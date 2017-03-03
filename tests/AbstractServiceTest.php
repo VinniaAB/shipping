@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 
 abstract class AbstractServiceTest extends TestCase
@@ -37,17 +38,18 @@ abstract class AbstractServiceTest extends TestCase
         }
 
         $package = new Package(30, 30, 30, 5000);
-        $promise = $service->getPrice($sender, $recipient, $package);
+        $promise = $service->getQuotes($sender, $recipient, $package);
 
-        /* @var Money $money */
-        $money = $promise->wait();
-
-        var_dump($money);
+        /* @var Quote[] $quotes */
+        $quotes = $promise->wait();
 
         if ($expected) {
-            $this->assertInstanceOf(Money::class, $money);
-            var_dump($money->getAmount());
-            var_dump($money->getCurrency());
+            $this->assertNotEmpty($quotes);
+            $this->assertInstanceOf(Quote::class, $quotes[0]);
+
+            foreach ($quotes as $quote) {
+                echo sprintf('%s %s: %d' . PHP_EOL, $quote->getVendor(), $quote->getProduct(), $quote->getAmount()->getAmount());
+            }
         }
     }
 

@@ -27,11 +27,26 @@ class DHLTest extends AbstractServiceTest
             $data['dhl']['password'],
             $data['dhl']['account_number']
         );
-        $dhl = new DHL(new Client(), $credentials, DHL::URL_TEST);
-        $sender = new Address(['Delfingatan 4'], '97334', 'Luleå', '', 'SE');
-        $recipient = new Address(['Lilla Varvsgatan 14'], '21115', 'Malmö', '', 'SE');
+        $dhl = new DHL(new Client(), $credentials, DHL::URL_PRODUCTION);
         return [
-            [$sender, $recipient, $dhl, true],
+            'Luleå, Sweden -> Malmö, Sweden' => [
+                new Address([], '97334', 'Luleå', '', 'SE'),
+                new Address([], '21115', 'Malmö', '', 'SE'),
+                $dhl,
+                true
+            ],
+            'Boulder, CO, USA -> Minneapolis, MN, US' => [
+                new Address([], '80302', 'Boulder', 'CO', 'US'),
+                new Address([], '55417', 'Minneapolis', 'MN', 'US'),
+                $dhl,
+                true,
+            ],
+            'Stockholm, Sweden -> Munich, Germany' => [
+                new Address([], '10000', 'Stockholm', '', 'SE'),
+                new Address([], '80469', 'Munich', '', 'DE'),
+                $dhl,
+                true
+            ],
         ];
     }
 

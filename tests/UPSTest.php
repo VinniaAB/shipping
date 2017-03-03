@@ -35,20 +35,20 @@ class UPSTest extends AbstractServiceTest
             'UPS Worldwide Express' => [
                 $sender,
                 $recipient,
-                new UPS($client, $credentials, '07', UPS::URL_TEST),
+                new UPS($client, $credentials, '07', UPS::URL_PRODUCTION),
                 true,
             ],
             'UPS Worldwide Express Plus' => [
                 $sender,
                 $recipient,
-                new UPS($client, $credentials, '54', UPS::URL_TEST),
+                new UPS($client, $credentials, '54', UPS::URL_PRODUCTION),
                 true,
             ],
             // shouldn't work for the specified addresses
             'UPS Standard' => [
                 $sender,
                 $recipient,
-                new UPS($client, $credentials, '11', UPS::URL_TEST),
+                new UPS($client, $credentials, '11', UPS::URL_PRODUCTION),
                 false,
             ],
         ];
