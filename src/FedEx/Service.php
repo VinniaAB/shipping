@@ -47,7 +47,7 @@ class Service implements ServiceInterface
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
-     * @return PromiseInterface promise resolved with an array of \Vinnia\Shipping\Quote on success
+     * @return PromiseInterface
      */
     public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
