@@ -148,7 +148,7 @@ EOD;
 
                 $product = (string) $element->{'ProductShortName'};
 
-                return new Quote('UPS', $product, new Money($amount, new Currency((string) $element->{'CurrencyCode'})));
+                return new Quote('DHL', $product, new Money($amount, new Currency((string) $element->{'CurrencyCode'})));
             }, $qtdShip);
         });
     }
