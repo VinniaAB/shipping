@@ -9,11 +9,18 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\DHL;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Promise\RejectedPromise;
+use Money\Currency;
+use Money\Money;
 use Psr\Http\Message\ResponseInterface;
+use SimpleXMLElement;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 
 class Service implements ServiceInterface
@@ -56,55 +63,56 @@ class Service implements ServiceInterface
      * @param Package $package
      * @return PromiseInterface promise resolved with an \App\Money object on success
      */
-    public function getPrice(Address $sender, Address $recipient, Package $package): PromiseInterface
+    public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
-        $dt = date('c');
+        $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $weight = $package->getWeight() / 1000; // weight in kilos
 
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
-<request:DCTRequest xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-	xmlns:request="http://www.dhl.com"
-	xmlns:dct="http://www.dhl.com/DCTRequestdatatypes"
-	xmlns:dhl="http://www.dhl.com/datatypes">
-	<GetQuote>
-		<Request>
-			<ServiceHeader>
-				<MessageTime>{$dt}</MessageTime>
-
-				<SiteID>{$this->credentials->getSiteID()}</SiteID>
-				<Password>{$this->credentials->getPassword()}</Password>
-			</ServiceHeader>
-		</Request>
-		<From>
-			<CountryCode>{$sender->getCountry()}</CountryCode>
-			<Postalcode>{$sender->getZip()}</Postalcode>
-			<City>{$sender->getCountry()}</City>
-		</From>
-		<BkgDetails>
-			<PaymentCountryCode>{$sender->getCountry()}</PaymentCountryCode>
-			<Date>{$dt}</Date>
-			<ReadyTime>PT00H00M</ReadyTime>
-			<ReadyTimeGMTOffset>+00:00</ReadyTimeGMTOffset>
-			<DimensionUnit>CM</DimensionUnit>
-			<WeightUnit>KG</WeightUnit>
-			<NumberOfPieces>1</NumberOfPieces>
-			<ShipmentWeight>{$weight}</ShipmentWeight>
-			<Volume>{$package->getVolume()}</Volume>
-			<PaymentAccountNumber></PaymentAccountNumber>
-			<IsDutiable>N</IsDutiable>
-			<NetworkTypeCode>TD</NetworkTypeCode>
-		</BkgDetails>
-		<To>
-			<CountryCode>{$recipient->getCountry()}</CountryCode>
-			<Postalcode>{$recipient->getZip()}</Postalcode>
-			<City>{$recipient->getCity()}</City>
-		</To>
-	</GetQuote>
-</request:DCTRequest>
+<p:DCTRequest xmlns:p="http://www.dhl.com"
+    xmlns:p1="http://www.dhl.com/datatypes"
+    xmlns:p2="http://www.dhl.com/DCTRequestdatatypes"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.dhl.com DCT-req.xsd ">
+   <GetQuote>
+      <Request>
+         <ServiceHeader>
+            <MessageTime>{$dt->format('c')}</MessageTime>
+            <SiteID>{$this->credentials->getSiteID()}</SiteID>
+            <Password>{$this->credentials->getPassword()}</Password>
+         </ServiceHeader>
+      </Request>
+      <From>
+         <CountryCode>{$sender->getCountry()}</CountryCode>
+         <Postalcode>{$sender->getZip()}</Postalcode>
+         <City>{$sender->getCountry()}</City>
+      </From>
+      <BkgDetails>
+         <PaymentCountryCode>{$sender->getCountry()}</PaymentCountryCode>
+         <Date>{$dt->format('Y-m-d')}</Date>
+         <ReadyTime>PT00H00M</ReadyTime>
+         <DimensionUnit>CM</DimensionUnit>
+         <WeightUnit>KG</WeightUnit>
+         <Pieces>
+            <Piece>
+               <PieceID>1</PieceID>
+               <Height>{$package->getHeight()}</Height>
+               <Depth>{$package->getLength()}</Depth>
+               <Width>{$package->getWidth()}</Width>
+               <Weight>{$weight}</Weight>
+            </Piece>
+         </Pieces>
+         <PaymentAccountNumber>{$this->credentials->getAccountNumber()}</PaymentAccountNumber>
+      </BkgDetails>
+      <To>
+         <CountryCode>{$recipient->getCountry()}</CountryCode>
+         <Postalcode>{$recipient->getZip()}</Postalcode>
+         <City>{$recipient->getCity()}</City>
+      </To>
+   </GetQuote>
+</p:DCTRequest>
 EOD;
-
-        echo $body . PHP_EOL;
 
         return $this->guzzle->requestAsync('POST', $this->baseUrl, [
             'query' => [
@@ -117,7 +125,31 @@ EOD;
             'body' => $body,
         ])->then(function (ResponseInterface $response) {
             $body = (string)$response->getBody();
-            return $body;
+
+            $xml = new SimpleXMLElement($body);
+            $qtdShip = $xml->xpath('/res:DCTResponse/GetQuoteResponse/BkgDetails/QtdShp');
+
+            if (count($qtdShip) === 0) {
+                return new RejectedPromise($body);
+            }
+
+            // somestimes the DHL api responds with a correct response
+            // without ShippingCharge values which is strange.
+            $qtdShip = array_filter($qtdShip, function (SimpleXMLElement $element): bool {
+                $charge = (string) $element->{'ShippingCharge'};
+                return $charge !== '';
+            });
+
+            return array_map(function (SimpleXMLElement $element): Quote {
+                $amountString = (string) $element->{'ShippingCharge'};
+
+                // the amount is a decimal string, deal with that
+                $amount = (int) round(((float)$amountString) * pow(10, 2));
+
+                $product = (string) $element->{'ProductShortName'};
+
+                return new Quote('UPS', $product, new Money($amount, new Currency((string) $element->{'CurrencyCode'})));
+            }, $qtdShip);
         });
     }
 

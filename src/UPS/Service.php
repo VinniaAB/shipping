@@ -13,9 +13,16 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use Exception;
 use GuzzleHttp\Promise\RejectedPromise;
+use Money\Currency;
+use Money\Money;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\Validator\Constraints\Collection;
+use Symfony\Component\Validator\Constraints\Required;
+use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Component\Validator\ValidatorBuilder;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 
 class Service implements ServiceInterface
@@ -23,6 +30,22 @@ class Service implements ServiceInterface
 
     const URL_TEST = 'https://wwwcie.ups.com/rest';
     const URL_PRODUCTION = 'https://onlinetools.ups.com/rest';
+
+    // UPS only provides a service code in the response so we might need these
+    const SERVICE_CODES = [
+        '11' => 'Standard',
+        '03' => 'Ground',
+        '12' => '3 Day Select',
+        '02' => '2nd Day Air',
+        '59' => '2nd Day Air AM',
+        '13' => 'Next Day Air Saver',
+        '01' => 'Next Day Air',
+        '14' => 'Next Day Air Early A.M.',
+        '07' => 'Worldwide Express',
+        '54' => 'Worldwide Express Plus',
+        '08' => 'Worldwide Expedited',
+        '65' => 'World Wide Saver',
+    ];
 
     /**
      * @var ClientInterface
@@ -63,7 +86,7 @@ class Service implements ServiceInterface
      * @param Package $package
      * @return PromiseInterface
      */
-    public function getPrice(Address $sender, Address $recipient, Package $package): PromiseInterface
+    public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
         $body = [
             'UPSSecurity' => [
@@ -151,23 +174,54 @@ class Service implements ServiceInterface
             'json' => $body,
         ])->then(function (ResponseInterface $response) {
             $body = json_decode((string) $response->getBody(), true);
-            $rules = [
-                'RateResponse.Response.ResponseStatus' => 'required',
-                'RateResponse.RatedShipment.TotalCharges.MonetaryValue' => 'required|numeric',
-            ];
-            if (validator($body, $rules)->fails()) {
+
+            if (!$this->validateResponse($body)) {
                 return new RejectedPromise($body);
             }
-            $charges = array_get($body, 'RateResponse.RatedShipment.TotalCharges');
-            return Money::fromFloat((float) $charges['MonetaryValue'], $charges['CurrencyCode']);
+            $shipment = $body['RateResponse']['RatedShipment'];
+            $charges = $shipment['TotalCharges'];
+            $amount = (int) round(((float) $charges['MonetaryValue']) * pow(10, 2));
+            $product = self::SERVICE_CODES[(string) $shipment['Service']['Code']] ?? 'Unknown';
 
+            return [
+                new Quote('UPS', $product, new Money($amount, new Currency($charges['CurrencyCode']))),
+            ];
         });
     }
 
     private function validateResponse(array $body): bool
     {
-        // TODO: implement
-        return true;
+        $validator = (new ValidatorBuilder())->getValidator();
+        $constraints = new Collection([
+            'allowExtraFields' => true,
+            'fields' => [
+                'RateResponse' => new Collection([
+                    'allowExtraFields' => true,
+                    'fields' => [
+                        'RatedShipment' => new Collection([
+                            'allowExtraFields' => true,
+                            'fields' => [
+                                'Service' => new Collection([
+                                    'allowExtraFields' => true,
+                                    'fields' => [
+                                        'Code' => new Required(),
+                                    ],
+                                ]),
+                                'TotalCharges' => new Collection([
+                                    'allowExtraFields' => true,
+                                    'fields' => [
+                                        'MonetaryValue' => new Type('numeric'),
+                                    ],
+                                ]),
+                            ],
+                        ]),
+                    ],
+                ]),
+            ],
+        ]);
+        $result = $validator->validate($body, $constraints);
+
+        return $result->count() === 0;
     }
 
     /**

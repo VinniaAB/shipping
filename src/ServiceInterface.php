@@ -18,9 +18,9 @@ interface ServiceInterface
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
-     * @return PromiseInterface promise resolved with an \App\Money object on success
+     * @return PromiseInterface promise resolved with an array of \Vinnia\Shipping\Quote on success
      */
-    public function getPrice(Address $sender, Address $recipient, Package $package): PromiseInterface;
+    public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface;
 
     /**
      * @param string $trackingNumber
