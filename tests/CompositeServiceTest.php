@@ -23,6 +23,7 @@ use Vinnia\Shipping\CompositeService;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Util\Measurement\Amount;
 
 class CompositeServiceTest extends TestCase
 {
@@ -58,7 +59,8 @@ class CompositeServiceTest extends TestCase
         };
         $service = new CompositeService([$a, $b, $c]);
         $address = new Address([], '', '', '', '');
-        $package = new Package(1, 1, 1, 1);
+        $size = new Amount(1, 'cm');
+        $package = new Package($size, $size, $size, new Amount(1, 'kg'));
         $promise = $service->getQuotes($address, $address, $package);
 
         /* @var Quote[] $quotes */

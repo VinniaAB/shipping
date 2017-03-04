@@ -9,12 +9,15 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\Tests;
 
+use GuzzleHttp\Promise\RejectionException;
 use PHPUnit\Framework\TestCase;
 
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Unit;
 
 abstract class AbstractServiceTest extends TestCase
 {
@@ -61,11 +64,19 @@ abstract class AbstractServiceTest extends TestCase
      */
     public function testGetQuotes(Address $sender, Address $recipient)
     {
-        $package = new Package(30, 30, 30, 5000);
+        $size = new Amount(30, Unit::CENTIMETER);
+        $package = new Package($size, $size, $size, new Amount(5, Unit::KILOGRAM));
         $promise = $this->service->getQuotes($sender, $recipient, $package);
 
-        /* @var Quote[] $quotes */
-        $quotes = $promise->wait();
+        try {
+            /* @var Quote[] $quotes */
+            $quotes = $promise->wait();
+        }
+        catch (RejectionException $e) {
+            $reason = $e->getReason();
+
+            var_dump($reason);
+        }
 
         $this->assertTrue(is_array($quotes));
 

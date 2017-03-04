@@ -23,6 +23,7 @@ use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Util\Collection;
+use Vinnia\Util\Measurement\Unit;
 
 class Service implements ServiceInterface
 {
@@ -67,8 +68,6 @@ class Service implements ServiceInterface
     public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
         $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-        $weight = $package->getWeight() / 1000; // weight in kilos
-
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <p:DCTRequest xmlns:p="http://www.dhl.com"
@@ -98,10 +97,10 @@ class Service implements ServiceInterface
          <Pieces>
             <Piece>
                <PieceID>1</PieceID>
-               <Height>{$package->getHeight()}</Height>
-               <Depth>{$package->getLength()}</Depth>
-               <Width>{$package->getWidth()}</Width>
-               <Weight>{$weight}</Weight>
+               <Height>{$package->getHeight()->convertTo(Unit::CENTIMETER)}</Height>
+               <Depth>{$package->getLength()->convertTo(Unit::CENTIMETER)}</Depth>
+               <Width>{$package->getWidth()->convertTo(Unit::CENTIMETER)}</Width>
+               <Weight>{$package->getWeight()->convertTo(Unit::KILOGRAM)}</Weight>
             </Piece>
          </Pieces>
          <PaymentAccountNumber>{$this->credentials->getAccountNumber()}</PaymentAccountNumber>

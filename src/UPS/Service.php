@@ -26,6 +26,7 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Util\Measurement\Unit;
 
 class Service implements ServiceInterface
 {
@@ -79,6 +80,12 @@ class Service implements ServiceInterface
      */
     public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
+        // after value conversions we might get lots of decimals. deal with that
+        $length = number_format($package->getLength()->getValue(), 2);
+        $width = number_format($package->getWidth()->getValue(), 2);
+        $height = number_format($package->getHeight()->getValue(), 2);
+        $weight = number_format($package->getWeight()->getValue(), 2);
+
         $body = [
             'UPSSecurity' => [
                 'UsernameToken' => [
@@ -136,15 +143,15 @@ class Service implements ServiceInterface
                             'UnitOfMeasurement' => [
                                 'Code' => 'CM',
                             ],
-                            'Length' => (string) $package->getLength(),
-                            'Width' => (string) $package->getWidth(),
-                            'Height' => (string) $package->getHeight(),
+                            'Length' => $length,
+                            'Width' => $width,
+                            'Height' => $height,
                         ],
                         'PackageWeight' => [
                             'UnitOfMeasurement' => [
-                                'Code' => 'Kgs',
+                                'Code' => 'KGS',
                             ],
-                            'Weight' => (string)($package->getWeight() / 1000),
+                            'Weight' => $weight,
                         ],
                     ],
                     //'ShipmentRatingOptions' => [

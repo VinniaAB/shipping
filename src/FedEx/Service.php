@@ -22,6 +22,7 @@ use Vinnia\Shipping\ServiceInterface;
 use DateTimeImmutable;
 use DateTimeZone;
 use SimpleXMLElement;
+use Vinnia\Util\Measurement\Unit;
 
 class Service implements ServiceInterface
 {
@@ -59,8 +60,6 @@ class Service implements ServiceInterface
      */
     public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
-        $weight = $package->getWeight() / 1000;
-
         $fromLines = implode("\n", array_map(function (string $line): string {
             return sprintf('<StreetLines>%s</StreetLines>', $line);
         }, $sender->getLines()));
@@ -121,12 +120,12 @@ class Service implements ServiceInterface
                <GroupPackageCount>1</GroupPackageCount>
                <Weight>
                   <Units>KG</Units>
-                  <Value>{$weight}</Value>
+                  <Value>{$package->getWeight()->convertTo(Unit::KILOGRAM)}</Value>
                </Weight>
                <Dimensions>
-                  <Length>{$package->getLength()}</Length>
-                  <Width>{$package->getWidth()}</Width>
-                  <Height>{$package->getHeight()}</Height>
+                  <Length>{$package->getLength()->convertTo(Unit::CENTIMETER)}</Length>
+                  <Width>{$package->getWidth()->convertTo(Unit::CENTIMETER)}</Width>
+                  <Height>{$package->getHeight()->convertTo(Unit::CENTIMETER)}</Height>
                   <Units>CM</Units>
                </Dimensions>
             </RequestedPackageLineItems>

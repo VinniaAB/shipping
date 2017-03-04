@@ -9,41 +9,39 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
+use Vinnia\Util\Measurement\Amount;
+
 class Package
 {
 
     /**
-     * Width in cm
-     * @var int
+     * @var Amount
      */
     private $width;
 
     /**
-     * Height in cm
-     * @var int
+     * @var Amount
      */
     private $height;
 
     /**
-     * Length in cm
-     * @var int
+     * @var Amount
      */
     private $length;
 
     /**
-     * Weight in grams
-     * @var int
+     * @var Amount
      */
     private $weight;
 
     /**
      * Package constructor.
-     * @param int $width
-     * @param int $height
-     * @param int $length
-     * @param int $weight
+     * @param Amount $width
+     * @param Amount $height
+     * @param Amount $length
+     * @param Amount $weight
      */
-    function __construct(int $width, int $height, int $length, int $weight)
+    function __construct(Amount $width, Amount $height, Amount $length, Amount $weight)
     {
         $this->width = $width;
         $this->height = $height;
@@ -52,43 +50,45 @@ class Package
     }
 
     /**
-     * @return int
+     * @return Amount
      */
-    public function getWidth(): int
+    public function getWidth(): Amount
     {
         return $this->width;
     }
 
     /**
-     * @return int
+     * @return Amount
      */
-    public function getHeight(): int
+    public function getHeight(): Amount
     {
         return $this->height;
     }
 
     /**
-     * @return int
+     * @return Amount
      */
-    public function getLength(): int
+    public function getLength(): Amount
     {
         return $this->length;
     }
 
     /**
-     * @return int
+     * @return Amount
      */
-    public function getWeight(): int
+    public function getWeight(): Amount
     {
         return $this->weight;
     }
 
-    /**
-     * @return int
-     */
-    public function getVolume(): int
+    public function convertTo(string $lengthUnit, string $weightUnit): self
     {
-        return $this->getWidth() * $this->getHeight() * $this->getLength();
+        return new Package(
+            $this->width->convertTo($lengthUnit),
+            $this->height->convertTo($lengthUnit),
+            $this->length->convertTo($lengthUnit),
+            $this->weight->convertTo($weightUnit)
+        );
     }
 
 }
