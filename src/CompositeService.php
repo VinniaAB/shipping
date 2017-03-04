@@ -63,7 +63,7 @@ class CompositeService implements ServiceInterface
             $quotes = [];
             foreach ($inspections as $inspection) {
                 if ($inspection['state'] === PromiseInterface::FULFILLED) {
-                    $quotes[] = $inspection['value'];
+                    $quotes = array_merge($quotes, $inspection['value']);
                 }
             }
             return $quotes;
