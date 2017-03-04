@@ -69,6 +69,16 @@ abstract class AbstractServiceTest extends TestCase
 
         $this->assertTrue(is_array($quotes));
 
+        echo sprintf(
+            '%s %s, %s to %s %s, %s' . PHP_EOL,
+            $sender->getZip(),
+            $sender->getCity(),
+            $sender->getCountry(),
+            $recipient->getZip(),
+            $recipient->getCity(),
+            $recipient->getCountry()
+        );
+
         foreach ($quotes as $quote) {
             $this->assertInstanceOf(Quote::class, $quote);
 
