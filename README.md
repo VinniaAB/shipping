@@ -54,7 +54,7 @@ $dhl->getQuotes($sender, $recipient, $package)->then(function (array $quotes) {
 
 ```
 If you want to use the library synchronously, refer to the guzzle promise documentation. Simple example:
-```
+```php
 $promise = $dhl->getQuotes(...);
 $quotes = $promise->wait();
 
