@@ -50,6 +50,8 @@ class Service implements ServiceInterface
         '65' => 'World Wide Saver',
     ];
 
+    const NON_SI_COUNTRIES = ['US'];
+
     /**
      * @var ClientInterface
      */
@@ -80,6 +82,16 @@ class Service implements ServiceInterface
      */
     public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
+        // UPS doesn't allow us to use SI units inside some countries
+        $nonSi = in_array(mb_strtoupper($sender->getCountry(), 'utf-8'), self::NON_SI_COUNTRIES);
+        $lengthUnit = $nonSi ? 'IN' : 'CM';
+        $weightUnit = $nonSi ? 'LBS' : 'KGS';
+
+        $package = $package->convertTo(
+            $nonSi ? Unit::INCH : Unit::CENTIMETER,
+            $nonSi ? Unit::POUND : Unit::KILOGRAM
+        );
+
         // after value conversions we might get lots of decimals. deal with that
         $length = number_format($package->getLength()->getValue(), 2);
         $width = number_format($package->getWidth()->getValue(), 2);
@@ -141,7 +153,7 @@ class Service implements ServiceInterface
                         ],
                         'Dimensions' => [
                             'UnitOfMeasurement' => [
-                                'Code' => 'CM',
+                                'Code' => $lengthUnit,
                             ],
                             'Length' => $length,
                             'Width' => $width,
@@ -149,7 +161,7 @@ class Service implements ServiceInterface
                         ],
                         'PackageWeight' => [
                             'UnitOfMeasurement' => [
-                                'Code' => 'KGS',
+                                'Code' => $weightUnit,
                             ],
                             'Weight' => $weight,
                         ],
