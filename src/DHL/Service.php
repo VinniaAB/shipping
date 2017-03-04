@@ -68,6 +68,15 @@ class Service implements ServiceInterface
     public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
         $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+
+        $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+        // after value conversions we might get lots of decimals. deal with that
+        $length = number_format($package->getLength()->getValue(), 2, '.', '');
+        $width = number_format($package->getWidth()->getValue(), 2, '.', '');
+        $height = number_format($package->getHeight()->getValue(), 2, '.', '');
+        $weight = number_format($package->getWeight()->getValue(), 2, '.', '');
+
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <p:DCTRequest xmlns:p="http://www.dhl.com"
@@ -97,10 +106,10 @@ class Service implements ServiceInterface
          <Pieces>
             <Piece>
                <PieceID>1</PieceID>
-               <Height>{$package->getHeight()->convertTo(Unit::CENTIMETER)}</Height>
-               <Depth>{$package->getLength()->convertTo(Unit::CENTIMETER)}</Depth>
-               <Width>{$package->getWidth()->convertTo(Unit::CENTIMETER)}</Width>
-               <Weight>{$package->getWeight()->convertTo(Unit::KILOGRAM)}</Weight>
+               <Height>{$height}</Height>
+               <Depth>{$length}</Depth>
+               <Width>{$width}</Width>
+               <Weight>{$weight}</Weight>
             </Piece>
          </Pieces>
          <PaymentAccountNumber>{$this->credentials->getAccountNumber()}</PaymentAccountNumber>

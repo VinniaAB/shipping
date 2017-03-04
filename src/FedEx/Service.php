@@ -68,6 +68,14 @@ class Service implements ServiceInterface
             return sprintf('<StreetLines>%s</StreetLines>', $line);
         }, $recipient->getLines()));
 
+        $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+        // after value conversions we might get lots of decimals. deal with that
+        $length = number_format($package->getLength()->getValue(), 0, '.', '');
+        $width = number_format($package->getWidth()->getValue(), 0, '.', '');
+        $height = number_format($package->getHeight()->getValue(), 0, '.', '');
+        $weight = number_format($package->getWeight()->getValue(), 0, '.', '');
+
         $body = <<<EOD
 <p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/rate/v20">
    <p:Body>
@@ -120,12 +128,12 @@ class Service implements ServiceInterface
                <GroupPackageCount>1</GroupPackageCount>
                <Weight>
                   <Units>KG</Units>
-                  <Value>{$package->getWeight()->convertTo(Unit::KILOGRAM)}</Value>
+                  <Value>{$weight}</Value>
                </Weight>
                <Dimensions>
-                  <Length>{$package->getLength()->convertTo(Unit::CENTIMETER)}</Length>
-                  <Width>{$package->getWidth()->convertTo(Unit::CENTIMETER)}</Width>
-                  <Height>{$package->getHeight()->convertTo(Unit::CENTIMETER)}</Height>
+                  <Length>{$length}</Length>
+                  <Width>{$width}</Width>
+                  <Height>{$height}</Height>
                   <Units>CM</Units>
                </Dimensions>
             </RequestedPackageLineItems>

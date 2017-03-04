@@ -93,10 +93,10 @@ class Service implements ServiceInterface
         );
 
         // after value conversions we might get lots of decimals. deal with that
-        $length = number_format($package->getLength()->getValue(), 2);
-        $width = number_format($package->getWidth()->getValue(), 2);
-        $height = number_format($package->getHeight()->getValue(), 2);
-        $weight = number_format($package->getWeight()->getValue(), 2);
+        $length = number_format($package->getLength()->getValue(), 2, '.', '');
+        $width = number_format($package->getWidth()->getValue(), 2, '.', '');
+        $height = number_format($package->getHeight()->getValue(), 2, '.', '');
+        $weight = number_format($package->getWeight()->getValue(), 2, '.', '');
 
         $body = [
             'UPSSecurity' => [
