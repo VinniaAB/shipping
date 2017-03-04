@@ -188,16 +188,16 @@ class Service implements ServiceInterface
             'allowExtraFields' => false,
             'allowMissingFields' => false,
             'fields' => [
-                'RateResponse' => new All(new Collection([
-                    'allowExtraFields' => false,
+                'RateResponse' => new Collection([
+                    'allowExtraFields' => true,
                     'allowMissingFields' => false,
                     'fields' => [
-                        'RatedShipment' => new Required(),
+                        'RatedShipment' => new All(new Type('array')),
                     ],
-                ])),
+                ]),
             ],
         ]);
-        return count($validator->validate($body,$constraints)) === 0;
+        return count($validator->validate($body, $constraints)) === 0;
     }
 
     /**
