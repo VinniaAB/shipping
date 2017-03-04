@@ -20,36 +20,59 @@ abstract class AbstractServiceTest extends TestCase
 {
 
     /**
-     * @return array
+     * @var ServiceInterface
      */
-    abstract public function addressAndServiceProvider(): array;
+    public $service;
 
     /**
-     * @dataProvider addressAndServiceProvider
+     * @return ServiceInterface
+     */
+    abstract public function getService(): ServiceInterface;
+
+    public function setUp()
+    {
+        parent::setUp();
+
+        $this->service = $this->getService();
+    }
+
+    public function addressProvider(): array
+    {
+        return [
+            'Luleå, Sweden -> Malmö, Sweden' => [
+                new Address([], '97334', 'Luleå', '', 'SE'),
+                new Address([], '21115', 'Malmö', '', 'SE'),
+            ],
+            'Boulder, CO, USA -> Minneapolis, MN, US' => [
+                new Address([], '80302', 'Boulder', 'CO', 'US'),
+                new Address([], '55417', 'Minneapolis', 'MN', 'US'),
+            ],
+            'Stockholm, Sweden -> Munich, Germany' => [
+                new Address([], '10000', 'Stockholm', '', 'SE'),
+                new Address([], '80469', 'Munich', '', 'DE'),
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider addressProvider
      * @param Address $sender
      * @param Address $recipient
-     * @param ServiceInterface $service
-     * @param bool $expected
      */
-    public function testRate(Address $sender, Address $recipient, ServiceInterface $service, bool $expected)
+    public function testRate(Address $sender, Address $recipient)
     {
-        if (!$expected) {
-            $this->expectException(RejectionException::class);
-        }
-
         $package = new Package(30, 30, 30, 5000);
-        $promise = $service->getQuotes($sender, $recipient, $package);
+        $promise = $this->service->getQuotes($sender, $recipient, $package);
 
         /* @var Quote[] $quotes */
         $quotes = $promise->wait();
 
-        if ($expected) {
-            $this->assertNotEmpty($quotes);
-            $this->assertInstanceOf(Quote::class, $quotes[0]);
+        $this->assertTrue(is_array($quotes));
 
-            foreach ($quotes as $quote) {
-                echo sprintf('%s %s: %d' . PHP_EOL, $quote->getVendor(), $quote->getProduct(), $quote->getAmount()->getAmount());
-            }
+        foreach ($quotes as $quote) {
+            $this->assertInstanceOf(Quote::class, $quote);
+
+            echo sprintf('%s %s: %d' . PHP_EOL, $quote->getVendor(), $quote->getProduct(), $quote->getAmount()->getAmount());
         }
     }
 

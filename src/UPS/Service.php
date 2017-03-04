@@ -16,9 +16,11 @@ use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\Validator\Constraints\All;
 use Symfony\Component\Validator\Constraints\Collection;
 use Symfony\Component\Validator\Constraints\Required;
 use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Component\Validator\Constraints\Valid;
 use Symfony\Component\Validator\ValidatorBuilder;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
@@ -60,23 +62,12 @@ class Service implements ServiceInterface
     /**
      * @var string
      */
-    private $serviceCode;
-
-    /**
-     * @var string
-     */
     private $baseUrl;
 
-    function __construct(
-        ClientInterface $guzzle,
-        Credentials $credentials,
-        string $serviceCode,
-        string $baseUrl = self::URL_PRODUCTION
-    )
+    function __construct(ClientInterface $guzzle, Credentials $credentials, string $baseUrl = self::URL_PRODUCTION)
     {
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
-        $this->serviceCode = $serviceCode;
         $this->baseUrl = $baseUrl;
     }
 
@@ -100,10 +91,10 @@ class Service implements ServiceInterface
             ],
             'RateRequest' => [
                 'Request' => [
-                    'RequestOption' => 'Rate',
-                    'TransactionReference' => [
-                        'CustomerContext' => '',
-                    ],
+                    'RequestOption' => 'Shop',
+                    //'TransactionReference' => [
+                    //    'CustomerContext' => '',
+                    //],
                 ],
                 'Shipment' => [
                     'Shipper' => [
@@ -137,9 +128,6 @@ class Service implements ServiceInterface
                             'CountryCode' => $sender->getCountry(),
                         ],
                     ],
-                    'Service' => [
-                        'Code' => $this->serviceCode,
-                    ],
                     'Package' => [
                         'PackagingType' => [
                             'Code' => '02',
@@ -159,9 +147,9 @@ class Service implements ServiceInterface
                             'Weight' => (string)($package->getWeight() / 1000),
                         ],
                     ],
-                    'ShipmentRatingOptions' => [
-                        'NegotiatedRatesIndicator' => '',
-                    ],
+                    //'ShipmentRatingOptions' => [
+                    //    'NegotiatedRatesIndicator' => '',
+                    //],
                 ],
             ],
         ];
@@ -178,14 +166,18 @@ class Service implements ServiceInterface
             if (!$this->validateResponse($body)) {
                 return new RejectedPromise($body);
             }
-            $shipment = $body['RateResponse']['RatedShipment'];
-            $charges = $shipment['TotalCharges'];
-            $amount = (int) round(((float) $charges['MonetaryValue']) * pow(10, 2));
-            $product = self::SERVICE_CODES[(string) $shipment['Service']['Code']] ?? 'Unknown';
 
-            return [
-                new Quote('UPS', $product, new Money($amount, new Currency($charges['CurrencyCode']))),
-            ];
+            return array_map(function (array $shipment): Quote {
+                $charges = $shipment['TotalCharges'];
+                $amount = (int) round(((float) $charges['MonetaryValue']) * pow(10, 2));
+                $product = self::SERVICE_CODES[(string) $shipment['Service']['Code']] ?? 'Unknown';
+
+                return new Quote(
+                    'UPS',
+                    $product,
+                    new Money($amount, new Currency($charges['CurrencyCode']))
+                );
+            }, $body['RateResponse']['RatedShipment']);
         });
     }
 
@@ -193,35 +185,19 @@ class Service implements ServiceInterface
     {
         $validator = (new ValidatorBuilder())->getValidator();
         $constraints = new Collection([
-            'allowExtraFields' => true,
+            'allowExtraFields' => false,
+            'allowMissingFields' => false,
             'fields' => [
-                'RateResponse' => new Collection([
-                    'allowExtraFields' => true,
+                'RateResponse' => new All(new Collection([
+                    'allowExtraFields' => false,
+                    'allowMissingFields' => false,
                     'fields' => [
-                        'RatedShipment' => new Collection([
-                            'allowExtraFields' => true,
-                            'fields' => [
-                                'Service' => new Collection([
-                                    'allowExtraFields' => true,
-                                    'fields' => [
-                                        'Code' => new Required(),
-                                    ],
-                                ]),
-                                'TotalCharges' => new Collection([
-                                    'allowExtraFields' => true,
-                                    'fields' => [
-                                        'MonetaryValue' => new Type('numeric'),
-                                    ],
-                                ]),
-                            ],
-                        ]),
+                        'RatedShipment' => new Required(),
                     ],
-                ]),
+                ])),
             ],
         ]);
-        $result = $validator->validate($body, $constraints);
-
-        return $result->count() === 0;
+        return count($validator->validate($body,$constraints)) === 0;
     }
 
     /**
