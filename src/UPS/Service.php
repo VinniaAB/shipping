@@ -183,21 +183,7 @@ class Service implements ServiceInterface
 
     private function validateResponse(array $body): bool
     {
-        $validator = (new ValidatorBuilder())->getValidator();
-        $constraints = new Collection([
-            'allowExtraFields' => false,
-            'allowMissingFields' => false,
-            'fields' => [
-                'RateResponse' => new Collection([
-                    'allowExtraFields' => true,
-                    'allowMissingFields' => false,
-                    'fields' => [
-                        'RatedShipment' => new All(new Type('array')),
-                    ],
-                ]),
-            ],
-        ]);
-        return count($validator->validate($body, $constraints)) === 0;
+        return isset($body['RateResponse']) && isset($body['RateResponse']['RatedShipment']);
     }
 
     /**

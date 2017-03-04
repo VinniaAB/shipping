@@ -15,7 +15,6 @@
         "ext-mbstring": "*",
         "ext-xml": "*",
         "guzzlehttp/guzzle": "^6.2",
-        "symfony/validator": "^3.2",
         "moneyphp/money": "^3.0"
     },
     "autoload": {
