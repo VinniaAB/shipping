@@ -20,4 +20,11 @@ return [
         'account_number' => '',
     ],
 
+    'fedex' => [
+        'credential_key' => '',
+        'credential_password' => '',
+        'account_number' => '',
+        'meter_number' => '',
+    ],
+
 ];
