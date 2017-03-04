@@ -8,6 +8,7 @@ Currently the following vendors are supported:
 ## Requirements
 - php 7.1+
 - ext-curl
+- ext-xml
 - ext-mbstring
 
 ## Usage
