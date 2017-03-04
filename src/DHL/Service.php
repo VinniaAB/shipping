@@ -22,6 +22,7 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Util\Collection;
 
 class Service implements ServiceInterface
 {
@@ -133,14 +134,14 @@ EOD;
                 return new RejectedPromise($body);
             }
 
+            $qtdShip =  new Collection($qtdShip);
+
             // somestimes the DHL api responds with a correct response
             // without ShippingCharge values which is strange.
-            $qtdShip = array_filter($qtdShip, function (SimpleXMLElement $element): bool {
+            return $qtdShip->filter(function (SimpleXMLElement $element): bool {
                 $charge = (string) $element->{'ShippingCharge'};
                 return $charge !== '';
-            });
-
-            return array_map(function (SimpleXMLElement $element): Quote {
+            })->map(function (SimpleXMLElement $element): Quote {
                 $amountString = (string) $element->{'ShippingCharge'};
 
                 // the amount is a decimal string, deal with that
@@ -149,7 +150,7 @@ EOD;
                 $product = (string) $element->{'ProductShortName'};
 
                 return new Quote('DHL', $product, new Money($amount, new Currency((string) $element->{'CurrencyCode'})));
-            }, $qtdShip);
+            })->value();
         });
     }
 
