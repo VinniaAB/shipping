@@ -59,7 +59,7 @@ abstract class AbstractServiceTest extends TestCase
      * @param Address $sender
      * @param Address $recipient
      */
-    public function testRate(Address $sender, Address $recipient)
+    public function testGetQuotes(Address $sender, Address $recipient)
     {
         $package = new Package(30, 30, 30, 5000);
         $promise = $this->service->getQuotes($sender, $recipient, $package);
@@ -72,7 +72,13 @@ abstract class AbstractServiceTest extends TestCase
         foreach ($quotes as $quote) {
             $this->assertInstanceOf(Quote::class, $quote);
 
-            echo sprintf('%s %s: %d' . PHP_EOL, $quote->getVendor(), $quote->getProduct(), $quote->getAmount()->getAmount());
+            echo sprintf(
+                '%s %s: %.2f %s' . PHP_EOL,
+                $quote->getVendor(),
+                $quote->getProduct(),
+                $quote->getAmount()->getAmount() / 100,
+                $quote->getAmount()->getCurrency()
+            );
         }
     }
 
