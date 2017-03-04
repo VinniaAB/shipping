@@ -5,10 +5,10 @@
  * Date: 2017-03-01
  * Time: 15:38
  */
+declare(strict_types = 1);
 
 namespace Vinnia\Shipping\Tests;
 
-use GuzzleHttp\Promise\RejectionException;
 use PHPUnit\Framework\TestCase;
 
 use Vinnia\Shipping\Address;

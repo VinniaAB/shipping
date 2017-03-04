@@ -5,9 +5,9 @@
  * Date: 2017-03-04
  * Time: 14:03
  */
+declare(strict_types = 1);
 
 namespace Vinnia\Shipping\Tests;
-
 
 use GuzzleHttp\Client;
 use Vinnia\Shipping\FedEx\Credentials;

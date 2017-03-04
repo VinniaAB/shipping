@@ -5,6 +5,7 @@
  * Date: 2017-03-01
  * Time: 16:44
  */
+declare(strict_types = 1);
 
 namespace Vinnia\Shipping\Tests;
 
@@ -12,7 +13,6 @@ use GuzzleHttp\Client;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\UPS\Service as UPS;
 use Vinnia\Shipping\UPS\Credentials as UPSCredentials;
-use Vinnia\Shipping\Address;
 
 class UPSTest extends AbstractServiceTest
 {

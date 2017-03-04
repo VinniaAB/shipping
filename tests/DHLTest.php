@@ -5,13 +5,13 @@
  * Date: 2017-03-02
  * Time: 17:17
  */
+declare(strict_types = 1);
 
 namespace Vinnia\Shipping\Tests;
 
 use GuzzleHttp\Client;
 use Vinnia\Shipping\DHL\Service as DHL;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
-use Vinnia\Shipping\Address;
 use Vinnia\Shipping\ServiceInterface;
 
 class DHLTest extends AbstractServiceTest

@@ -5,6 +5,7 @@
  * Date: 2017-03-03
  * Time: 19:24
  */
+declare(strict_types = 1);
 
 namespace Vinnia\Shipping\FedEx;
 
@@ -148,7 +149,7 @@ EOD;
             $details = $xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body/*[local-name()=\'RateReply\']/*[local-name()=\'RateReplyDetails\']');
 
             return array_map(function (SimpleXMLElement $element): Quote {
-                $product = $element->{'ServiceType'};
+                $product = (string) $element->{'ServiceType'};
 
                 $total = $element
                     ->{'RatedShipmentDetails'}

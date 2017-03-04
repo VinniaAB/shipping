@@ -5,6 +5,7 @@
  * Date: 2017-03-03
  * Time: 19:27
  */
+declare(strict_types = 1);
 
 namespace Vinnia\Shipping\FedEx;
 

@@ -5,6 +5,7 @@
  * Date: 2017-03-03
  * Time: 17:22
  */
+declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
