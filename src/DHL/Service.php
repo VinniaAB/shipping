@@ -126,7 +126,7 @@ EOD;
         ])->then(function (ResponseInterface $response) {
             $body = (string)$response->getBody();
 
-            $xml = new SimpleXMLElement($body);
+            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
             $qtdShip = $xml->xpath('/res:DCTResponse/GetQuoteResponse/BkgDetails/QtdShp');
 
             if (count($qtdShip) === 0) {
