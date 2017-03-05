@@ -37,13 +37,23 @@ interface ServiceInterface
 DHL example:
 
 ```php
-$guzzle = new \GuzzleHttp\Client();
-$credentials = new \Vinnia\Shipping\DHL\Credentials('site_id', 'password', 'account_number');
-$dhl = new \Vinnia\Shipping\DHL\Service($guzzle, $credentials);
+use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
+use Vinnia\Shipping\DHL\Service as DHLService;
+use Vinnia\Shipping\Address;
+use Vinnia\Shipping\Package;
+use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Unit;
 
-$sender = new \Vinnia\Shipping\Address([], '97334', 'Luleå', '', 'SE');
-$recipient = new \Vinnia\Shipping\Address([], '21115', 'Malmö', '', 'SE');
-$package = new \Vinnia\Shipping\Package(30, 30, 30, 5000);
+$guzzle = new \GuzzleHttp\Client();
+$credentials = new DHLCredentials('site_id', 'password', 'account_number');
+$dhl = new DHLService($guzzle, $credentials);
+
+$sender = new Address([], '97334', 'Luleå', '', 'SE');
+$recipient = new Address([], '21115', 'Malmö', '', 'SE');
+
+$size = new Amount(30, Unit::CENTIMETER);
+$weight = new Amount(5, Unit::KILOGRAM);
+$package = new Package($size, $size, $size, $weight);
 
 $dhl->getQuotes($sender, $recipient, $package)->then(function (array $quotes) {
     // do something with the quote array
