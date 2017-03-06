@@ -60,13 +60,14 @@ class CompositeService implements ServiceInterface
         $aggregate = \GuzzleHttp\Promise\settle($promises);
 
         return $aggregate->then(function (array $inspections) {
-            $quotes = [];
+            $results = [];
             foreach ($inspections as $inspection) {
                 if ($inspection['state'] === PromiseInterface::FULFILLED) {
-                    $quotes = array_merge($quotes, $inspection['value']);
+                    // we expect the result to be an array, otherwise this won't work
+                    $results = array_merge($results, $inspection['value']);
                 }
             }
-            return $quotes;
+            return $results;
         });
     }
 }
