@@ -32,4 +32,14 @@ class FedExTest extends AbstractServiceTest
         return new FedEx(new Client(), $credentials, FedEx::URL_PRODUCTION);
     }
 
+    /**
+     * @return string[][]
+     */
+    public function trackingNumberProvider(): array
+    {
+        $data = require __DIR__ . '/../credentials.php';
+        return array_map(function (string $value) {
+            return [$value];
+        }, $data['fedex']['tracking_numbers']);
+    }
 }

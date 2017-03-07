@@ -31,4 +31,15 @@ class DHLTest extends AbstractServiceTest
         return new DHL(new Client(), $credentials, DHL::URL_PRODUCTION);
     }
 
+    /**
+     * @return string[][]
+     */
+    public function trackingNumberProvider(): array
+    {
+        $data = require __DIR__ . '/../credentials.php';
+        return array_map(function (string $value) {
+            return [$value];
+        }, $data['dhl']['tracking_numbers']);
+    }
+
 }

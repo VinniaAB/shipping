@@ -31,4 +31,14 @@ class UPSTest extends AbstractServiceTest
         return new UPS(new Client(), $credentials, UPS::URL_PRODUCTION);
     }
 
+    /**
+     * @return string[][]
+     */
+    public function trackingNumberProvider(): array
+    {
+        $data = require __DIR__ . '/../credentials.php';
+        return array_map(function (string $value) {
+            return [$value];
+        }, $data['ups']['tracking_numbers']);
+    }
 }

@@ -16,6 +16,8 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Shipping\Tracking;
+use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 
@@ -31,6 +33,11 @@ abstract class AbstractServiceTest extends TestCase
      * @return ServiceInterface
      */
     abstract public function getService(): ServiceInterface;
+
+    /**
+     * @return string[][]
+     */
+    abstract public function trackingNumberProvider(): array;
 
     public function setUp()
     {
@@ -99,6 +106,34 @@ abstract class AbstractServiceTest extends TestCase
                 $quote->getProduct(),
                 $quote->getAmount()->getAmount() / 100,
                 $quote->getAmount()->getCurrency()
+            );
+        }
+    }
+
+    /**
+     * @dataProvider trackingNumberProvider
+     * @param string $trackingNumber
+     */
+    public function testGetTrackingStatus(string $trackingNumber)
+    {
+        $promise = $this->service->getTrackingStatus($trackingNumber);
+
+        /* @var Tracking|null $tracking */
+        $tracking = $promise->wait();
+
+        $this->assertInstanceOf(Tracking::class, $tracking);
+        $this->assertNotEmpty($tracking->getActivities());
+
+        echo sprintf('%s %s' . PHP_EOL, $tracking->getVendor(), $tracking->getProduct());
+
+        foreach ($tracking->getActivities() as $activity) {
+            $this->assertInstanceOf(TrackingActivity::class, $activity);
+
+            echo sprintf(
+                '%s: %s %s' . PHP_EOL,
+                $activity->getDate()->format('c'),
+                $activity->getStatus(),
+                $activity->getAddress()->getCity()
             );
         }
     }

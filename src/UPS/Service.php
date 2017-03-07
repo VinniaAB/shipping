@@ -16,16 +16,13 @@ use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
-use Symfony\Component\Validator\Constraints\All;
-use Symfony\Component\Validator\Constraints\Collection;
-use Symfony\Component\Validator\Constraints\Required;
-use Symfony\Component\Validator\Constraints\Type;
-use Symfony\Component\Validator\Constraints\Valid;
-use Symfony\Component\Validator\ValidatorBuilder;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Shipping\Tracking;
+use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 
 class Service implements ServiceInterface
@@ -182,7 +179,7 @@ class Service implements ServiceInterface
         ])->then(function (ResponseInterface $response) {
             $body = json_decode((string) $response->getBody(), true);
 
-            if (!$this->validateResponse($body)) {
+            if (!$this->arrayHasKeys($body, ['RateResponse.RatedShipment'])) {
                 return new RejectedPromise($body);
             }
 
@@ -200,9 +197,24 @@ class Service implements ServiceInterface
         });
     }
 
-    private function validateResponse(array $body): bool
+    /**
+     * @param array $value
+     * @param string[] $keys multi-dimensional keys may be described with dot syntax, eg "car.make"
+     * @return bool
+     */
+    private function arrayHasKeys(array $value, array $keys): bool
     {
-        return isset($body['RateResponse']) && isset($body['RateResponse']['RatedShipment']);
+        foreach ($keys as $key) {
+            $parts = explode('.', $key);
+            $slice = $value;
+            foreach ($parts as $part) {
+                if (!isset($slice[$part])) {
+                    return false;
+                }
+                $slice = $slice[$part];
+            }
+        }
+        return true;
     }
 
     /**
@@ -211,7 +223,52 @@ class Service implements ServiceInterface
      */
     public function getTrackingStatus(string $trackingNumber): PromiseInterface
     {
-        throw new Exception(__METHOD__ . ' is not implemented');
+        $body = [
+            'UPSSecurity' => [
+                'UsernameToken' => [
+                    'Username' => $this->credentials->getUsername(),
+                    'Password' => $this->credentials->getPassword(),
+                ],
+                'ServiceAccessToken' => [
+                    'AccessLicenseNumber' => $this->credentials->getAccessLicense(),
+                ],
+            ],
+            'TrackRequest' => [
+                'Request' => [
+                    'RequestOption' => '1',
+                ],
+                'InquiryNumber' => $trackingNumber,
+            ],
+        ];
+
+        return $this->guzzle->requestAsync('POST', $this->baseUrl . '/Track', [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ],
+            'json' => $body,
+        ])->then(function (ResponseInterface $response) {
+            $body = json_decode((string) $response->getBody(), true);
+
+            if (!$this->arrayHasKeys($body, ['TrackResponse.Shipment'])) {
+                return new RejectedPromise($body);
+            }
+
+            $activities = $body['TrackResponse']['Shipment']['Package']['Activity'];
+            $activities = (new Collection($activities))->map(function (array $row): TrackingActivity {
+                $address = new Address(
+                    [],
+                    $row['ActivityLocation']['Address']['PostalCode'] ?? '',
+                    $row['ActivityLocation']['Address']['City'] ?? '',
+                    '',
+                    $row['ActivityLocation']['Address']['CountryCode'] ?? ''
+                );
+                $date = \DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
+                return new TrackingActivity($row['Status']['Description'], $date, $address);
+            })->value();
+
+            return new Tracking('UPS', $body['TrackResponse']['Shipment']['Service']['Description'], $activities);
+        });
     }
 
 }

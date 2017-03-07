@@ -12,12 +12,20 @@ return [
         'username' => '',
         'password' => '',
         'access_license' => '',
+
+        'tracking_numbers' => [
+            // tracking numbers used for tests
+        ],
     ],
 
     'dhl' => [
         'site_id' => '',
         'password' => '',
         'account_number' => '',
+
+        'tracking_numbers' => [
+            // tracking numbers used for tests
+        ],
     ],
 
     'fedex' => [
@@ -25,6 +33,10 @@ return [
         'credential_password' => '',
         'account_number' => '',
         'meter_number' => '',
+
+        'tracking_numbers' => [
+            // tracking numbers used for tests
+        ],
     ],
 
 ];
