@@ -12,6 +12,7 @@ namespace Vinnia\Shipping\FedEx;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
@@ -22,6 +23,9 @@ use Vinnia\Shipping\ServiceInterface;
 use DateTimeImmutable;
 use DateTimeZone;
 use SimpleXMLElement;
+use Vinnia\Shipping\Tracking;
+use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 
 class Service implements ServiceInterface
@@ -177,6 +181,76 @@ EOD;
      */
     public function getTrackingStatus(string $trackingNumber): PromiseInterface
     {
-        // TODO: Implement getTrackingStatus() method.
+        $body = <<<EOD
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/track/v12">
+   <soapenv:Header />
+   <soapenv:Body>
+      <TrackRequest>
+         <WebAuthenticationDetail>
+            <UserCredential>
+               <Key>{$this->credentials->getCredentialKey()}</Key>
+               <Password>{$this->credentials->getCredentialPassword()}</Password>
+            </UserCredential>
+         </WebAuthenticationDetail>
+         <ClientDetail>
+            <AccountNumber>{$this->credentials->getAccountNumber()}</AccountNumber>
+            <MeterNumber>{$this->credentials->getMeterNumber()}</MeterNumber>
+         </ClientDetail>
+         <Version>
+            <ServiceId>trck</ServiceId>
+            <Major>12</Major>
+            <Intermediate>0</Intermediate>
+            <Minor>0</Minor>
+         </Version>
+         <SelectionDetails>
+            <PackageIdentifier>
+               <Type>TRACKING_NUMBER_OR_DOORTAG</Type>
+               <Value>{$trackingNumber}</Value>
+            </PackageIdentifier>
+         </SelectionDetails>
+         <ProcessingOptions>INCLUDE_DETAILED_SCANS</ProcessingOptions>
+      </TrackRequest>
+   </soapenv:Body>
+</soapenv:Envelope>
+EOD;
+
+        return $this->guzzle->requestAsync('POST', $this->url . '/track', [
+            'headers' => [
+                'Accept' => 'text/xml',
+                'Content-Type' => 'text/xml',
+            ],
+            'body' => $body,
+        ])->then(function (ResponseInterface $response) {
+            $body = (string) $response->getBody();
+            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
+
+            $details = $xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body/*[local-name()=\'TrackReply\']/*[local-name()=\'CompletedTrackDetails\']/*[local-name()=\'TrackDetails\']');
+
+            if (!$details) {
+                return new RejectedPromise($body);
+            }
+
+            $service = (string) $details[0]->{'Service'}->{'Type'};
+            $events = $details[0]->xpath('*[local-name()=\'Events\']');
+
+            $activities = (new Collection($events))->map(function (SimpleXMLElement $element) {
+                $status = (string) $element->{'EventDescription'};
+                $dt = new DateTimeImmutable((string) $element->{'Timestamp'});
+                $address = new Address(
+                    [],
+                    (string) $element->{'Address'}->{'PostalCode'},
+                    (string) $element->{'Address'}->{'City'},
+                    (string) $element->{'Address'}->{'StateOrProvinceCode'},
+                    (string) $element->{'Address'}->{'CountryName'}
+                );
+
+                return new TrackingActivity($status, $dt, $address);
+            })->sort(function (TrackingActivity $a, TrackingActivity $b) {
+                return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
+            })->value();
+
+            return new Tracking('FedEx', $service, $activities);
+        });
     }
 }
