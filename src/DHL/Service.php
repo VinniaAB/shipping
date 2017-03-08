@@ -22,6 +22,8 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Shipping\Tracking;
+use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 
@@ -168,7 +170,53 @@ EOD;
      */
     public function getTrackingStatus(string $trackingNumber): PromiseInterface
     {
-        throw new \Exception(__METHOD__ . ' is not implemented');
+        $body = <<<EOD
+<?xml version="1.0" encoding="UTF-8"?>
+<req:KnownTrackingRequest xmlns:req="http://www.dhl.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.dhl.com TrackingRequestKnown.xsd">
+   <Request>
+      <ServiceHeader>
+         <SiteID>{$this->credentials->getSiteID()}</SiteID>
+         <Password>{$this->credentials->getPassword()}</Password>
+      </ServiceHeader>
+   </Request>
+   <LanguageCode>en</LanguageCode>
+   <AWBNumber>{$trackingNumber}</AWBNumber>
+   <LevelOfDetails>ALL_CHECK_POINTS</LevelOfDetails>
+   <PiecesEnabled>S</PiecesEnabled>
+</req:KnownTrackingRequest>
+EOD;
+
+        return $this->guzzle->requestAsync('POST', $this->baseUrl, [
+            'query' => [
+                'isUTF8Support' => true,
+            ],
+            'headers' => [
+                'Accept' => 'text/xml',
+                'Content-Type' => 'text/xml',
+            ],
+            'body' => $body,
+        ])->then(function (ResponseInterface $response) {
+            $body = (string)$response->getBody();
+            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
+
+            $info = $xml->xpath('/req:TrackingResponse/AWBInfo/ShipmentInfo');
+
+            if (!$info) {
+                return new RejectedPromise($body);
+            }
+
+            $activities = (new Collection($info[0]->xpath('ShipmentEvent')))->map(function (SimpleXMLElement $element) {
+                $dtString = ((string) $element->{'Date'}) . ' ' . ((string) $element->{'Time'});
+                $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
+                $addressParts = explode(' - ', (string) $element->{'ServiceArea'}->{'Description'});
+                $address = new Address([], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
+                return new TrackingActivity((string) $element->{'ServiceEvent'}->{'Description'}, $dt, $address);
+            })->value();
+
+            return new Tracking('DHL', '', $activities);
+        });
     }
 
 }
