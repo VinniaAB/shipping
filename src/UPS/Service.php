@@ -265,6 +265,8 @@ class Service implements ServiceInterface
                 );
                 $date = \DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
                 return new TrackingActivity($row['Status']['Description'], $date, $address);
+            })->sort(function (TrackingActivity $a, TrackingActivity $b) {
+                return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();
 
             return new Tracking('UPS', $body['TrackResponse']['Shipment']['Service']['Description'], $activities);

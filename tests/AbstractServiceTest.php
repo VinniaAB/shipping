@@ -136,6 +136,13 @@ abstract class AbstractServiceTest extends TestCase
                 $activity->getAddress()->getCity()
             );
         }
+
+        $prev = PHP_INT_MAX;
+        foreach ($tracking->getActivities() as $activity) {
+            $ts = $activity->getDate()->getTimestamp();
+            $this->assertLessThanOrEqual($prev, $ts);
+            $prev = $ts;
+        }
     }
 
 }
