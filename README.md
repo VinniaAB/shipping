@@ -1,9 +1,10 @@
 # 3rdparty shipping lib
-This is a library for fetching shipment quotes from 3rdparty vendors.
-Currently the following vendors are supported:
+This is a library for rating & tracking packages from various shipping carriers.
+The following carriers are supported:
 - UPS
 - DHL
-- Fedex
+- FedEx
+- TNT
 
 ## Requirements
 - php 7.1+
