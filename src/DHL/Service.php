@@ -210,9 +210,16 @@ EOD;
             $activities = (new Collection($info[0]->xpath('ShipmentEvent')))->map(function (SimpleXMLElement $element) {
                 $dtString = ((string) $element->{'Date'}) . ' ' . ((string) $element->{'Time'});
                 $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
+
+                // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
                 $addressParts = explode(' - ', (string) $element->{'ServiceArea'}->{'Description'});
+
                 $address = new Address([], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
-                return new TrackingActivity((string) $element->{'ServiceEvent'}->{'Description'}, $dt, $address);
+
+                // the status will sometimes include the location too.
+                $status = (string) $element->{'ServiceEvent'}->{'Description'};
+                
+                return new TrackingActivity($status, $dt, $address);
             })->value();
 
             return new Tracking('DHL', '', $activities);
