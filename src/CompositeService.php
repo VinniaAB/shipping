@@ -32,7 +32,7 @@ class CompositeService implements ServiceInterface
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
-     * @return PromiseInterface promise resolved with an array of \Vinnia\Shipping\Quote on success
+     * @return PromiseInterface promise resolved with \Vinnia\Shipping\Quote[][] on success
      */
     public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
@@ -48,6 +48,11 @@ class CompositeService implements ServiceInterface
         return $this->aggregate('getTrackingStatus', [$trackingNumber]);
     }
 
+    /**
+     * @param string $method
+     * @param array $parameters
+     * @return PromiseInterface promise resolved with \Vinnia\Shipping\Tracking[] on success
+     */
     private function aggregate(string $method, array $parameters = []): PromiseInterface
     {
         /* @var PromiseInterface[] $promises */
@@ -64,7 +69,7 @@ class CompositeService implements ServiceInterface
             foreach ($inspections as $inspection) {
                 if ($inspection['state'] === PromiseInterface::FULFILLED) {
                     // we expect the result to be an array, otherwise this won't work
-                    $results = array_merge($results, $inspection['value']);
+                    $results[] = $inspection['value'];
                 }
             }
             return $results;

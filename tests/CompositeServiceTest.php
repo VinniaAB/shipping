@@ -67,8 +67,10 @@ class CompositeServiceTest extends TestCase
         $quotes = $promise->wait();
 
         $this->assertCount(2, $quotes);
-        $this->assertEquals('DHL', $quotes[0]->getVendor());
-        $this->assertEquals('UPS', $quotes[1]->getVendor());
+        $this->assertTrue(is_array($quotes[0]));
+        $this->assertTrue(is_array($quotes[1]));
+        $this->assertEquals('DHL', $quotes[0][0]->getVendor());
+        $this->assertEquals('UPS', $quotes[1][0]->getVendor());
     }
 
 }
