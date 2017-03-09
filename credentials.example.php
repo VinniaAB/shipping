@@ -39,4 +39,13 @@ return [
         ],
     ],
 
+    'tnt' => [
+        'username' => '',
+        'password' => '',
+
+        'tracking_numbers' => [
+            // tracking numbers used for tests
+        ],
+    ],
+
 ];
