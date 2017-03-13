@@ -9,7 +9,9 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
-class Address
+use JsonSerializable;
+
+class Address implements JsonSerializable
 {
 
     /**
@@ -92,6 +94,28 @@ class Address
     public function getCountry(): string
     {
         return $this->country;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'lines' => $this->getLines(),
+            'zip' => $this->getZip(),
+            'city' => $this->getCity(),
+            'state' => $this->getState(),
+            'country' => $this->getCountry(),
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 
 }

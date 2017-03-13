@@ -10,8 +10,9 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping;
 
 use DateTimeInterface;
+use JsonSerializable;
 
-class TrackingActivity
+class TrackingActivity implements JsonSerializable
 {
 
     /**
@@ -64,6 +65,26 @@ class TrackingActivity
     public function getAddress(): Address
     {
         return $this->address;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'status' => $this->getStatus(),
+            'date' => $this->getDate(),
+            'address' => $this->getAddress(),
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 
 }

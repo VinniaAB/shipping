@@ -9,7 +9,9 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
-class Tracking
+use JsonSerializable;
+
+class Tracking implements JsonSerializable
 {
 
     /**
@@ -62,6 +64,26 @@ class Tracking
     public function getActivities(): array
     {
         return $this->activities;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'vendor' => $this->getVendor(),
+            'product' => $this->getProduct(),
+            'activities' => $this->getActivities(),
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 
 }

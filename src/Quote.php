@@ -9,10 +9,10 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
-
 use Money\Money;
+use JsonSerializable;
 
-class Quote
+class Quote implements JsonSerializable
 {
 
     /**
@@ -65,6 +65,26 @@ class Quote
     public function getAmount(): Money
     {
         return $this->amount;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'vendor' => $this->getVendor(),
+            'product' => $this->getProduct(),
+            'amount' => $this->getAmount(),
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 
 }
