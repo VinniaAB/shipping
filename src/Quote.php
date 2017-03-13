@@ -28,19 +28,19 @@ class Quote implements JsonSerializable
     /**
      * @var Money
      */
-    private $amount;
+    private $price;
 
     /**
      * Quote constructor.
      * @param string $vendor
      * @param string $product
-     * @param Money $amount
+     * @param Money $price
      */
-    function __construct(string $vendor, string $product, Money $amount)
+    function __construct(string $vendor, string $product, Money $price)
     {
         $this->vendor = $vendor;
         $this->product = $product;
-        $this->amount = $amount;
+        $this->price = $price;
     }
 
     /**
@@ -62,9 +62,9 @@ class Quote implements JsonSerializable
     /**
      * @return Money
      */
-    public function getAmount(): Money
+    public function getPrice(): Money
     {
-        return $this->amount;
+        return $this->price;
     }
 
     /**
@@ -75,7 +75,7 @@ class Quote implements JsonSerializable
         return [
             'vendor' => $this->getVendor(),
             'product' => $this->getProduct(),
-            'amount' => $this->getAmount(),
+            'price' => $this->getPrice(),
         ];
     }
 

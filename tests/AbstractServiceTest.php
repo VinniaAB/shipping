@@ -104,8 +104,8 @@ abstract class AbstractServiceTest extends TestCase
                 '%s %s: %.2f %s' . PHP_EOL,
                 $quote->getVendor(),
                 $quote->getProduct(),
-                $quote->getAmount()->getAmount() / 100,
-                $quote->getAmount()->getCurrency()
+                $quote->getPrice()->getAmount() / 100,
+                $quote->getPrice()->getCurrency()
             );
         }
     }
