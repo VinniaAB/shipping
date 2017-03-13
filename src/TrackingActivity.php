@@ -74,7 +74,7 @@ class TrackingActivity implements JsonSerializable
     {
         return [
             'status' => $this->getStatus(),
-            'date' => $this->getDate(),
+            'date' => $this->getDate()->format('c'),
             'address' => $this->getAddress(),
         ];
     }
