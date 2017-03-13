@@ -10,6 +10,7 @@ namespace Vinnia\Shipping;
 
 
 use GuzzleHttp\Promise\PromiseInterface;
+use Vinnia\Util\Collection;
 
 class CompositeService implements ServiceInterface
 {
@@ -36,7 +37,9 @@ class CompositeService implements ServiceInterface
      */
     public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
     {
-        return $this->aggregate('getQuotes', [$sender, $recipient, $package]);
+        return $this->aggregate('getQuotes', [$sender, $recipient, $package])->then(function (array $data) {
+            return (new Collection($data))->flatten()->value();
+        });
     }
 
     /**
@@ -45,7 +48,9 @@ class CompositeService implements ServiceInterface
      */
     public function getTrackingStatus(string $trackingNumber): PromiseInterface
     {
-        return $this->aggregate('getTrackingStatus', [$trackingNumber]);
+        return $this->aggregate('getTrackingStatus', [$trackingNumber])->then(function (array $trackings) {
+            return $trackings[0] ?? null;
+        });
     }
 
     /**

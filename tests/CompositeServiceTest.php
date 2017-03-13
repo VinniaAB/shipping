@@ -23,12 +23,13 @@ use Vinnia\Shipping\CompositeService;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Shipping\Tracking;
 use Vinnia\Util\Measurement\Amount;
 
 class CompositeServiceTest extends TestCase
 {
 
-    public function testOnlyReturnsResolvedValues()
+    public function testFlattensQuoteResponses()
     {
         $a = new class implements ServiceInterface {
             public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
@@ -67,10 +68,36 @@ class CompositeServiceTest extends TestCase
         $quotes = $promise->wait();
 
         $this->assertCount(2, $quotes);
-        $this->assertTrue(is_array($quotes[0]));
-        $this->assertTrue(is_array($quotes[1]));
-        $this->assertEquals('DHL', $quotes[0][0]->getVendor());
-        $this->assertEquals('UPS', $quotes[1][0]->getVendor());
+        $this->assertEquals('DHL', $quotes[0]->getVendor());
+        $this->assertEquals('UPS', $quotes[1]->getVendor());
+    }
+
+    public function testReturnsFirstSuccessfulTracking()
+    {
+        $a = new class implements ServiceInterface {
+            public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+            {
+            }
+            public function getTrackingStatus(string $trackingNumber): PromiseInterface
+            {
+                return \GuzzleHttp\Promise\promise_for(new Tracking('DHL', '', []));
+            }
+        };
+        $b = new class implements ServiceInterface {
+            public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+            {
+            }
+            public function getTrackingStatus(string $trackingNumber): PromiseInterface
+            {
+                return \GuzzleHttp\Promise\promise_for(new Tracking('DHL', '', []));
+            }
+        };
+
+        $service = new CompositeService([$a, $b]);
+        $tracking = $service->getTrackingStatus('123')->wait();
+
+        $this->assertInstanceOf(Tracking::class, $tracking);
+        $this->assertEquals('DHL', $tracking->getVendor());
     }
 
 }
