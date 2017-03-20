@@ -54,6 +54,7 @@ class CompositeService implements ServiceInterface
     }
 
     /**
+     * Execute a method on all child services and aggregate the results into a combined promise.
      * @param string $method
      * @param array $parameters
      * @return PromiseInterface promise resolved with \Vinnia\Shipping\Tracking[] on success
@@ -82,7 +83,7 @@ class CompositeService implements ServiceInterface
     }
 
     /**
-     * Returns a new CompositeService that contains a subset of services of this one.
+     * Returns a new CompositeService that contains a subset of services from this one.
      * @param string[] $serviceClasses
      * @return CompositeService
      */
