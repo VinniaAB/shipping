@@ -100,4 +100,37 @@ class CompositeServiceTest extends TestCase
         $this->assertEquals('DHL', $tracking->getVendor());
     }
 
+    public function testWithOnlyFiltersCorrectlyWithSpecificClass()
+    {
+        $guzzle = new Client();
+        $service = new CompositeService([
+            new \Vinnia\Shipping\DHL\Service($guzzle, new \Vinnia\Shipping\DHL\Credentials('','','')),
+            new \Vinnia\Shipping\UPS\Service($guzzle, new \Vinnia\Shipping\UPS\Credentials('','','')),
+        ]);
+
+        $filtered = $service->withOnly([
+            \Vinnia\Shipping\DHL\Service::class,
+        ]);
+
+        $this->assertCount(1, $filtered->getDelegates());
+        $this->assertInstanceOf(\Vinnia\Shipping\DHL\Service::class, $filtered->getDelegates()[0]);
+    }
+
+    public function testWithOnlyFiltersCorrectlyWithParentInterface()
+    {
+        $guzzle = new Client();
+        $service = new CompositeService([
+            new \Vinnia\Shipping\DHL\Service($guzzle, new \Vinnia\Shipping\DHL\Credentials('','','')),
+            new \Vinnia\Shipping\UPS\Service($guzzle, new \Vinnia\Shipping\UPS\Credentials('','','')),
+        ]);
+
+        $filtered = $service->withOnly([
+            \Vinnia\Shipping\ServiceInterface::class,
+        ]);
+
+        $this->assertCount(2, $filtered->getDelegates());
+        $this->assertInstanceOf(\Vinnia\Shipping\DHL\Service::class, $filtered->getDelegates()[0]);
+        $this->assertInstanceOf(\Vinnia\Shipping\UPS\Service::class, $filtered->getDelegates()[1]);
+    }
+
 }

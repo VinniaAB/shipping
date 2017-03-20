@@ -80,4 +80,32 @@ class CompositeService implements ServiceInterface
             return $results;
         });
     }
+
+    /**
+     * Returns a new CompositeService that contains a subset of services of this one.
+     * @param string[] $serviceClasses
+     * @return CompositeService
+     */
+    public function withOnly(array $serviceClasses): self
+    {
+        $filtered = [];
+        foreach ($this->delegates as $delegate) {
+            foreach ($serviceClasses as $clazz) {
+                if ($delegate instanceof $clazz) {
+                    $filtered[] = $delegate;
+                    break 1;
+                }
+            }
+        }
+        return new self($filtered);
+    }
+
+    /**
+     * @return ServiceInterface[]
+     */
+    public function getDelegates(): array
+    {
+        return $this->delegates;
+    }
+
 }
