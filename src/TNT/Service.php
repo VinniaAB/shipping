@@ -19,6 +19,7 @@ use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\Tracking;
+use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 use DateTimeImmutable;
@@ -123,7 +124,7 @@ EOD;
             ],
             'auth' => [$this->credentials->getUsername(), $this->credentials->getPassword(), 'basic'],
             'body' => $body,
-        ])->then(function (ResponseInterface $response) {
+        ])->then(function (ResponseInterface $response): array {
             $body = (string) $response->getBody();
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
             $services = $xml->xpath('/document/priceResponse/ratedServices/ratedService');
@@ -147,7 +148,54 @@ EOD;
      */
     public function getTrackingStatus(string $trackingNumber): PromiseInterface
     {
-        // TODO: Implement getTrackingStatus() method.
+        $body = <<<EOD
+<?xml version="1.0" encoding="UTF-8"?>
+<TrackRequest locale="en_US" version="3.1">
+    <SearchCriteria marketType="INTERNATIONAL" originCountry="US">
+        <ConsignmentNumber>{$trackingNumber}</ConsignmentNumber>
+    </SearchCriteria>
+    <LevelOfDetail>
+        <Complete shipment="true" />
+    </LevelOfDetail>
+</TrackRequest>
+EOD;
+
+        return $this->guzzle->requestAsync('POST', $this->baseUrl . '/track.do', [
+            'headers' => [
+                'Accept' => 'text/xml',
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'auth' => [$this->credentials->getUsername(), $this->credentials->getPassword(), 'basic'],
+
+            // yes, TNT wants url-encoded XML for this endpoint.
+            'form_params' => [
+                'xml_in' => $body,
+            ],
+        ])->then(function (ResponseInterface $response): Tracking {
+            $body = (string) $response->getBody();
+
+            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
+
+            $activities = $xml->xpath('/TrackResponse/Consignment/StatusData');
+
+            $activities = (new Collection($activities))->map(function (SimpleXMLElement $e): TrackingActivity {
+                // TODO: TNT supplies datetimes from the local timezone. this means that after we
+                // sort this array according to event date, some events might be ordered incorrectly.
+                $dt = DateTimeImmutable::createFromFormat('YmdHi', ((string) $e->LocalEventDate) . ((string) $e->LocalEventTime));
+
+                // unfortunately TNT only supplies a "Depot" and "DepotName" for the location
+                // of the status update so we can't really create a good address from it.
+                $address = new Address([], '', (string) $e->DepotName, '', '');
+
+                return new TrackingActivity((string) $e->StatusDescription, $dt, $address);
+            })->sort(function (TrackingActivity $a, TrackingActivity $b) {
+                return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
+            })->value();
+
+            $service = (string) $xml->Consignment->ShipmentSummary->Service;
+
+            return new Tracking('TNT', $service, $activities);
+        });
     }
 
 }
