@@ -23,7 +23,12 @@ class TNTTest extends AbstractServiceTest
     public function getService(): ServiceInterface
     {
         $data = require __DIR__ . '/../credentials.php';
-        $credentials = new Credentials($data['tnt']['username'], $data['tnt']['password']);
+        $credentials = new Credentials(
+            $data['tnt']['username'],
+            $data['tnt']['password'],
+            $data['tnt']['account_number'],
+            $data['tnt']['account_country']
+        );
         $guzzle = new Client();
 
         return new Service($guzzle, $credentials, Service::URL_PRODUCTION);

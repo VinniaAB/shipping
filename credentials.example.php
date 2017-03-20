@@ -42,6 +42,8 @@ return [
     'tnt' => [
         'username' => '',
         'password' => '',
+        'account_number' => '',
+        'account_country' => '',
 
         'tracking_numbers' => [
             // tracking numbers used for tests
