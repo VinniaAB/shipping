@@ -58,7 +58,7 @@ abstract class AbstractServiceTest extends TestCase
                 new Address([], '55417', 'Minneapolis', 'MN', 'US'),
             ],
             'Stockholm, Sweden -> Munich, Germany' => [
-                new Address([], '10000', 'Stockholm', '', 'SE'),
+                new Address([], '11157', 'Stockholm', '', 'SE'),
                 new Address([], '80469', 'Munich', '', 'DE'),
             ],
         ];
