@@ -11,11 +11,19 @@ namespace Vinnia\Shipping\TNT;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
+use Money\Currency;
+use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Shipping\Tracking;
+use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
+use DateTimeImmutable;
+use DateTimeZone;
+use SimpleXMLElement;
 
 class Service implements ServiceInterface
 {
@@ -65,6 +73,8 @@ class Service implements ServiceInterface
         $height = number_format($package->getHeight()->getValue(), 2, '.', '');
         $weight = number_format($package->getWeight()->getValue(), 2, '.', '');
 
+        $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <priceRequest>
@@ -82,10 +92,16 @@ class Service implements ServiceInterface
          <town>{$recipient->getCity()}</town>
          <postcode>{$recipient->getZip()}</postcode>
       </delivery>
+      <collectionDateTime>{$dt->format('c')}</collectionDateTime>
       <product>
          <type>N</type>
       </product>
-      <priceBreakDown>true</priceBreakDown>
+      <account>
+        <accountNumber>{$this->credentials->getAccountNumber()}</accountNumber>
+        <accountCountry>{$this->credentials->getAccountCountry()}</accountCountry>
+      </account>
+      <currency>EUR</currency>
+      <priceBreakDown>false</priceBreakDown>
       <pieceLine>
          <numberOfPieces>1</numberOfPieces>
          <pieceMeasurements>
@@ -108,7 +124,20 @@ EOD;
             'auth' => [$this->credentials->getUsername(), $this->credentials->getPassword(), 'basic'],
             'body' => $body,
         ])->then(function (ResponseInterface $response) {
-            // TODO: parse the response yee
+            $body = (string) $response->getBody();
+            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
+            $services = $xml->xpath('/document/priceResponse/ratedServices/ratedService');
+
+            return (new Collection($services))->map(function (SimpleXMLElement $element): Quote {
+                $amount = ((float) ((string) $element->totalPrice)) * pow(10, 2);
+
+                // TODO: fix hard coded currency. the currency should probably be a
+                // property of the credentials since TNT requires a manually specified
+                // currency.
+                $money = new Money($amount, new Currency('EUR'));
+
+                return new Quote('TNT', (string) $element->product->productDesc, $money);
+            })->value();
         });
     }
 
