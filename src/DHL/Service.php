@@ -237,10 +237,32 @@ EOD;
     private function getStatusFromEventCode(string $code): int
     {
         $code = mb_strtoupper($code, 'utf-8');
-        switch ($code) {
-            case 'OK':
-                return TrackingActivity::STATUS_DELIVERED;
+
+        // status mappings stolen from keeptracker.
+        // DHL doesn't really provide any documentation for the
+        // meaning of these so we'll just have to wing it for now.
+        $codeMap = [
+            TrackingActivity::STATUS_DELIVERED => [
+                'CC', 'BR', 'TP', 'DD', 'OK', 'DL', 'DM',
+            ],
+            TrackingActivity::STATUS_EXCEPTION => [
+                'BL', 'HI', 'HO', 'AD', 'SP', 'IA', 'SI', 'ST', 'NA',
+                'CI', 'CU', 'LX', 'DI', 'SF', 'LV', 'UV', 'HN', 'DP',
+                'PY', 'PM', 'BA', 'CD', 'UD', 'HX', 'TD', 'CA', 'NH',
+                'MX', 'SS', 'CS', 'CM', 'RD', 'RR', 'MS', 'MC', 'OH',
+                'SC', 'WX',
+
+                // returned to shipper
+                'RT',
+            ],
+        ];
+
+        foreach ($codeMap as $status => $codes) {
+            if (in_array($code, $codes)) {
+                return $status;
+            }
         }
+
         return TrackingActivity::STATUS_IN_TRANSIT;
     }
 
