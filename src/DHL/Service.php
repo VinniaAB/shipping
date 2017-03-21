@@ -224,7 +224,7 @@ EOD;
                 return new TrackingActivity($status, $description, $dt, $address);
             })->reverse()->value(); // DHL orders the events in ascending order, we want the most recent first.
 
-            return new Tracking('DHL', '', $activities);
+            return new Tracking('DHL', (string) $info[0]->{'GlobalProductCode'}, $activities);
         });
     }
 
