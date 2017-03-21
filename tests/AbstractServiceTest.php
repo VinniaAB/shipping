@@ -130,8 +130,9 @@ abstract class AbstractServiceTest extends TestCase
             $this->assertInstanceOf(TrackingActivity::class, $activity);
 
             echo sprintf(
-                '%s: %s %s' . PHP_EOL,
+                '%s: %d %s %s' . PHP_EOL,
                 $activity->getDate()->format('c'),
+                $activity->getStatus(),
                 $activity->getDescription(),
                 $activity->getAddress()->getCity()
             );

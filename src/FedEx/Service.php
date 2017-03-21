@@ -223,6 +223,7 @@ EOD;
             'body' => $body,
         ])->then(function (ResponseInterface $response) {
             $body = (string) $response->getBody();
+
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
 
             $details = $xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body/*[local-name()=\'TrackReply\']/*[local-name()=\'CompletedTrackDetails\']/*[local-name()=\'TrackDetails\']');
@@ -235,7 +236,8 @@ EOD;
             $events = $details[0]->xpath('*[local-name()=\'Events\']');
 
             $activities = (new Collection($events))->map(function (SimpleXMLElement $element) {
-                $status = (string) $element->{'EventDescription'};
+                $status = $this->getStatusFromEventType((string) $element->{'EventType'});
+                $description = (string) $element->{'EventDescription'};
                 $dt = new DateTimeImmutable((string) $element->{'Timestamp'});
                 $address = new Address(
                     [],
@@ -245,8 +247,7 @@ EOD;
                     (string) $element->{'Address'}->{'CountryName'}
                 );
 
-                // TODO: implement status parsing
-                return new TrackingActivity(TrackingActivity::STATUS_DELIVERED, $status, $dt, $address);
+                return new TrackingActivity($status, $description, $dt, $address);
             })->sort(function (TrackingActivity $a, TrackingActivity $b) {
                 return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();
@@ -254,4 +255,39 @@ EOD;
             return new Tracking('FedEx', $service, $activities);
         });
     }
+
+    /**
+     * @param string $type
+     * @return int
+     */
+    private function getStatusFromEventType(string $type): int
+    {
+        $type = mb_strtoupper($type, 'utf-8');
+
+        // status mappings stolen from keeptracker.
+        $typeMap = [
+            TrackingActivity::STATUS_DELIVERED => [
+                'DL',
+            ],
+            TrackingActivity::STATUS_EXCEPTION => [
+                // cancelled
+                'CA',
+
+                // general issues
+                'CD', 'DY', 'DE', 'HL', 'CH', 'SE',
+
+                // returned to shipper
+                'RS',
+            ],
+        ];
+
+        foreach ($typeMap as $status => $types) {
+            if (in_array($type, $types)) {
+                return $status;
+            }
+        }
+
+        return TrackingActivity::STATUS_IN_TRANSIT;
+    }
+
 }
