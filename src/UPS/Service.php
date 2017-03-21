@@ -264,15 +264,35 @@ class Service implements ServiceInterface
                     $row['ActivityLocation']['Address']['CountryCode'] ?? ''
                 );
                 $date = \DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
-
-                // TODO: implement status parsing
-                return new TrackingActivity(TrackingActivity::STATUS_DELIVERED, $row['Status']['Description'], $date, $address);
+                $status = $this->getStatusFromType($row['Status']['Type']);
+                $description = $row['Status']['Description'];
+                return new TrackingActivity($status, $description, $date, $address);
             })->sort(function (TrackingActivity $a, TrackingActivity $b) {
                 return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();
 
             return new Tracking('UPS', $body['TrackResponse']['Shipment']['Service']['Description'], $activities);
         });
+    }
+
+    /**
+     * @param string $type
+     * @return int
+     */
+    private function getStatusFromType(string $type): int
+    {
+        $type = mb_strtoupper($type, 'utf-8');
+        switch ($type) {
+            case 'D':
+                return TrackingActivity::STATUS_DELIVERED;
+            case 'I':
+            case 'P':
+            case 'M':
+                return TrackingActivity::STATUS_IN_TRANSIT;
+            case 'X':
+                return TrackingActivity::STATUS_EXCEPTION;
+        }
+        return TrackingActivity::STATUS_IN_TRANSIT;
     }
 
 }
