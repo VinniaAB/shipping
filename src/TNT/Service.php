@@ -173,7 +173,7 @@ EOD;
             ],
         ])->then(function (ResponseInterface $response): Tracking {
             $body = (string) $response->getBody();
-
+            echo $body . PHP_EOL;
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
 
             $activities = $xml->xpath('/TrackResponse/Consignment/StatusData');
@@ -186,9 +186,9 @@ EOD;
                 // unfortunately TNT only supplies a "Depot" and "DepotName" for the location
                 // of the status update so we can't really create a good address from it.
                 $address = new Address([], '', (string) $e->DepotName, '', '');
-
-                // TODO: implement status parsing
-                return new TrackingActivity(TrackingActivity::STATUS_DELIVERED, (string) $e->StatusDescription, $dt, $address);
+                $status = $this->getStatusFromCode((string) $e->StatusCode);
+                $description = (string) $e->StatusDescription;
+                return new TrackingActivity($status, $description, $dt, $address);
             })->sort(function (TrackingActivity $a, TrackingActivity $b) {
                 return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();
@@ -197,6 +197,22 @@ EOD;
 
             return new Tracking('TNT', $service, $activities);
         });
+    }
+
+    /**
+     * @param string $code
+     * @return int
+     */
+    private function getStatusFromCode(string $code): int
+    {
+        $code = mb_strtoupper($code, 'utf-8');
+
+        // TNT provides zero documentation for these codes. YEE BOI
+        switch ($code) {
+            case 'OK':
+                return TrackingActivity::STATUS_DELIVERED;
+        }
+        return TrackingActivity::STATUS_IN_TRANSIT;
     }
 
 }
