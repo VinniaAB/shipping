@@ -267,8 +267,6 @@ class Service implements ServiceInterface
                 $status = $this->getStatusFromType($row['Status']['Type']);
                 $description = $row['Status']['Description'];
                 return new TrackingActivity($status, $description, $date, $address);
-            })->sort(function (TrackingActivity $a, TrackingActivity $b) {
-                return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();
 
             return new Tracking('UPS', $body['TrackResponse']['Shipment']['Service']['Description'], $activities);

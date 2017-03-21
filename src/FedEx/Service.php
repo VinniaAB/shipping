@@ -248,8 +248,6 @@ EOD;
                 );
 
                 return new TrackingActivity($status, $description, $dt, $address);
-            })->sort(function (TrackingActivity $a, TrackingActivity $b) {
-                return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();
 
             return new Tracking('FedEx', $service, $activities);

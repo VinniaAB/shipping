@@ -173,14 +173,11 @@ EOD;
             ],
         ])->then(function (ResponseInterface $response): Tracking {
             $body = (string) $response->getBody();
-            echo $body . PHP_EOL;
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
 
             $activities = $xml->xpath('/TrackResponse/Consignment/StatusData');
 
             $activities = (new Collection($activities))->map(function (SimpleXMLElement $e): TrackingActivity {
-                // TODO: TNT supplies datetimes from the local timezone. this means that after we
-                // sort this array according to event date, some events might be ordered incorrectly.
                 $dt = DateTimeImmutable::createFromFormat('YmdHi', ((string) $e->LocalEventDate) . ((string) $e->LocalEventTime));
 
                 // unfortunately TNT only supplies a "Depot" and "DepotName" for the location
@@ -189,8 +186,6 @@ EOD;
                 $status = $this->getStatusFromCode((string) $e->StatusCode);
                 $description = (string) $e->StatusDescription;
                 return new TrackingActivity($status, $description, $dt, $address);
-            })->sort(function (TrackingActivity $a, TrackingActivity $b) {
-                return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();
 
             $service = (string) $xml->Consignment->ShipmentSummary->Service;

@@ -222,9 +222,7 @@ EOD;
                 $status = $this->getStatusFromEventCode((string) $element->{'ServiceEvent'}->{'EventCode'});
 
                 return new TrackingActivity($status, $description, $dt, $address);
-            })->sort(function (TrackingActivity $a, TrackingActivity $b) {
-                return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
-            })->value();
+            })->reverse()->value(); // DHL orders the events in ascending order, we want the most recent first.
 
             return new Tracking('DHL', '', $activities);
         });
