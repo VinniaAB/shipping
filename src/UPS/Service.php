@@ -264,7 +264,9 @@ class Service implements ServiceInterface
                     $row['ActivityLocation']['Address']['CountryCode'] ?? ''
                 );
                 $date = \DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
-                return new TrackingActivity($row['Status']['Description'], $date, $address);
+
+                // TODO: implement status parsing
+                return new TrackingActivity(TrackingActivity::STATUS_DELIVERED, $row['Status']['Description'], $date, $address);
             })->sort(function (TrackingActivity $a, TrackingActivity $b) {
                 return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();

@@ -15,10 +15,19 @@ use JsonSerializable;
 class TrackingActivity implements JsonSerializable
 {
 
+    const STATUS_DELIVERED      = 100;
+    const STATUS_IN_TRANSIT     = 200;
+    const STATUS_EXCEPTION      = 500;
+
+    /**
+     * @var int
+     */
+    private $status;
+
     /**
      * @var string
      */
-    private $status;
+    private $description;
 
     /**
      * @var DateTimeInterface
@@ -32,23 +41,33 @@ class TrackingActivity implements JsonSerializable
 
     /**
      * TrackingActivity constructor.
-     * @param string $status
+     * @param int $status
+     * @param string $description
      * @param DateTimeInterface $date
      * @param Address $address
      */
-    function __construct(string $status, DateTimeInterface $date, Address $address)
+    function __construct(int $status, string $description, DateTimeInterface $date, Address $address)
     {
         $this->status = $status;
+        $this->description = $description;
         $this->date = $date;
         $this->address = $address;
     }
 
     /**
-     * @return string
+     * @return int
      */
-    public function getStatus(): string
+    public function getStatus(): int
     {
         return $this->status;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDescription(): string
+    {
+        return $this->description;
     }
 
     /**
@@ -74,6 +93,7 @@ class TrackingActivity implements JsonSerializable
     {
         return [
             'status' => $this->getStatus(),
+            'description' => $this->getDescription(),
             'date' => $this->getDate()->format('c'),
             'address' => $this->getAddress(),
         ];

@@ -187,7 +187,8 @@ EOD;
                 // of the status update so we can't really create a good address from it.
                 $address = new Address([], '', (string) $e->DepotName, '', '');
 
-                return new TrackingActivity((string) $e->StatusDescription, $dt, $address);
+                // TODO: implement status parsing
+                return new TrackingActivity(TrackingActivity::STATUS_DELIVERED, (string) $e->StatusDescription, $dt, $address);
             })->sort(function (TrackingActivity $a, TrackingActivity $b) {
                 return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();

@@ -245,7 +245,8 @@ EOD;
                     (string) $element->{'Address'}->{'CountryName'}
                 );
 
-                return new TrackingActivity($status, $dt, $address);
+                // TODO: implement status parsing
+                return new TrackingActivity(TrackingActivity::STATUS_DELIVERED, $status, $dt, $address);
             })->sort(function (TrackingActivity $a, TrackingActivity $b) {
                 return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();

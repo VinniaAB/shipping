@@ -132,7 +132,7 @@ abstract class AbstractServiceTest extends TestCase
             echo sprintf(
                 '%s: %s %s' . PHP_EOL,
                 $activity->getDate()->format('c'),
-                $activity->getStatus(),
+                $activity->getDescription(),
                 $activity->getAddress()->getCity()
             );
         }
