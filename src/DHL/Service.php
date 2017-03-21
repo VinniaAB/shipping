@@ -216,17 +216,32 @@ EOD;
 
                 $address = new Address([], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
 
-                // the status will sometimes include the location too.
-                $status = (string) $element->{'ServiceEvent'}->{'Description'};
+                // the description will sometimes include the location too.
+                $description = (string) $element->{'ServiceEvent'}->{'Description'};
 
-                // TODO: implement status parsing
-                return new TrackingActivity(TrackingActivity::STATUS_DELIVERED, $status, $dt, $address);
+                $status = $this->getStatusFromEventCode((string) $element->{'ServiceEvent'}->{'EventCode'});
+
+                return new TrackingActivity($status, $description, $dt, $address);
             })->sort(function (TrackingActivity $a, TrackingActivity $b) {
                 return $b->getDate()->getTimestamp() <=> $a->getDate()->getTimestamp();
             })->value();
 
             return new Tracking('DHL', '', $activities);
         });
+    }
+
+    /**
+     * @param string $code
+     * @return int
+     */
+    private function getStatusFromEventCode(string $code): int
+    {
+        $code = mb_strtoupper($code, 'utf-8');
+        switch ($code) {
+            case 'OK':
+                return TrackingActivity::STATUS_DELIVERED;
+        }
+        return TrackingActivity::STATUS_IN_TRANSIT;
     }
 
 }
