@@ -11,6 +11,7 @@ namespace Vinnia\Shipping\TNT;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
@@ -171,11 +172,16 @@ EOD;
             'form_params' => [
                 'xml_in' => $body,
             ],
-        ])->then(function (ResponseInterface $response): Tracking {
+        ])->then(function (ResponseInterface $response) {
             $body = (string) $response->getBody();
+
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
 
             $activities = $xml->xpath('/TrackResponse/Consignment/StatusData');
+
+            if (!$activities) {
+                return new RejectedPromise($body);
+            }
 
             $activities = (new Collection($activities))->map(function (SimpleXMLElement $e): TrackingActivity {
                 $dt = DateTimeImmutable::createFromFormat('YmdHi', ((string) $e->LocalEventDate) . ((string) $e->LocalEventTime));
