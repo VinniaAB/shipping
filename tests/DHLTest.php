@@ -13,6 +13,7 @@ use GuzzleHttp\Client;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Service as DHL;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
+use Vinnia\Shipping\Label;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Util\Measurement\Amount;
@@ -49,18 +50,19 @@ class DHLTest extends AbstractServiceTest
     public function testCreateLabel()
     {
         $sender = new Address([], '', '', '', '');
+        $recipient = new Address([], '', '', '', '');
         $package = new Package(
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(5.0, Unit::KILOGRAM)
         );
-        $promise = $this->service->createLabel($sender, $sender, $package);
+        $promise = $this->service->createLabel($sender, $recipient, $package);
 
-        /* @var \Psr\Http\Message\ResponseInterface $res */
+        /* @var Label $res */
         $res = $promise->wait();
 
-        echo (string) $res->getBody();
+        $this->assertInstanceOf(Label::class, $res);
     }
 
 }

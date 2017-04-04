@@ -25,11 +25,13 @@ class Label
     private $vendor;
 
     /**
+     * Label data format
      * @var string
      */
     private $format;
 
     /**
+     * Binary label data
      * @var string
      */
     private $data;
