@@ -49,15 +49,23 @@ class DHLTest extends AbstractServiceTest
 
     public function testCreateLabel()
     {
-        $sender = new Address([], '', '', '', '');
-        $recipient = new Address([], '', '', '', '');
+        $sender = new Address(['Foobar AB', 'Street 1'], '111 57', 'Stockholm', '', 'SE');
         $package = new Package(
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(5.0, Unit::KILOGRAM)
         );
-        $promise = $this->service->createLabel($sender, $recipient, $package);
+        $promise = $this->service->createLabel($sender, $sender, $package, [
+            'product_code' => 'Q',
+            'sender_contact_name' => 'Helmut1',
+            'sender_contact_phone' => '1234567890',
+            'recipient_contact_name' => 'Helmut2',
+            'recipient_contact_phone' => '1234567890',
+            'amount' => 300,
+            'currency' => 'EUR',
+            'content' => 'Stuff',
+        ]);
 
         /* @var Label $res */
         $res = $promise->wait();

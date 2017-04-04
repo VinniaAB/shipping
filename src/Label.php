@@ -12,8 +12,6 @@ namespace Vinnia\Shipping;
 class Label
 {
 
-    const FORMAT_PDF = 'pdf';
-
     /**
      * @var string
      */

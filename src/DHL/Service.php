@@ -278,6 +278,35 @@ EOD;
     {
         $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+        $productCode = $options['product_code'];
+
+        $senderContactName = $options['sender_contact_name'];
+        $senderContactPhone = $options['sender_contact_phone'];
+
+        $recipientContactName = $options['recipient_contact_name'];
+        $recipientContactPhone = $options['recipient_contact_phone'];
+
+        $recipientCompanyName = $recipient->getLines()[0];
+        $recipientAddressLines = (new Collection($recipient->getLines()))
+            ->tail()
+            ->map(function (string $line) {
+                return "<AddressLine>{$line}</AddressLine>";
+            })->join("\n");
+
+        $senderCompanyName = $sender->getLines()[0];
+        $senderAddressLines = (new Collection($sender->getLines()))
+            ->tail()
+            ->map(function (string $line) {
+                return "<AddressLine>{$line}</AddressLine>";
+            })->join("\n");
+
+        $countryNames = require __DIR__ . '/../../countries.php';
+
+        $amount = $options['amount'];
+        $currency = $options['currency'];
+        $content = $options['content'];
+
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd" schemaVersion="5.0">
@@ -285,8 +314,8 @@ EOD;
       <ServiceHeader>
          <MessageTime>{$dt->format('c')}</MessageTime>
          <MessageReference>123456789012345678901234567890</MessageReference>
-         <SiteID>DServiceVal</SiteID>
-         <Password>testServVal</Password>
+         <SiteID>{$this->credentials->getSiteID()}</SiteID>
+         <Password>{$this->credentials->getPassword()}</Password>
       </ServiceHeader>
    </Request>
    <RegionCode>EU</RegionCode>
@@ -294,26 +323,25 @@ EOD;
    <LanguageCode>en</LanguageCode>
    <PiecesEnabled>Y</PiecesEnabled>
    <Billing>
-      <ShipperAccountNumber>950000002</ShipperAccountNumber>
+      <ShipperAccountNumber>{$this->credentials->getAccountNumber()}</ShipperAccountNumber>
       <ShippingPaymentType>S</ShippingPaymentType>
       <DutyPaymentType>R</DutyPaymentType>
    </Billing>
    <Consignee>
-      <CompanyName>ABM Life Centre</CompanyName>
-      <AddressLine>Central 1</AddressLine>
-      <AddressLine>Changi Business Park</AddressLine>
-      <City>Singapore</City>
-      <PostalCode>486048</PostalCode>
-      <CountryCode>SG</CountryCode>
-      <CountryName>Singapore</CountryName>
+      <CompanyName>{$recipientCompanyName}</CompanyName>
+      {$recipientAddressLines}
+      <City>{$recipient->getCity()}</City>
+      <PostalCode>{$recipient->getZip()}</PostalCode>
+      <CountryCode>{$recipient->getCountry()}</CountryCode>
+      <CountryName>{$countryNames[$recipient->getCountry()]}</CountryName>
       <Contact>
-         <PersonName>raobeert bere</PersonName>
-         <PhoneNumber>11234-325423</PhoneNumber>
+         <PersonName>{$recipientContactName}</PersonName>
+         <PhoneNumber>{$recipientContactPhone}</PhoneNumber>
       </Contact>
    </Consignee>
    <Dutiable>
-      <DeclaredValue>150.00</DeclaredValue>
-      <DeclaredCurrency>EUR</DeclaredCurrency>
+      <DeclaredValue>{$amount}</DeclaredValue>
+      <DeclaredCurrency>{$currency}</DeclaredCurrency>
    </Dutiable>
    <ShipmentDetails>
       <NumberOfPieces>1</NumberOfPieces>
@@ -329,26 +357,25 @@ EOD;
       </Pieces>
       <Weight>{$package->getWeight()}</Weight>
       <WeightUnit>K</WeightUnit>
-      <GlobalProductCode>P</GlobalProductCode>
+      <GlobalProductCode>{$productCode}</GlobalProductCode>
       <Date>{$dt->format('Y-m-d')}</Date>
-      <Contents>For testing purpose only. Please do not ship</Contents>
+      <Contents>{$content}</Contents>
       <DoorTo>DD</DoorTo>
       <DimensionUnit>C</DimensionUnit>
       <IsDutiable>Y</IsDutiable>
-      <CurrencyCode>EUR</CurrencyCode>
+      <CurrencyCode>{$currency}</CurrencyCode>
    </ShipmentDetails>
    <Shipper>
       <ShipperID>{$this->credentials->getAccountNumber()}</ShipperID>
-      <CompanyName>BP Europa SE - BP Nederland</CompanyName>
-      <AddressLine>Anchoragelaan 8</AddressLine>
-      <AddressLine>LD Schiol lane</AddressLine>
-      <City>Schiphol</City>
-      <PostalCode>1118</PostalCode>
-      <CountryCode>NL</CountryCode>
-      <CountryName>Netherlands</CountryName>
+      <CompanyName>{$senderCompanyName}</CompanyName>
+      {$senderAddressLines}
+      <City>{$sender->getCity()}</City>
+      <PostalCode>{$sender->getZip()}</PostalCode>
+      <CountryCode>{$sender->getCountry()}</CountryCode>
+      <CountryName>{$countryNames[$sender->getCountry()]}</CountryName>
       <Contact>
-         <PersonName>enquiry sing</PersonName>
-         <PhoneNumber>11234-325423</PhoneNumber>
+         <PersonName>{$senderContactName}</PersonName>
+         <PhoneNumber>{$senderContactPhone}</PhoneNumber>
       </Contact>
    </Shipper>
    <EProcShip>N</EProcShip>
@@ -367,13 +394,15 @@ EOD;
             'body' => $body,
         ])->then(function (ResponseInterface $response) {
             $body = (string) $response->getBody();
-            echo $body;
-
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
+            $number = $xml->xpath('/res:ShipmentResponse/AirwayBillNumber');
 
+            if (count($number) === 0) {
+                return new RejectedPromise($body);
+            }
 
             return new Label(
-                (string) $xml->xpath('/res:ShipmentResponse/AirwayBillNumber')[0],
+                (string) $number[0],
                 'DHL',
                 'PDF',
                 base64_decode((string) $xml->xpath('/res:ShipmentResponse/LabelImage/OutputImage')[0])
