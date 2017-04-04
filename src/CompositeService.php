@@ -34,7 +34,7 @@ class CompositeService implements ServiceInterface
      * @param Address $recipient
      * @param Package $package
      * @param array $options
-     * @return PromiseInterface promise resolved with \Vinnia\Shipping\Quote[][] on success
+     * @return PromiseInterface promise resolved with \Vinnia\Shipping\Quote[] on success
      */
     public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
@@ -111,4 +111,17 @@ class CompositeService implements ServiceInterface
         return $this->delegates;
     }
 
+    /**
+     * @param Address $sender
+     * @param Address $recipient
+     * @param Package $package
+     * @param array $options
+     * @return PromiseInterface
+     */
+    public function createLabel(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    {
+        return $this->aggregate('createLabel', [$sender, $recipient, $package, $options])->then(function (array $labels) {
+            return $labels[0] ?? null;
+        });
+    }
 }

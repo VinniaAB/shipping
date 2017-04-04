@@ -10,9 +10,13 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping\Tests;
 
 use GuzzleHttp\Client;
+use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Service as DHL;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
+use Vinnia\Shipping\Package;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Unit;
 
 class DHLTest extends AbstractServiceTest
 {
@@ -28,7 +32,7 @@ class DHLTest extends AbstractServiceTest
             $data['dhl']['password'],
             $data['dhl']['account_number']
         );
-        return new DHL(new Client(), $credentials, DHL::URL_PRODUCTION);
+        return new DHL(new Client(), $credentials, DHL::URL_TEST);
     }
 
     /**
@@ -40,6 +44,23 @@ class DHLTest extends AbstractServiceTest
         return array_map(function (string $value) {
             return [$value];
         }, $data['dhl']['tracking_numbers']);
+    }
+
+    public function testCreateLabel()
+    {
+        $sender = new Address([], '', '', '', '');
+        $package = new Package(
+            new Amount(1.0, Unit::METER),
+            new Amount(1.0, Unit::METER),
+            new Amount(1.0, Unit::METER),
+            new Amount(5.0, Unit::KILOGRAM)
+        );
+        $promise = $this->service->createLabel($sender, $sender, $package);
+
+        /* @var \Psr\Http\Message\ResponseInterface $res */
+        $res = $promise->wait();
+
+        echo (string) $res->getBody();
     }
 
 }

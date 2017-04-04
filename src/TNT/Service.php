@@ -218,4 +218,15 @@ EOD;
         return TrackingActivity::STATUS_IN_TRANSIT;
     }
 
+    /**
+     * @param Address $sender
+     * @param Address $recipient
+     * @param Package $package
+     * @param array $options
+     * @return PromiseInterface
+     */
+    public function createLabel(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    {
+        // TODO: Implement createLabel() method.
+    }
 }
