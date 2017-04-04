@@ -65,9 +65,10 @@ class Service implements ServiceInterface
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
+     * @param array $options
      * @return PromiseInterface promise resolved with an array of \Vinnia\Shipping\Quote on success
      */
-    public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+    public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
         $package = $package->convertTo(Unit::METER, Unit::KILOGRAM);
         $length = number_format($package->getLength()->getValue(), 2, '.', '');
@@ -145,9 +146,10 @@ EOD;
 
     /**
      * @param string $trackingNumber
+     * @param array $options
      * @return PromiseInterface
      */
-    public function getTrackingStatus(string $trackingNumber): PromiseInterface
+    public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
     {
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>

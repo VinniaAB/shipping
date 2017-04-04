@@ -32,29 +32,29 @@ class CompositeServiceTest extends TestCase
     public function testFlattensQuoteResponses()
     {
         $a = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
             {
                 return \GuzzleHttp\Promise\promise_for([new Quote('DHL', '', new Money(0, new Currency('USD')))]);
             }
-            public function getTrackingStatus(string $trackingNumber): PromiseInterface
+            public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
             }
         };
         $b = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
             {
                 return \GuzzleHttp\Promise\rejection_for(false);
             }
-            public function getTrackingStatus(string $trackingNumber): PromiseInterface
+            public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
             }
         };
         $c = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
             {
                 return \GuzzleHttp\Promise\promise_for([new Quote('UPS', '', new Money(0, new Currency('USD')))]);
             }
-            public function getTrackingStatus(string $trackingNumber): PromiseInterface
+            public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
             }
         };
@@ -75,19 +75,19 @@ class CompositeServiceTest extends TestCase
     public function testReturnsFirstSuccessfulTracking()
     {
         $a = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
             {
             }
-            public function getTrackingStatus(string $trackingNumber): PromiseInterface
+            public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
                 return \GuzzleHttp\Promise\promise_for(new Tracking('DHL', '', []));
             }
         };
         $b = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
             {
             }
-            public function getTrackingStatus(string $trackingNumber): PromiseInterface
+            public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
                 return \GuzzleHttp\Promise\promise_for(new Tracking('DHL', '', []));
             }

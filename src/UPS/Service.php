@@ -75,9 +75,10 @@ class Service implements ServiceInterface
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
+     * @param array $options
      * @return PromiseInterface
      */
-    public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+    public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
         // UPS doesn't allow us to use SI units inside some countries
         $nonSi = in_array(mb_strtoupper($sender->getCountry(), 'utf-8'), self::NON_SI_COUNTRIES);
@@ -219,9 +220,10 @@ class Service implements ServiceInterface
 
     /**
      * @param string $trackingNumber
+     * @param array $options
      * @return PromiseInterface
      */
-    public function getTrackingStatus(string $trackingNumber): PromiseInterface
+    public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
     {
         $body = [
             'UPSSecurity' => [

@@ -33,22 +33,24 @@ class CompositeService implements ServiceInterface
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
+     * @param array $options
      * @return PromiseInterface promise resolved with \Vinnia\Shipping\Quote[][] on success
      */
-    public function getQuotes(Address $sender, Address $recipient, Package $package): PromiseInterface
+    public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
-        return $this->aggregate('getQuotes', [$sender, $recipient, $package])->then(function (array $data) {
+        return $this->aggregate('getQuotes', [$sender, $recipient, $package, $options])->then(function (array $data) {
             return (new Collection($data))->flatten()->value();
         });
     }
 
     /**
      * @param string $trackingNumber
+     * @param array $options
      * @return PromiseInterface
      */
-    public function getTrackingStatus(string $trackingNumber): PromiseInterface
+    public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
     {
-        return $this->aggregate('getTrackingStatus', [$trackingNumber])->then(function (array $trackings) {
+        return $this->aggregate('getTrackingStatus', [$trackingNumber, $options])->then(function (array $trackings) {
             return $trackings[0] ?? null;
         });
     }
