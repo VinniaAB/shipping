@@ -9,6 +9,7 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\TNT;
 
+use DateTimeInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
@@ -219,13 +220,14 @@ EOD;
     }
 
     /**
+     * @param DateTimeInterface $date
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
      * @param array $options
      * @return PromiseInterface
      */
-    public function createLabel(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function createLabel(DateTimeInterface $date, Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
         // TODO: Implement createLabel() method.
     }

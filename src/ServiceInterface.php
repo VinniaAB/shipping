@@ -10,6 +10,7 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping;
 
 use GuzzleHttp\Promise\PromiseInterface;
+use DateTimeInterface;
 
 interface ServiceInterface
 {
@@ -31,12 +32,19 @@ interface ServiceInterface
     public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface;
 
     /**
+     * @param DateTimeInterface $date
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
      * @param array $options
      * @return PromiseInterface
      */
-    public function createLabel(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface;
+    public function createLabel(
+        DateTimeInterface $date,
+        Address $sender,
+        Address $recipient,
+        Package $package,
+        array $options = []
+    ): PromiseInterface;
 
 }

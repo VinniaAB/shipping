@@ -9,6 +9,7 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\Tests;
 
+use DateTimeImmutable;
 use GuzzleHttp\Client;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Service as DHL;
@@ -56,7 +57,7 @@ class DHLTest extends AbstractServiceTest
             new Amount(1.0, Unit::METER),
             new Amount(5.0, Unit::KILOGRAM)
         );
-        $promise = $this->service->createLabel($sender, $sender, $package, [
+        $promise = $this->service->createLabel(new DateTimeImmutable(), $sender, $sender, $package, [
             'product_code' => 'Q',
             'sender_contact_name' => 'Helmut1',
             'sender_contact_phone' => '1234567890',
@@ -69,6 +70,8 @@ class DHLTest extends AbstractServiceTest
 
         /* @var Label $res */
         $res = $promise->wait();
+
+        var_dump($res);
 
         $this->assertInstanceOf(Label::class, $res);
     }

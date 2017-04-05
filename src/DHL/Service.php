@@ -10,6 +10,7 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping\DHL;
 
 use DateTimeImmutable;
+use DateTimeInterface;
 use DateTimeZone;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -268,13 +269,14 @@ EOD;
     }
 
     /**
+     * @param DateTimeInterface $date
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
      * @param array $options
      * @return PromiseInterface
      */
-    public function createLabel(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function createLabel(DateTimeInterface $date, Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
         $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
@@ -358,7 +360,7 @@ EOD;
       <Weight>{$package->getWeight()}</Weight>
       <WeightUnit>K</WeightUnit>
       <GlobalProductCode>{$productCode}</GlobalProductCode>
-      <Date>{$dt->format('Y-m-d')}</Date>
+      <Date>{$date->format('Y-m-d')}</Date>
       <Contents>{$content}</Contents>
       <DoorTo>DD</DoorTo>
       <DimensionUnit>C</DimensionUnit>
