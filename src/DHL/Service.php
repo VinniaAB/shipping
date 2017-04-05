@@ -396,19 +396,23 @@ EOD;
             'body' => $body,
         ])->then(function (ResponseInterface $response) {
             $body = (string) $response->getBody();
-            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
-            $number = $xml->xpath('/res:ShipmentResponse/AirwayBillNumber');
 
-            if (count($number) === 0) {
+            // yes, it is ridiculous to parse xml with a regex.
+            // we're doing it here because SimpleXML seems to have
+            // issues with non-latin characters in the DHL response
+            // eg. ÅÄÖ.
+            // Also, http://stackoverflow.com/a/1732454 :)
+            if (preg_match('/<AirwayBillNumber>(.+)<\/AirwayBillNumber>/', $body, $matches) === 0) {
                 return new RejectedPromise($body);
             }
 
-            return new Label(
-                (string) $number[0],
-                'DHL',
-                'PDF',
-                base64_decode((string) $xml->xpath('/res:ShipmentResponse/LabelImage/OutputImage')[0])
-            );
+            $number = $matches[1];
+
+            preg_match('/<OutputImage>(.+)<\/OutputImage>/', $body, $matches);
+
+            $data = base64_decode($matches[1]);
+
+            return new Label($number, 'DHL', 'PDF', $data);
         });
     }
 }
