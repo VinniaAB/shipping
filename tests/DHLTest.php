@@ -66,6 +66,7 @@ class DHLTest extends AbstractServiceTest
             'amount' => 300,
             'currency' => 'EUR',
             'content' => 'Stuff',
+            'special_services' => ['PT'],
         ]);
 
         /* @var Label $res */

@@ -309,6 +309,14 @@ EOD;
         $currency = $options['currency'];
         $content = $options['content'];
 
+        $specialServices = (new Collection($options['special_services'] ?? []))->map(function (string $service): string {
+            return <<<EOD
+<SpecialService>
+  <SpecialServiceType>{$service}</SpecialServiceType>
+</SpecialService>
+EOD;
+        })->join('');
+
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd" schemaVersion="5.0">
@@ -380,6 +388,7 @@ EOD;
          <PhoneNumber>{$senderContactPhone}</PhoneNumber>
       </Contact>
    </Shipper>
+   {$specialServices}
    <EProcShip>N</EProcShip>
    <LabelImageFormat>PDF</LabelImageFormat>
 </req:ShipmentRequest>
