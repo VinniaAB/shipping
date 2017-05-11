@@ -49,8 +49,8 @@ $guzzle = new \GuzzleHttp\Client();
 $credentials = new DHLCredentials('site_id', 'password', 'account_number');
 $dhl = new DHLService($guzzle, $credentials);
 
-$sender = new Address([], '97334', 'Luleå', '', 'SE');
-$recipient = new Address([], '21115', 'Malmö', '', 'SE');
+$sender = new Address('', [], '97334', 'Luleå', '', 'SE');
+$recipient = new Address('', [], '21115', 'Malmö', '', 'SE');
 
 $size = new Amount(30, Unit::CENTIMETER);
 $weight = new Amount(5, Unit::KILOGRAM);
