@@ -50,7 +50,7 @@ class DHLTest extends AbstractServiceTest
 
     public function testCreateLabel()
     {
-        $sender = new Address(['Foobar AB', 'Street 1'], '111 57', 'Stockholm', '', 'SE');
+        $sender = new Address('Company AB', ['Street 1'], '111 57', 'Stockholm', '', 'SE', 'Helmut');
         $package = new Package(
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
@@ -59,9 +59,7 @@ class DHLTest extends AbstractServiceTest
         );
         $promise = $this->service->createLabel(new DateTimeImmutable(), $sender, $sender, $package, [
             'product_code' => 'Q',
-            'sender_contact_name' => 'Helmut1',
             'sender_contact_phone' => '1234567890',
-            'recipient_contact_name' => 'Helmut2',
             'recipient_contact_phone' => '1234567890',
             'amount' => 300,
             'currency' => 'EUR',

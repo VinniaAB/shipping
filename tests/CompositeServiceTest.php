@@ -9,6 +9,7 @@
 namespace Vinnia\Shipping\Tests;
 
 
+use DateTimeInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\Promise\Promise;
@@ -39,6 +40,15 @@ class CompositeServiceTest extends TestCase
             public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
             }
+            public function createLabel(
+                DateTimeInterface $date,
+                Address $sender,
+                Address $recipient,
+                Package $package,
+                array $options = []
+            ): PromiseInterface
+            {
+            }
         };
         $b = new class implements ServiceInterface {
             public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
@@ -46,6 +56,15 @@ class CompositeServiceTest extends TestCase
                 return \GuzzleHttp\Promise\rejection_for(false);
             }
             public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
+            {
+            }
+            public function createLabel(
+                DateTimeInterface $date,
+                Address $sender,
+                Address $recipient,
+                Package $package,
+                array $options = []
+            ): PromiseInterface
             {
             }
         };
@@ -57,9 +76,18 @@ class CompositeServiceTest extends TestCase
             public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
             }
+            public function createLabel(
+                DateTimeInterface $date,
+                Address $sender,
+                Address $recipient,
+                Package $package,
+                array $options = []
+            ): PromiseInterface
+            {
+            }
         };
         $service = new CompositeService([$a, $b, $c]);
-        $address = new Address([], '', '', '', '');
+        $address = new Address('', [], '', '', '', '');
         $size = new Amount(1, 'cm');
         $package = new Package($size, $size, $size, new Amount(1, 'kg'));
         $promise = $service->getQuotes($address, $address, $package);
@@ -82,6 +110,15 @@ class CompositeServiceTest extends TestCase
             {
                 return \GuzzleHttp\Promise\promise_for(new Tracking('DHL', '', []));
             }
+            public function createLabel(
+                DateTimeInterface $date,
+                Address $sender,
+                Address $recipient,
+                Package $package,
+                array $options = []
+            ): PromiseInterface
+            {
+            }
         };
         $b = new class implements ServiceInterface {
             public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
@@ -90,6 +127,15 @@ class CompositeServiceTest extends TestCase
             public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
                 return \GuzzleHttp\Promise\promise_for(new Tracking('DHL', '', []));
+            }
+            public function createLabel(
+                DateTimeInterface $date,
+                Address $sender,
+                Address $recipient,
+                Package $package,
+                array $options = []
+            ): PromiseInterface
+            {
             }
         };
 

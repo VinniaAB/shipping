@@ -191,7 +191,7 @@ EOD;
 
                 // unfortunately TNT only supplies a "Depot" and "DepotName" for the location
                 // of the status update so we can't really create a good address from it.
-                $address = new Address([], '', (string) $e->DepotName, '', '');
+                $address = new Address('', [], '', (string) $e->DepotName, '', '');
                 $status = $this->getStatusFromCode((string) $e->StatusCode);
                 $description = (string) $e->StatusDescription;
                 return new TrackingActivity($status, $description, $dt, $address);

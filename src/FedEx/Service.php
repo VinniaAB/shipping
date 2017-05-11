@@ -243,6 +243,7 @@ EOD;
                 $description = (string) $element->{'EventDescription'};
                 $dt = new DateTimeImmutable((string) $element->{'Timestamp'});
                 $address = new Address(
+                    '',
                     [],
                     (string) $element->{'Address'}->{'PostalCode'},
                     (string) $element->{'Address'}->{'City'},

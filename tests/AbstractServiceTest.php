@@ -50,16 +50,16 @@ abstract class AbstractServiceTest extends TestCase
     {
         return [
             'Luleå, Sweden -> Malmö, Sweden' => [
-                new Address([], '97334', 'Luleå', '', 'SE'),
-                new Address([], '21115', 'Malmö', '', 'SE'),
+                new Address('Company AB', [], '97334', 'Luleå', '', 'SE'),
+                new Address('Company AB', [], '21115', 'Malmö', '', 'SE'),
             ],
             'Boulder, CO, USA -> Minneapolis, MN, US' => [
-                new Address([], '80302', 'Boulder', 'CO', 'US'),
-                new Address([], '55417', 'Minneapolis', 'MN', 'US'),
+                new Address('Company AB', [], '80302', 'Boulder', 'CO', 'US'),
+                new Address('Company AB', [], '55417', 'Minneapolis', 'MN', 'US'),
             ],
             'Stockholm, Sweden -> Munich, Germany' => [
-                new Address([], '11157', 'Stockholm', '', 'SE'),
-                new Address([], '80469', 'Munich', '', 'DE'),
+                new Address('Company AB', [], '11157', 'Stockholm', '', 'SE'),
+                new Address('Company AB', [], '80469', 'Munich', '', 'DE'),
             ],
         ];
     }

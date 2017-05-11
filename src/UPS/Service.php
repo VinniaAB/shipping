@@ -260,6 +260,7 @@ class Service implements ServiceInterface
             $activities = $body['TrackResponse']['Shipment']['Package']['Activity'];
             $activities = (new Collection($activities))->map(function (array $row): TrackingActivity {
                 $address = new Address(
+                    '',
                     [],
                     $row['ActivityLocation']['Address']['PostalCode'] ?? '',
                     $row['ActivityLocation']['Address']['City'] ?? '',

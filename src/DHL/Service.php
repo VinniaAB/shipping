@@ -218,7 +218,7 @@ EOD;
                 // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
                 $addressParts = explode(' - ', (string) $element->{'ServiceArea'}->{'Description'});
 
-                $address = new Address([], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
+                $address = new Address('', [], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
 
                 // the description will sometimes include the location too.
                 $description = (string) $element->{'ServiceEvent'}->{'Description'};
@@ -283,22 +283,20 @@ EOD;
 
         $productCode = $options['product_code'];
 
-        $senderContactName = $options['sender_contact_name'];
+        $senderContactName = $sender->getReference();
         $senderContactPhone = $options['sender_contact_phone'];
 
-        $recipientContactName = $options['recipient_contact_name'];
+        $recipientContactName = $recipient->getReference();
         $recipientContactPhone = $options['recipient_contact_phone'];
 
-        $recipientCompanyName = $recipient->getLines()[0];
+        $recipientCompanyName = $recipient->getName();
         $recipientAddressLines = (new Collection($recipient->getLines()))
-            ->tail()
             ->map(function (string $line) {
                 return "<AddressLine>{$line}</AddressLine>";
             })->join("\n");
 
-        $senderCompanyName = $sender->getLines()[0];
+        $senderCompanyName = $sender->getName();
         $senderAddressLines = (new Collection($sender->getLines()))
-            ->tail()
             ->map(function (string $line) {
                 return "<AddressLine>{$line}</AddressLine>";
             })->join("\n");

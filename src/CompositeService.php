@@ -11,6 +11,7 @@ namespace Vinnia\Shipping;
 
 use GuzzleHttp\Promise\PromiseInterface;
 use Vinnia\Util\Collection;
+use DateTimeInterface;
 
 class CompositeService implements ServiceInterface
 {
@@ -118,7 +119,7 @@ class CompositeService implements ServiceInterface
      * @param array $options
      * @return PromiseInterface
      */
-    public function createLabel(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function createLabel(DateTimeInterface $date, Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
         return $this->aggregate('createLabel', [$sender, $recipient, $package, $options])->then(function (array $labels) {
             return $labels[0] ?? null;

@@ -15,6 +15,11 @@ class Address implements JsonSerializable
 {
 
     /**
+     * @var string
+     */
+    private $name;
+
+    /**
      * @var string[]
      */
     private $lines;
@@ -40,20 +45,45 @@ class Address implements JsonSerializable
     private $country;
 
     /**
+     * @var string
+     */
+    private $reference;
+
+    /**
      * Address constructor.
+     * @param string $name
      * @param string[] $lines
      * @param string $zip
      * @param string $city
      * @param string $state
      * @param string $country
+     * @param string $reference
      */
-    function __construct(array $lines, string $zip, string $city, string $state, string $country)
+    function __construct(
+        string $name,
+        array $lines,
+        string $zip,
+        string $city,
+        string $state,
+        string $country,
+        string $reference = ''
+    )
     {
+        $this->name = $name;
         $this->lines = $lines;
         $this->zip = $zip;
         $this->city = $city;
         $this->state = $state;
         $this->country = $country;
+        $this->reference = $reference;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     /**
@@ -97,16 +127,26 @@ class Address implements JsonSerializable
     }
 
     /**
+     * @return string
+     */
+    public function getReference(): string
+    {
+        return $this->reference;
+    }
+
+    /**
      * @return array
      */
     public function toArray(): array
     {
         return [
+            'name' => $this->getName(),
             'lines' => $this->getLines(),
             'zip' => $this->getZip(),
             'city' => $this->getCity(),
             'state' => $this->getState(),
             'country' => $this->getCountry(),
+            'reference' => $this->getReference(),
         ];
     }
 
@@ -116,6 +156,23 @@ class Address implements JsonSerializable
     public function jsonSerialize()
     {
         return $this->toArray();
+    }
+
+    /**
+     * @param array $data
+     * @return self
+     */
+    public static function fromArray(array $data): self
+    {
+        return new Address(
+            $data['name'],
+            $data['lines'],
+            $data['zip'],
+            $data['city'],
+            $data['state'],
+            $data['country'],
+            $data['reference'] ?? ''
+        );
     }
 
 }
