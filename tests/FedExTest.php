@@ -10,9 +10,15 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping\Tests;
 
 use GuzzleHttp\Client;
+use Vinnia\Shipping\Address;
 use Vinnia\Shipping\FedEx\Credentials;
 use Vinnia\Shipping\FedEx\Service as FedEx;
+use Vinnia\Shipping\Label;
+use Vinnia\Shipping\Package;
 use Vinnia\Shipping\ServiceInterface;
+use DateTimeImmutable;
+use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Unit;
 
 class FedExTest extends AbstractServiceTest
 {
@@ -41,5 +47,31 @@ class FedExTest extends AbstractServiceTest
         return array_map(function (string $value) {
             return [$value];
         }, $data['fedex']['tracking_numbers']);
+    }
+
+    public function testCreateLabel()
+    {
+        $this->assertTrue(true);
+
+        $promise = $this->service->createLabel(
+            new DateTimeImmutable(),
+            new Address('Helmut Schneider', [], '', '', '', ''),
+            new Address('Helmut Schneider', [], '', '', '', ''),
+            new Package(
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(1, Unit::KILOGRAM)
+            )
+        );
+
+        try {
+            $promise->wait();
+        }
+        catch (\Exception $e) {
+
+        }
+
+
     }
 }

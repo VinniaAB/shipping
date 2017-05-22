@@ -304,6 +304,46 @@ EOD;
      */
     public function createLabel(DateTimeInterface $date, Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
-        // TODO: Implement createLabel() method.
+        $shipRequest = Xml::fromArray([
+            'ProcessShipmentRequest' => [
+                'WebAuthenticationDetail' => [
+                    'UserCredential' => [
+                        'Key' => $this->credentials->getCredentialKey(),
+                        'Password' => $this->credentials->getCredentialPassword(),
+                    ],
+                ],
+                'ClientDetail' => [
+                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                ],
+                'Version' => [
+                    'ServiceId' => 'ship',
+                    'Major' => 19,
+                    'Intermediate' => 0,
+                    'Minor' => 0,
+                ],
+                'RequestedShipment' => [
+                    'ShipTimestamp' => $date->format('c'),
+                ],
+            ],
+        ]);
+        $body = <<<EOD
+<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/ship/v19">
+   <p:Body>$shipRequest</p:Body>
+</p:Envelope>
+EOD;
+        //echo $body;
+        return $this->guzzle->requestAsync('POST', $this->url . '/ship', [
+            'headers' => [
+                'Accept' => 'text/xml',
+                'Content-Type' => 'text/xml',
+            ],
+            'body' => $body,
+        ])->then(function (ResponseInterface $response) {
+            $body = (string) $response->getBody();
+
+            echo $body;
+
+        });
     }
 }
