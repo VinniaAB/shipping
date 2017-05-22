@@ -304,6 +304,14 @@ EOD;
      */
     public function createLabel(DateTimeInterface $date, Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
+        $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+        // after value conversions we might get lots of decimals. deal with that
+        $length = number_format($package->getLength()->getValue(), 0, '.', '');
+        $width = number_format($package->getWidth()->getValue(), 0, '.', '');
+        $height = number_format($package->getHeight()->getValue(), 0, '.', '');
+        $weight = number_format($package->getWeight()->getValue(), 0, '.', '');
+
         $shipRequest = Xml::fromArray([
             'ProcessShipmentRequest' => [
                 'WebAuthenticationDetail' => [
@@ -324,6 +332,42 @@ EOD;
                 ],
                 'RequestedShipment' => [
                     'ShipTimestamp' => $date->format('c'),
+                    'DropoffType' => 'REGULAR_PICKUP',
+                    'ServiceType' => 'INTERNATIONAL_PRIORITY', // TODO: should be configurable
+                    'PackagingType' => 'YOUR_PACKAGING',
+                    'Shipper' => [
+                        'Address' => $this->addressToArray($sender),
+                    ],
+                    'Recipient' => [
+                        'Address' => $this->addressToArray($recipient),
+                    ],
+                    'ShippingChargesPayment' => [
+                        'PaymentType' => 'SENDER',
+                    ],
+                    //'CustomsClearanceDetail' => [
+                    //
+                    //]
+                    'LabelSpecification' => [
+                        'LabelFormatType' => 'COMMON2D',
+                        'ImageType' => 'PDF',
+                        ''
+                    ],
+                    'PackageCount' => 1,
+                    'RequestedPackageLineItems' => [
+                        'SequenceNumber' => 1,
+                        'GroupNumber' => 1,
+                        'GroupPackageCount' => 1,
+                        'Weight' => [
+                            'Units' => 'KG',
+                            'Value' => $weight,
+                        ],
+                        'Dimensions' => [
+                            'Length' => $length,
+                            'Width' => $width,
+                            'Height' => $height,
+                            'Units' => 'CM',
+                        ],
+                    ],
                 ],
             ],
         ]);
