@@ -26,6 +26,7 @@ use DateTimeZone;
 use SimpleXMLElement;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Shipping\Xml;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 
@@ -184,37 +185,39 @@ EOD;
      */
     public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
     {
+        $trackRequest = Xml::fromArray([
+            'TrackRequest' => [
+                'WebAuthenticationDetail' => [
+                    'UserCredential' => [
+                        'Key' => $this->credentials->getCredentialKey(),
+                        'Password' => $this->credentials->getCredentialPassword(),
+                    ],
+                ],
+                'ClientDetail' => [
+                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                ],
+                'Version' => [
+                    'ServiceId' => 'trck',
+                    'Major' => 12,
+                    'Intermediate' => 0,
+                    'Minor' => 0,
+                ],
+                'SelectionDetails' => [
+                    'PackageIdentifier' => [
+                        'Type' => 'TRACKING_NUMBER_OR_DOORTAG',
+                        'Value' => $trackingNumber,
+                    ],
+                ],
+                'ProcessingOptions' => 'INCLUDE_DETAILED_SCANS',
+            ],
+        ]);
+
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/track/v12">
    <soapenv:Header />
-   <soapenv:Body>
-      <TrackRequest>
-         <WebAuthenticationDetail>
-            <UserCredential>
-               <Key>{$this->credentials->getCredentialKey()}</Key>
-               <Password>{$this->credentials->getCredentialPassword()}</Password>
-            </UserCredential>
-         </WebAuthenticationDetail>
-         <ClientDetail>
-            <AccountNumber>{$this->credentials->getAccountNumber()}</AccountNumber>
-            <MeterNumber>{$this->credentials->getMeterNumber()}</MeterNumber>
-         </ClientDetail>
-         <Version>
-            <ServiceId>trck</ServiceId>
-            <Major>12</Major>
-            <Intermediate>0</Intermediate>
-            <Minor>0</Minor>
-         </Version>
-         <SelectionDetails>
-            <PackageIdentifier>
-               <Type>TRACKING_NUMBER_OR_DOORTAG</Type>
-               <Value>{$trackingNumber}</Value>
-            </PackageIdentifier>
-         </SelectionDetails>
-         <ProcessingOptions>INCLUDE_DETAILED_SCANS</ProcessingOptions>
-      </TrackRequest>
-   </soapenv:Body>
+   <soapenv:Body>{$trackRequest}</soapenv:Body>
 </soapenv:Envelope>
 EOD;
 

@@ -26,7 +26,13 @@ class XmlTest extends TestCase
                    'b' => 'c',
                    'd' => 'e',
                ],
-            ], '<a><b>c</b><d>e</d></a>']
+            ], '<a><b>c</b><d>e</d></a>'],
+            [[
+                'a' => [
+                    'one',
+                    'two',
+                ],
+            ], '<a>one</a><a>two</a>'],
         ];
     }
 
