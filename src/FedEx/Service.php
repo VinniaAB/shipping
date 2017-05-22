@@ -12,6 +12,8 @@ namespace Vinnia\Shipping\FedEx;
 
 use DateTimeInterface;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
@@ -59,6 +61,21 @@ class Service implements ServiceInterface
     }
 
     /**
+     * @param Address $address
+     * @return array
+     */
+    private function addressToArray(Address $address): array
+    {
+        return [
+            'StreetLines' => $address->getLines(),
+            'City' => $address->getCity(),
+            'StateOrProvinceCode' => $address->getState(),
+            'PostalCode' => $address->getZip(),
+            'CountryCode' => $address->getCountry(),
+        ];
+    }
+
+    /**
      * @param Address $sender
      * @param Address $recipient
      * @param Package $package
@@ -67,14 +84,6 @@ class Service implements ServiceInterface
      */
     public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
-        $fromLines = implode("\n", array_map(function (string $line): string {
-            return sprintf('<StreetLines>%s</StreetLines>', $line);
-        }, $sender->getLines()));
-
-        $toLines = implode("\n", array_map(function (string $line): string {
-            return sprintf('<StreetLines>%s</StreetLines>', $line);
-        }, $recipient->getLines()));
-
         $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
@@ -83,70 +92,60 @@ class Service implements ServiceInterface
         $height = number_format($package->getHeight()->getValue(), 0, '.', '');
         $weight = number_format($package->getWeight()->getValue(), 0, '.', '');
 
+        $rateRequest = Xml::fromArray([
+            'RateRequest' => [
+                'WebAuthenticationDetail' => [
+                    'UserCredential' => [
+                        'Key' => $this->credentials->getCredentialKey(),
+                        'Password' => $this->credentials->getCredentialPassword(),
+                    ],
+                ],
+                'ClientDetail' => [
+                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                ],
+                'Version' => [
+                    'ServiceId' => 'crs',
+                    'Major' => 20,
+                    'Intermediate' => 0,
+                    'Minor' => 0,
+                ],
+                'RequestedShipment' => [
+                    'DropoffType' => 'REGULAR_PICKUP',
+                    'PackagingType' => 'YOUR_PACKAGING',
+                    'Shipper' => [
+                        'Address' => $this->addressToArray($sender),
+                    ],
+                    'Recipient' => [
+                        'Address' => $this->addressToArray($recipient),
+                    ],
+                    'ShippingChargesPayment' => [
+                        'PaymentType' => 'SENDER',
+                    ],
+                    'RateRequestTypes' => 'NONE',
+                    'PackageCount' => 1,
+                    'RequestedPackageLineItems' => [
+                        'SequenceNumber' => 1,
+                        'GroupNumber' => 1,
+                        'GroupPackageCount' => 1,
+                        'Weight' => [
+                            'Units' => 'KG',
+                            'Value' => $weight,
+                        ],
+                        'Dimensions' => [
+                            'Length' => $length,
+                            'Width' => $width,
+                            'Height' => $height,
+                            'Units' => 'CM',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
         $body = <<<EOD
 <p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/rate/v20">
-   <p:Body>
-      <RateRequest>
-         <WebAuthenticationDetail>
-            <UserCredential>
-               <Key>{$this->credentials->getCredentialKey()}</Key>
-               <Password>{$this->credentials->getCredentialPassword()}</Password>
-            </UserCredential>
-         </WebAuthenticationDetail>
-         <ClientDetail>
-            <AccountNumber>{$this->credentials->getAccountNumber()}</AccountNumber>
-            <MeterNumber>{$this->credentials->getMeterNumber()}</MeterNumber>
-         </ClientDetail>
-         <Version>
-            <ServiceId>crs</ServiceId>
-            <Major>20</Major>
-            <Intermediate>0</Intermediate>
-            <Minor>0</Minor>
-         </Version>
-         <RequestedShipment>
-            <DropoffType>REGULAR_PICKUP</DropoffType>
-            <PackagingType>YOUR_PACKAGING</PackagingType>
-            <Shipper>
-               <Address>
-                  {$fromLines}
-                  <City>{$sender->getCity()}</City>
-                  <StateOrProvinceCode>{$sender->getState()}</StateOrProvinceCode>
-                  <PostalCode>{$sender->getZip()}</PostalCode>
-                  <CountryCode>{$sender->getCountry()}</CountryCode>
-               </Address>
-            </Shipper>
-            <Recipient>
-               <Address>
-                  {$toLines}
-                  <City>{$recipient->getCity()}</City>
-                  <StateOrProvinceCode>{$recipient->getState()}</StateOrProvinceCode>
-                  <PostalCode>{$recipient->getZip()}</PostalCode>
-                  <CountryCode>{$recipient->getCountry()}</CountryCode>
-               </Address>
-            </Recipient>
-            <ShippingChargesPayment>
-               <PaymentType>SENDER</PaymentType>
-            </ShippingChargesPayment>
-            <RateRequestTypes>NONE</RateRequestTypes>
-            <PackageCount>1</PackageCount>
-            <RequestedPackageLineItems>
-               <SequenceNumber>1</SequenceNumber>
-               <GroupNumber>1</GroupNumber>
-               <GroupPackageCount>1</GroupPackageCount>
-               <Weight>
-                  <Units>KG</Units>
-                  <Value>{$weight}</Value>
-               </Weight>
-               <Dimensions>
-                  <Length>{$length}</Length>
-                  <Width>{$width}</Width>
-                  <Height>{$height}</Height>
-                  <Units>CM</Units>
-               </Dimensions>
-            </RequestedPackageLineItems>
-         </RequestedShipment>
-      </RateRequest>
-   </p:Body>
+   <p:Body>{$rateRequest}</p:Body>
 </p:Envelope>
 EOD;
 
