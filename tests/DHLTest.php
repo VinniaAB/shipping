@@ -14,7 +14,7 @@ use GuzzleHttp\Client;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Service as DHL;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
-use Vinnia\Shipping\Label;
+use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
@@ -64,12 +64,12 @@ class DHLTest extends AbstractServiceTest
 
         $promise = $this->service->createShipment($req);
 
-        /* @var Label $res */
+        /* @var Shipment $res */
         $res = $promise->wait();
 
         var_dump($res);
 
-        $this->assertInstanceOf(Label::class, $res);
+        $this->assertInstanceOf(Shipment::class, $res);
     }
 
 }

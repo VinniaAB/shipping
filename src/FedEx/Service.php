@@ -19,7 +19,7 @@ use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
-use Vinnia\Shipping\Label;
+use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
@@ -340,7 +340,6 @@ EOD;
                     'Shipper' => [
                         'Contact' => [
                             'CompanyName' => $request->sender->name,
-                            'PersonName' => $request->sender->contactName,
                             'PhoneNumber' => $request->sender->contactPhone,
                         ],
                         'Address' => $this->addressToArray($request->sender),
@@ -348,7 +347,6 @@ EOD;
                     'Recipient' => [
                         'Contact' => [
                             'CompanyName' => $request->recipient->name,
-                            'PersonName' => $request->recipient->contactName,
                             'PhoneNumber' => $request->recipient->contactPhone,
                         ],
                         'Address' => $this->addressToArray($request->recipient),
@@ -397,8 +395,6 @@ EOD;
         return $this->send('/ship', $body, function (ResponseInterface $response) {
             $body = (string) $response->getBody();
 
-            echo $body;
-
             if (strpos($body, '<HighestSeverity>SUCCESS</HighestSeverity>') === false) {
                 return new RejectedPromise($body);
             }
@@ -411,14 +407,16 @@ EOD;
 
             $image = base64_decode($matches[1]);
 
-            return new Label($trackingNumber, 'FedEx', 'PDF', $image);
-        }, function (ServerException $e) {
-           $body = (string) $e->getResponse()->getBody();
-           echo $body;
+            return new Shipment($trackingNumber, 'FedEx', $image, $body);
         });
     }
 
-    public function deleteLabel(string $id, string $type): PromiseInterface
+    /**
+     * @param string $id
+     * @param array $data
+     * @return PromiseInterface
+     */
+    public function cancelShipment(string $id, array $data = []): PromiseInterface
     {
         $deleteRequest = Xml::fromArray([
             'DeleteShipmentRequest' => [
@@ -439,7 +437,7 @@ EOD;
                     'Minor' => 0,
                 ],
                 'TrackingId' => [
-                    'TrackingIdType' => $type,
+                    'TrackingIdType' => $data['type'],
                     'TrackingNumber' => $id,
                 ],
                 'DeletionControl' => 'DELETE_ALL_PACKAGES',
@@ -455,17 +453,7 @@ EOD;
         return $this->send('/ship', $body, function (ResponseInterface $response) {
             $body = (string) $response->getBody();
 
-            echo $body;
+            return $body;
         });
-    }
-
-    /**
-     * @param string $id
-     * @param array $data
-     * @return PromiseInterface
-     */
-    public function cancelShipment(string $id, array $data = []): PromiseInterface
-    {
-        // TODO: Implement cancelShipment() method.
     }
 }

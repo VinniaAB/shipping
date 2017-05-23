@@ -20,7 +20,7 @@ use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use SimpleXMLElement;
 use Vinnia\Shipping\Address;
-use Vinnia\Shipping\Label;
+use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
@@ -404,7 +404,7 @@ EOD;
 
             $data = base64_decode($matches[1]);
 
-            return new Label($number, 'DHL', 'PDF', $data);
+            return new Shipment($number, 'DHL', $data, $body);
         });
     }
 

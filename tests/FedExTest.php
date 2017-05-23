@@ -14,10 +14,11 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\FedEx\Credentials;
 use Vinnia\Shipping\FedEx\Service as FedEx;
 use Vinnia\Shipping\FedEx\Service;
-use Vinnia\Shipping\Label;
+use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\ServiceInterface;
 use DateTimeImmutable;
+use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 
@@ -52,24 +53,28 @@ class FedExTest extends AbstractServiceTest
 
     public function testCreateLabel()
     {
-        $this->markTestSkipped();
-        /* @var Service $service */
-        $service = $this->service;
+        $sender = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+        $package = new Package(
+            new Amount(30, Unit::CENTIMETER),
+            new Amount(30, Unit::CENTIMETER),
+            new Amount(30, Unit::CENTIMETER),
+            new Amount(1, Unit::KILOGRAM)
+        );
+        $req = new ShipmentRequest('FEDEX_GROUND', $sender, $sender, $package);
+        $promise = $this->service->createShipment($req);
 
-        $promise = $service->createShipment();
+        /* @var \Vinnia\Shipping\Shipment $shipment */
+        $shipment = $promise->wait();
 
-        /* @var \Vinnia\Shipping\Label $label */
-        $label = $promise->wait();
+        $this->assertInstanceOf(Shipment::class, $shipment);
 
-        $this->assertInstanceOf(Label::class, $label);
+        var_dump($shipment);
 
-        var_dump($label);
+        file_put_contents('/Users/johan/Desktop/fedex.pdf', $shipment->labelData);
 
-        $deleted = $service->deleteLabel($label->getId(), 'FEDEX')
+        $deleted = $this->service->cancelShipment($shipment->id, ['type' => 'FEDEX'])
             ->wait();
 
         var_dump($deleted);
-
-        //file_put_contents('/Users/johan/Desktop/fedex_label.pdf', $label->getData());
     }
 }

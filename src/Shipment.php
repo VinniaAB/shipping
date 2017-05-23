@@ -9,7 +9,7 @@
 namespace Vinnia\Shipping;
 
 
-class Label
+class Shipment
 {
 
     /**
@@ -23,30 +23,30 @@ class Label
     public $vendor;
 
     /**
-     * Label data format
+     * Binary pdf data
      * @var string
      */
-    public $format;
+    public $labelData;
 
     /**
-     * Binary label data
-     * @var string
+     * Raw data that was used to create this object
+     * @var mixed
      */
-    public $data;
+    public $raw;
 
     /**
      * Label constructor.
      * @param string $id
      * @param string $vendor
-     * @param string $format
-     * @param string $data
+     * @param string $labelData
+     * @param mixed $raw
      */
-    function __construct(string $id, string $vendor, string $format, string $data)
+    function __construct(string $id, string $vendor, string $labelData, $raw = null)
     {
         $this->id = $id;
         $this->vendor = $vendor;
-        $this->format = $format;
-        $this->data = $data;
+        $this->labelData = $labelData;
+        $this->raw = $raw;
     }
 
 }
