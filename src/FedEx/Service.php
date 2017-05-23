@@ -9,8 +9,10 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\FedEx;
 
+use Closure;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
@@ -71,6 +73,24 @@ class Service implements ServiceInterface
             'PostalCode' => $address->zip,
             'CountryCode' => $address->countryCode,
         ];
+    }
+
+    /**
+     * @param string $endpoint
+     * @param string $body
+     * @param Closure $success
+     * @param Closure|null $error
+     * @return PromiseInterface
+     */
+    private function send(string $endpoint, string $body, Closure $success, Closure $error = null): PromiseInterface
+    {
+        return $this->guzzle->requestAsync('POST', $this->url . $endpoint, [
+            'headers' => [
+                'Accept' => 'text/xml',
+                'Content-Type' => 'text/xml',
+            ],
+            'body' => $body,
+        ])->then($success, $error);
     }
 
     /**
@@ -147,13 +167,7 @@ class Service implements ServiceInterface
 </p:Envelope>
 EOD;
 
-        return $this->guzzle->requestAsync('POST', $this->url . '/rate', [
-            'headers' => [
-                'Accept' => 'text/xml',
-                'Content-Type' => 'text/xml',
-            ],
-            'body' => $body,
-        ])->then(function (ResponseInterface $response) {
+        return $this->send('/rate', $body, function (ResponseInterface $response) {
             $body = (string) $response->getBody();
 
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
@@ -218,13 +232,7 @@ EOD;
 </soapenv:Envelope>
 EOD;
 
-        return $this->guzzle->requestAsync('POST', $this->url . '/track', [
-            'headers' => [
-                'Accept' => 'text/xml',
-                'Content-Type' => 'text/xml',
-            ],
-            'body' => $body,
-        ])->then(function (ResponseInterface $response) {
+        return $this->send('/track', $body, function (ResponseInterface $response) {
             $body = (string) $response->getBody();
 
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
@@ -386,13 +394,7 @@ EOD;
 </p:Envelope>
 EOD;
 
-        return $this->guzzle->requestAsync('POST', $this->url . '/ship', [
-            'headers' => [
-                'Accept' => 'text/xml',
-                'Content-Type' => 'text/xml',
-            ],
-            'body' => $body,
-        ])->then(function (ResponseInterface $response) {
+        return $this->send('/ship', $body, function (ResponseInterface $response) {
             $body = (string) $response->getBody();
 
             echo $body;
@@ -449,19 +451,11 @@ EOD;
    <p:Body>$deleteRequest</p:Body>
 </p:Envelope>
 EOD;
-        //echo $body;
-        return $this->guzzle->requestAsync('POST', $this->url . '/ship', [
-            'headers' => [
-                'Accept' => 'text/xml',
-                'Content-Type' => 'text/xml',
-            ],
-            'body' => $body,
-        ])->then(function (ResponseInterface $response) {
+
+        return $this->send('/ship', $body, function (ResponseInterface $response) {
             $body = (string) $response->getBody();
 
             echo $body;
-
-            return $body;
         });
     }
 
