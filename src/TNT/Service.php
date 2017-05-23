@@ -72,10 +72,10 @@ class Service implements ServiceInterface
     public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
         $package = $package->convertTo(Unit::METER, Unit::KILOGRAM);
-        $length = number_format($package->getLength()->getValue(), 2, '.', '');
-        $width = number_format($package->getWidth()->getValue(), 2, '.', '');
-        $height = number_format($package->getHeight()->getValue(), 2, '.', '');
-        $weight = number_format($package->getWeight()->getValue(), 2, '.', '');
+        $length = number_format($package->length->getValue(), 2, '.', '');
+        $width = number_format($package->width->getValue(), 2, '.', '');
+        $height = number_format($package->height->getValue(), 2, '.', '');
+        $weight = number_format($package->weight->getValue(), 2, '.', '');
 
         $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 

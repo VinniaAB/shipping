@@ -19,22 +19,22 @@ class Package implements JsonSerializable
     /**
      * @var Amount
      */
-    private $width;
+    public $width;
 
     /**
      * @var Amount
      */
-    private $height;
+    public $height;
 
     /**
      * @var Amount
      */
-    private $length;
+    public $length;
 
     /**
      * @var Amount
      */
-    private $weight;
+    public $weight;
 
     /**
      * Package constructor.
@@ -49,38 +49,6 @@ class Package implements JsonSerializable
         $this->height = $height;
         $this->length = $length;
         $this->weight = $weight;
-    }
-
-    /**
-     * @return Amount
-     */
-    public function getWidth(): Amount
-    {
-        return $this->width;
-    }
-
-    /**
-     * @return Amount
-     */
-    public function getHeight(): Amount
-    {
-        return $this->height;
-    }
-
-    /**
-     * @return Amount
-     */
-    public function getLength(): Amount
-    {
-        return $this->length;
-    }
-
-    /**
-     * @return Amount
-     */
-    public function getWeight(): Amount
-    {
-        return $this->weight;
     }
 
     public function convertTo(string $lengthUnit, string $weightUnit): self
@@ -99,10 +67,10 @@ class Package implements JsonSerializable
     public function toArray(): array
     {
         return [
-            'width' => $this->getWidth(),
-            'height' => $this->getHeight(),
-            'length' => $this->getLength(),
-            'weight' => $this->getWeight(),
+            'width' => $this->width,
+            'height' => $this->height,
+            'length' => $this->length,
+            'weight' => $this->weight,
         ];
     }
 

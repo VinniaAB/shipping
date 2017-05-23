@@ -88,8 +88,8 @@ class CompositeServiceTest extends TestCase
         $quotes = $promise->wait();
 
         $this->assertCount(2, $quotes);
-        $this->assertEquals('DHL', $quotes[0]->getVendor());
-        $this->assertEquals('UPS', $quotes[1]->getVendor());
+        $this->assertEquals('DHL', $quotes[0]->vendor);
+        $this->assertEquals('UPS', $quotes[1]->vendor);
     }
 
     public function testReturnsFirstSuccessfulTracking()

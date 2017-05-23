@@ -15,24 +15,24 @@ class Label
     /**
      * @var string
      */
-    private $id;
+    public $id;
 
     /**
      * @var string
      */
-    private $vendor;
+    public $vendor;
 
     /**
      * Label data format
      * @var string
      */
-    private $format;
+    public $format;
 
     /**
      * Binary label data
      * @var string
      */
-    private $data;
+    public $data;
 
     /**
      * Label constructor.
@@ -47,38 +47,6 @@ class Label
         $this->vendor = $vendor;
         $this->format = $format;
         $this->data = $data;
-    }
-
-    /**
-     * @return string
-     */
-    public function getId(): string
-    {
-        return $this->id;
-    }
-
-    /**
-     * @return string
-     */
-    public function getVendor(): string
-    {
-        return $this->vendor;
-    }
-
-    /**
-     * @return string
-     */
-    public function getFormat(): string
-    {
-        return $this->format;
-    }
-
-    /**
-     * @return string
-     */
-    public function getData(): string
-    {
-        return $this->data;
     }
 
 }

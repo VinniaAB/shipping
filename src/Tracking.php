@@ -17,53 +17,29 @@ class Tracking implements JsonSerializable
     /**
      * @var string
      */
-    private $vendor;
+    public $vendor;
 
     /**
      * @var string
      */
-    private $product;
+    public $service;
 
     /**
      * @var TrackingActivity[]
      */
-    private $activities;
+    public $activities;
 
     /**
      * Tracking constructor.
      * @param string $vendor
-     * @param string $product
+     * @param string $service
      * @param TrackingActivity[] $activities
      */
-    function __construct(string $vendor, string $product, array $activities)
+    function __construct(string $vendor, string $service, array $activities)
     {
         $this->vendor = $vendor;
-        $this->product = $product;
+        $this->service = $service;
         $this->activities = $activities;
-    }
-
-    /**
-     * @return string
-     */
-    public function getVendor(): string
-    {
-        return $this->vendor;
-    }
-
-    /**
-     * @return string
-     */
-    public function getProduct(): string
-    {
-        return $this->product;
-    }
-
-    /**
-     * @return TrackingActivity[]
-     */
-    public function getActivities(): array
-    {
-        return $this->activities;
     }
 
     /**
@@ -72,9 +48,9 @@ class Tracking implements JsonSerializable
     public function toArray(): array
     {
         return [
-            'vendor' => $this->getVendor(),
-            'product' => $this->getProduct(),
-            'activities' => $this->getActivities(),
+            'vendor' => $this->vendor,
+            'service' => $this->service,
+            'activities' => $this->activities,
         ];
     }
 

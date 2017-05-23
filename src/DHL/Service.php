@@ -78,10 +78,10 @@ class Service implements ServiceInterface
         $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
-        $length = number_format($package->getLength()->getValue(), 2, '.', '');
-        $width = number_format($package->getWidth()->getValue(), 2, '.', '');
-        $height = number_format($package->getHeight()->getValue(), 2, '.', '');
-        $weight = number_format($package->getWeight()->getValue(), 2, '.', '');
+        $length = number_format($package->length->getValue(), 2, '.', '');
+        $width = number_format($package->width->getValue(), 2, '.', '');
+        $height = number_format($package->height->getValue(), 2, '.', '');
+        $weight = number_format($package->weight->getValue(), 2, '.', '');
 
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
@@ -342,13 +342,13 @@ EOD;
          <Piece>
             <PieceID>1</PieceID>
             <PackageType>YP</PackageType>
-            <Weight>{$package->getWeight()}</Weight>
-            <Width>{$package->getWidth()}</Width>
-            <Height>{$package->getHeight()}</Height>
-            <Depth>{$package->getLength()}</Depth>
+            <Weight>{$package->weight}</Weight>
+            <Width>{$package->width}</Width>
+            <Height>{$package->height}</Height>
+            <Depth>{$package->length}</Depth>
          </Piece>
       </Pieces>
-      <Weight>{$package->getWeight()}</Weight>
+      <Weight>{$package->weight}</Weight>
       <WeightUnit>K</WeightUnit>
       <GlobalProductCode>{$request->service}</GlobalProductCode>
       <Date>{$request->date->format('Y-m-d')}</Date>

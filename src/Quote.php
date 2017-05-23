@@ -18,53 +18,29 @@ class Quote implements JsonSerializable
     /**
      * @var string
      */
-    private $vendor;
+    public $vendor;
 
     /**
      * @var string
      */
-    private $product;
+    public $service;
 
     /**
      * @var Money
      */
-    private $price;
+    public $price;
 
     /**
      * Quote constructor.
      * @param string $vendor
-     * @param string $product
+     * @param string $service
      * @param Money $price
      */
-    function __construct(string $vendor, string $product, Money $price)
+    function __construct(string $vendor, string $service, Money $price)
     {
         $this->vendor = $vendor;
-        $this->product = $product;
+        $this->service = $service;
         $this->price = $price;
-    }
-
-    /**
-     * @return string
-     */
-    public function getVendor(): string
-    {
-        return $this->vendor;
-    }
-
-    /**
-     * @return string
-     */
-    public function getProduct(): string
-    {
-        return $this->product;
-    }
-
-    /**
-     * @return Money
-     */
-    public function getPrice(): Money
-    {
-        return $this->price;
     }
 
     /**
@@ -73,9 +49,9 @@ class Quote implements JsonSerializable
     public function toArray(): array
     {
         return [
-            'vendor' => $this->getVendor(),
-            'product' => $this->getProduct(),
-            'price' => $this->getPrice(),
+            'vendor' => $this->vendor,
+            'service' => $this->service,
+            'price' => $this->price,
         ];
     }
 

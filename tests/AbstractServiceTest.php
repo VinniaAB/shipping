@@ -102,10 +102,10 @@ abstract class AbstractServiceTest extends TestCase
 
             echo sprintf(
                 '%s %s: %.2f %s' . PHP_EOL,
-                $quote->getVendor(),
-                $quote->getProduct(),
-                $quote->getPrice()->getAmount() / 100,
-                $quote->getPrice()->getCurrency()
+                $quote->vendor,
+                $quote->service,
+                $quote->price->getAmount() / 100,
+                $quote->price->getCurrency()
             );
         }
     }
@@ -122,25 +122,25 @@ abstract class AbstractServiceTest extends TestCase
         $tracking = $promise->wait();
 
         $this->assertInstanceOf(Tracking::class, $tracking);
-        $this->assertNotEmpty($tracking->getActivities());
+        $this->assertNotEmpty($tracking->activities);
 
-        echo sprintf('%s %s' . PHP_EOL, $tracking->getVendor(), $tracking->getProduct());
+        echo sprintf('%s %s' . PHP_EOL, $tracking->vendor, $tracking->service);
 
-        foreach ($tracking->getActivities() as $activity) {
+        foreach ($tracking->activities as $activity) {
             $this->assertInstanceOf(TrackingActivity::class, $activity);
 
             echo sprintf(
                 '%s: %d %s %s' . PHP_EOL,
-                $activity->getDate()->format('c'),
-                $activity->getStatus(),
-                $activity->getDescription(),
-                $activity->getAddress()->city
+                $activity->date->format('c'),
+                $activity->status,
+                $activity->description,
+                $activity->address->city
             );
         }
 
         $prev = PHP_INT_MAX;
-        foreach ($tracking->getActivities() as $activity) {
-            $ts = $activity->getDate()->getTimestamp();
+        foreach ($tracking->activities as $activity) {
+            $ts = $activity->date->getTimestamp();
             $this->assertLessThanOrEqual($prev, $ts);
             $prev = $ts;
         }

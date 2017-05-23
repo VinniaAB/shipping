@@ -22,22 +22,22 @@ class TrackingActivity implements JsonSerializable
     /**
      * @var int
      */
-    private $status;
+    public $status;
 
     /**
      * @var string
      */
-    private $description;
+    public $description;
 
     /**
      * @var DateTimeInterface
      */
-    private $date;
+    public $date;
 
     /**
      * @var Address
      */
-    private $address;
+    public $address;
 
     /**
      * TrackingActivity constructor.
@@ -55,47 +55,15 @@ class TrackingActivity implements JsonSerializable
     }
 
     /**
-     * @return int
-     */
-    public function getStatus(): int
-    {
-        return $this->status;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDescription(): string
-    {
-        return $this->description;
-    }
-
-    /**
-     * @return DateTimeInterface
-     */
-    public function getDate(): DateTimeInterface
-    {
-        return $this->date;
-    }
-
-    /**
-     * @return Address
-     */
-    public function getAddress(): Address
-    {
-        return $this->address;
-    }
-
-    /**
      * @return array
      */
     public function toArray(): array
     {
         return [
-            'status' => $this->getStatus(),
-            'description' => $this->getDescription(),
-            'date' => $this->getDate()->format('c'),
-            'address' => $this->getAddress(),
+            'status' => $this->status,
+            'description' => $this->description,
+            'date' => $this->date->format('c'),
+            'address' => $this->address,
         ];
     }
 
