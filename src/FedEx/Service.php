@@ -20,6 +20,7 @@ use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\Label;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
@@ -333,16 +334,29 @@ EOD;
                 'RequestedShipment' => [
                     'ShipTimestamp' => $date->format('c'),
                     'DropoffType' => 'REGULAR_PICKUP',
-                    'ServiceType' => 'INTERNATIONAL_PRIORITY', // TODO: should be configurable
+                    'ServiceType' => 'FEDEX_GROUND', // TODO: should be configurable
                     'PackagingType' => 'YOUR_PACKAGING',
                     'Shipper' => [
+                        'Contact' => [
+                            'CompanyName' => $sender->getName(),
+                            'PhoneNumber' => '123456',
+                        ],
                         'Address' => $this->addressToArray($sender),
                     ],
                     'Recipient' => [
+                        'Contact' => [
+                            'CompanyName' => $recipient->getName(),
+                            'PhoneNumber' => '123456',
+                        ],
                         'Address' => $this->addressToArray($recipient),
                     ],
                     'ShippingChargesPayment' => [
                         'PaymentType' => 'SENDER',
+                        'Payor' => [
+                            'ResponsibleParty' => [
+                                'AccountNumber' => $this->credentials->getAccountNumber(),
+                            ],
+                        ],
                     ],
                     //'CustomsClearanceDetail' => [
                     //
@@ -350,7 +364,7 @@ EOD;
                     'LabelSpecification' => [
                         'LabelFormatType' => 'COMMON2D',
                         'ImageType' => 'PDF',
-                        ''
+                        'LabelStockType' => 'PAPER_LETTER',
                     ],
                     'PackageCount' => 1,
                     'RequestedPackageLineItems' => [
@@ -376,6 +390,70 @@ EOD;
    <p:Body>$shipRequest</p:Body>
 </p:Envelope>
 EOD;
+
+        return $this->guzzle->requestAsync('POST', $this->url . '/ship', [
+            'headers' => [
+                'Accept' => 'text/xml',
+                'Content-Type' => 'text/xml',
+            ],
+            'body' => $body,
+        ])->then(function (ResponseInterface $response) {
+            $body = (string) $response->getBody();
+
+            echo $body;
+
+            if (strpos($body, '<HighestSeverity>SUCCESS</HighestSeverity>') === false) {
+                return new RejectedPromise($body);
+            }
+
+            preg_match('/<TrackingNumber>(.+)<\/TrackingNumber>/', $body, $matches);
+
+            $trackingNumber = $matches[1];
+
+            preg_match('/<Image>(.+)<\/Image>/', $body, $matches);
+
+            $image = base64_decode($matches[1]);
+
+            return new Label($trackingNumber, 'FedEx', 'PDF', $image);
+        }, function (ServerException $e) {
+           $body = (string) $e->getResponse()->getBody();
+           echo $body;
+        });
+    }
+
+    public function deleteLabel(string $id, string $type): PromiseInterface
+    {
+        $deleteRequest = Xml::fromArray([
+            'DeleteShipmentRequest' => [
+                'WebAuthenticationDetail' => [
+                    'UserCredential' => [
+                        'Key' => $this->credentials->getCredentialKey(),
+                        'Password' => $this->credentials->getCredentialPassword(),
+                    ],
+                ],
+                'ClientDetail' => [
+                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                ],
+                'Version' => [
+                    'ServiceId' => 'ship',
+                    'Major' => 19,
+                    'Intermediate' => 0,
+                    'Minor' => 0,
+                ],
+                'TrackingId' => [
+                    'TrackingIdType' => $type,
+                    'TrackingNumber' => $id,
+                ],
+                'DeletionControl' => 'DELETE_ALL_PACKAGES',
+            ],
+        ]);
+
+        $body = <<<EOD
+<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/ship/v19">
+   <p:Body>$deleteRequest</p:Body>
+</p:Envelope>
+EOD;
         //echo $body;
         return $this->guzzle->requestAsync('POST', $this->url . '/ship', [
             'headers' => [
@@ -388,6 +466,8 @@ EOD;
 
             echo $body;
 
+            return $body;
         });
     }
+
 }
