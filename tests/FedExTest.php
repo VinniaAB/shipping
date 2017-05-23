@@ -52,6 +52,7 @@ class FedExTest extends AbstractServiceTest
 
     public function testCreateLabel()
     {
+        $this->markTestSkipped();
         /* @var Service $service */
         $service = $this->service;
 

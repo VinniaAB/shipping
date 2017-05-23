@@ -6,6 +6,8 @@ The following carriers are supported:
 - FedEx
 - TNT
 
+**Note: the code in this library is a work in progress; BC breaks will happen on a regular basis.**
+
 ## Requirements
 - php 7.1+
 - ext-curl

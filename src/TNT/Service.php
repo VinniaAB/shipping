@@ -87,14 +87,14 @@ class Service implements ServiceInterface
    <priceCheck>
       <rateId>rate2</rateId>
       <sender>
-         <country>{$sender->getCountry()}</country>
-         <town>{$sender->getCity()}</town>
-         <postcode>{$sender->getZip()}</postcode>
+         <country>{$sender->countryCode}</country>
+         <town>{$sender->city}</town>
+         <postcode>{$sender->zip}</postcode>
       </sender>
       <delivery>
-         <country>{$recipient->getCountry()}</country>
-         <town>{$recipient->getCity()}</town>
-         <postcode>{$recipient->getZip()}</postcode>
+         <country>{$recipient->countryCode}</country>
+         <town>{$recipient->city}</town>
+         <postcode>{$recipient->zip}</postcode>
       </delivery>
       <collectionDateTime>{$dt->format('c')}</collectionDateTime>
       <product>

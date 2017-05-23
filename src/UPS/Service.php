@@ -82,7 +82,7 @@ class Service implements ServiceInterface
     public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
     {
         // UPS doesn't allow us to use SI units inside some countries
-        $nonSi = in_array(mb_strtoupper($sender->getCountry(), 'utf-8'), self::NON_SI_COUNTRIES);
+        $nonSi = in_array(mb_strtoupper($sender->countryCode, 'utf-8'), self::NON_SI_COUNTRIES);
         $lengthUnit = $nonSi ? 'IN' : 'CM';
         $weightUnit = $nonSi ? 'LBS' : 'KGS';
 
@@ -119,31 +119,31 @@ class Service implements ServiceInterface
                         'Name' => '',
                         'ShipperNumber' => '',
                         'Address' => [
-                            'AddressLine' => $sender->getLines(),
-                            'City' => $sender->getCity(),
+                            'AddressLine' => $sender->lines,
+                            'City' => $sender->city,
                             'StateProvinceCode' => '',
-                            'PostalCode' => $sender->getZip(),
-                            'CountryCode' => $sender->getCountry(),
+                            'PostalCode' => $sender->zip,
+                            'CountryCode' => $sender->countryCode,
                         ],
                     ],
                     'ShipTo' => [
                         'Name' => '',
                         'Address' => [
-                            'AddressLine' => $recipient->getLines(),
-                            'City' => $recipient->getCity(),
+                            'AddressLine' => $recipient->lines,
+                            'City' => $recipient->city,
                             'StateProvinceCode' => '',
-                            'PostalCode' => $recipient->getZip(),
-                            'CountryCode' => $recipient->getCountry(),
+                            'PostalCode' => $recipient->zip,
+                            'CountryCode' => $recipient->countryCode,
                         ],
                     ],
                     'ShipFrom' => [
                         'Name' => '',
                         'Address' => [
-                            'AddressLine' => $sender->getLines(),
-                            'City' => $sender->getCity(),
+                            'AddressLine' => $sender->lines,
+                            'City' => $sender->city,
                             'StateProvinceCode' => '',
-                            'PostalCode' => $sender->getZip(),
-                            'CountryCode' => $sender->getCountry(),
+                            'PostalCode' => $sender->zip,
+                            'CountryCode' => $sender->countryCode,
                         ],
                     ],
                     'Package' => [

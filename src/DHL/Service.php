@@ -98,12 +98,12 @@ class Service implements ServiceInterface
          </ServiceHeader>
       </Request>
       <From>
-         <CountryCode>{$sender->getCountry()}</CountryCode>
-         <Postalcode>{$sender->getZip()}</Postalcode>
-         <City>{$sender->getCountry()}</City>
+         <CountryCode>{$sender->countryCode}</CountryCode>
+         <Postalcode>{$sender->zip}</Postalcode>
+         <City>{$sender->city}</City>
       </From>
       <BkgDetails>
-         <PaymentCountryCode>{$sender->getCountry()}</PaymentCountryCode>
+         <PaymentCountryCode>{$sender->countryCode}</PaymentCountryCode>
          <Date>{$dt->format('Y-m-d')}</Date>
          <ReadyTime>PT00H00M</ReadyTime>
          <DimensionUnit>CM</DimensionUnit>
@@ -120,9 +120,9 @@ class Service implements ServiceInterface
          <PaymentAccountNumber>{$this->credentials->getAccountNumber()}</PaymentAccountNumber>
       </BkgDetails>
       <To>
-         <CountryCode>{$recipient->getCountry()}</CountryCode>
-         <Postalcode>{$recipient->getZip()}</Postalcode>
-         <City>{$recipient->getCity()}</City>
+         <CountryCode>{$recipient->countryCode}</CountryCode>
+         <Postalcode>{$recipient->zip}</Postalcode>
+         <City>{$recipient->city}</City>
       </To>
    </GetQuote>
 </p:DCTRequest>
@@ -283,20 +283,14 @@ EOD;
 
         $productCode = $options['product_code'];
 
-        $senderContactName = $sender->getReference();
-        $senderContactPhone = $options['sender_contact_phone'];
-
-        $recipientContactName = $recipient->getReference();
-        $recipientContactPhone = $options['recipient_contact_phone'];
-
-        $recipientCompanyName = $recipient->getName();
-        $recipientAddressLines = (new Collection($recipient->getLines()))
+        $recipientCompanyName = $recipient->name;
+        $recipientAddressLines = (new Collection($recipient->lines))
             ->map(function (string $line) {
                 return "<AddressLine>{$line}</AddressLine>";
             })->join("\n");
 
-        $senderCompanyName = $sender->getName();
-        $senderAddressLines = (new Collection($sender->getLines()))
+        $senderCompanyName = $sender->name;
+        $senderAddressLines = (new Collection($sender->lines))
             ->map(function (string $line) {
                 return "<AddressLine>{$line}</AddressLine>";
             })->join("\n");
@@ -306,6 +300,9 @@ EOD;
         $amount = $options['amount'];
         $currency = $options['currency'];
         $content = $options['content'];
+
+        var_dump($sender);
+        var_dump($recipient);
 
         $specialServices = (new Collection($options['special_services'] ?? []))->map(function (string $service): string {
             return <<<EOD
@@ -338,13 +335,13 @@ EOD;
    <Consignee>
       <CompanyName>{$recipientCompanyName}</CompanyName>
       {$recipientAddressLines}
-      <City>{$recipient->getCity()}</City>
-      <PostalCode>{$recipient->getZip()}</PostalCode>
-      <CountryCode>{$recipient->getCountry()}</CountryCode>
-      <CountryName>{$countryNames[$recipient->getCountry()]}</CountryName>
+      <City>{$recipient->city}</City>
+      <PostalCode>{$recipient->zip}</PostalCode>
+      <CountryCode>{$recipient->countryCode}</CountryCode>
+      <CountryName>{$countryNames[$recipient->countryCode]}</CountryName>
       <Contact>
-         <PersonName>{$recipientContactName}</PersonName>
-         <PhoneNumber>{$recipientContactPhone}</PhoneNumber>
+         <PersonName>{$recipient->contactName}</PersonName>
+         <PhoneNumber>{$recipient->contactPhone}</PhoneNumber>
       </Contact>
    </Consignee>
    <Dutiable>
@@ -377,13 +374,13 @@ EOD;
       <ShipperID>{$this->credentials->getAccountNumber()}</ShipperID>
       <CompanyName>{$senderCompanyName}</CompanyName>
       {$senderAddressLines}
-      <City>{$sender->getCity()}</City>
-      <PostalCode>{$sender->getZip()}</PostalCode>
-      <CountryCode>{$sender->getCountry()}</CountryCode>
-      <CountryName>{$countryNames[$sender->getCountry()]}</CountryName>
+      <City>{$sender->city}</City>
+      <PostalCode>{$sender->zip}</PostalCode>
+      <CountryCode>{$sender->countryCode}</CountryCode>
+      <CountryName>{$countryNames[$sender->countryCode]}</CountryName>
       <Contact>
-         <PersonName>{$senderContactName}</PersonName>
-         <PhoneNumber>{$senderContactPhone}</PhoneNumber>
+         <PersonName>{$sender->contactName}</PersonName>
+         <PhoneNumber>{$sender->contactPhone}</PhoneNumber>
       </Contact>
    </Shipper>
    {$specialServices}

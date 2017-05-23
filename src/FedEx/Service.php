@@ -68,11 +68,11 @@ class Service implements ServiceInterface
     private function addressToArray(Address $address): array
     {
         return [
-            'StreetLines' => $address->getLines(),
-            'City' => $address->getCity(),
-            'StateOrProvinceCode' => $address->getState(),
-            'PostalCode' => $address->getZip(),
-            'CountryCode' => $address->getCountry(),
+            'StreetLines' => $address->lines,
+            'City' => $address->city,
+            'StateOrProvinceCode' => $address->state,
+            'PostalCode' => $address->zip,
+            'CountryCode' => $address->countryCode,
         ];
     }
 
@@ -338,15 +338,17 @@ EOD;
                     'PackagingType' => 'YOUR_PACKAGING',
                     'Shipper' => [
                         'Contact' => [
-                            'CompanyName' => $sender->getName(),
-                            'PhoneNumber' => '123456',
+                            'CompanyName' => $sender->name,
+                            'PersonName' => $sender->contactName,
+                            'PhoneNumber' => $sender->contactPhone,
                         ],
                         'Address' => $this->addressToArray($sender),
                     ],
                     'Recipient' => [
                         'Contact' => [
-                            'CompanyName' => $recipient->getName(),
-                            'PhoneNumber' => '123456',
+                            'CompanyName' => $recipient->name,
+                            'PersonName' => $recipient->contactName,
+                            'PhoneNumber' => $recipient->contactPhone,
                         ],
                         'Address' => $this->addressToArray($recipient),
                     ],

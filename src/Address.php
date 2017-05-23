@@ -17,37 +17,42 @@ class Address implements JsonSerializable
     /**
      * @var string
      */
-    private $name;
+    public $name;
 
     /**
      * @var string[]
      */
-    private $lines;
+    public $lines;
 
     /**
      * @var string
      */
-    private $zip;
+    public $zip;
 
     /**
      * @var string
      */
-    private $city;
+    public $city;
 
     /**
      * @var string
      */
-    private $state;
+    public $state;
 
     /**
      * @var string
      */
-    private $country;
+    public $countryCode;
 
     /**
      * @var string
      */
-    private $reference;
+    public $contactName;
+
+    /**
+     * @var string
+     */
+    public $contactPhone;
 
     /**
      * Address constructor.
@@ -56,8 +61,9 @@ class Address implements JsonSerializable
      * @param string $zip
      * @param string $city
      * @param string $state
-     * @param string $country
-     * @param string $reference
+     * @param string $countryCode
+     * @param string $contactName
+     * @param string $contactPhone
      */
     function __construct(
         string $name,
@@ -65,8 +71,9 @@ class Address implements JsonSerializable
         string $zip,
         string $city,
         string $state,
-        string $country,
-        string $reference = ''
+        string $countryCode,
+        string $contactName = '',
+        string $contactPhone = ''
     )
     {
         $this->name = $name;
@@ -74,64 +81,9 @@ class Address implements JsonSerializable
         $this->zip = $zip;
         $this->city = $city;
         $this->state = $state;
-        $this->country = $country;
-        $this->reference = $reference;
-    }
-
-    /**
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getLines(): array
-    {
-        return $this->lines;
-    }
-
-    /**
-     * @return string
-     */
-    public function getZip(): string
-    {
-        return $this->zip;
-    }
-
-    /**
-     * @return string
-     */
-    public function getCity(): string
-    {
-        return $this->city;
-    }
-
-    /**
-     * @return string
-     */
-    public function getState(): string
-    {
-        return $this->state;
-    }
-
-    /**
-     * @return string
-     */
-    public function getCountry(): string
-    {
-        return $this->country;
-    }
-
-    /**
-     * @return string
-     */
-    public function getReference(): string
-    {
-        return $this->reference;
+        $this->countryCode = $countryCode;
+        $this->contactName = $contactName;
+        $this->contactPhone = $contactPhone;
     }
 
     /**
@@ -140,13 +92,14 @@ class Address implements JsonSerializable
     public function toArray(): array
     {
         return [
-            'name' => $this->getName(),
-            'lines' => $this->getLines(),
-            'zip' => $this->getZip(),
-            'city' => $this->getCity(),
-            'state' => $this->getState(),
-            'country' => $this->getCountry(),
-            'reference' => $this->getReference(),
+            'name' => $this->name,
+            'lines' => $this->lines,
+            'zip' => $this->zip,
+            'city' => $this->city,
+            'state' => $this->state,
+            'country_code' => $this->countryCode,
+            'contact_name' => $this->contactName,
+            'contact_phone' => $this->contactPhone,
         ];
     }
 
@@ -170,8 +123,9 @@ class Address implements JsonSerializable
             $data['zip'],
             $data['city'],
             $data['state'],
-            $data['country'],
-            $data['reference'] ?? ''
+            $data['country_code'],
+            $data['contact_name'] ?? '',
+            $data['contact_phone'] ?? ''
         );
     }
 

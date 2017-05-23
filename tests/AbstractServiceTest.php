@@ -89,12 +89,12 @@ abstract class AbstractServiceTest extends TestCase
 
         echo sprintf(
             '%s %s, %s to %s %s, %s' . PHP_EOL,
-            $sender->getZip(),
-            $sender->getCity(),
-            $sender->getCountry(),
-            $recipient->getZip(),
-            $recipient->getCity(),
-            $recipient->getCountry()
+            $sender->zip,
+            $sender->city,
+            $sender->countryCode,
+            $recipient->zip,
+            $recipient->city,
+            $recipient->countryCode
         );
 
         foreach ($quotes as $quote) {
@@ -134,7 +134,7 @@ abstract class AbstractServiceTest extends TestCase
                 $activity->getDate()->format('c'),
                 $activity->getStatus(),
                 $activity->getDescription(),
-                $activity->getAddress()->getCity()
+                $activity->getAddress()->city
             );
         }
 
