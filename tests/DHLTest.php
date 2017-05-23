@@ -17,6 +17,7 @@ use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
 use Vinnia\Shipping\Label;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 
@@ -50,20 +51,18 @@ class DHLTest extends AbstractServiceTest
 
     public function testCreateLabel()
     {
-        $sender = new Address('Company AB', ['Street 1'], '111 57', 'Stockholm', '', 'SE', 'Helmut', '123456');
+        $sender = new Address('Company AB', ['Street 1'], '111 57', 'Stockholm', '', 'SE', 'Helmut', '1234567890');
         $package = new Package(
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(5.0, Unit::KILOGRAM)
         );
-        $promise = $this->service->createLabel(new DateTimeImmutable(), $sender, $sender, $package, [
-            'product_code' => 'Q',
-            'amount' => 300,
-            'currency' => 'EUR',
-            'content' => 'Stuff',
-            'special_services' => ['PT'],
-        ]);
+        $req = new ShipmentRequest('Q', $sender, $sender, $package);
+        $req->specialServices = ['PT'];
+        $req->currency = 'EUR';
+
+        $promise = $this->service->createShipment($req);
 
         /* @var Label $res */
         $res = $promise->wait();

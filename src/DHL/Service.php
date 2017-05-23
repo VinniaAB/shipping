@@ -24,6 +24,7 @@ use Vinnia\Shipping\Label;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Util\Collection;
@@ -269,42 +270,29 @@ EOD;
     }
 
     /**
-     * @param DateTimeInterface $date
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options
+     * @param ShipmentRequest $request
      * @return PromiseInterface
      */
-    public function createLabel(DateTimeInterface $date, Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-        $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $now = date('c');
+        $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
-        $productCode = $options['product_code'];
-
-        $recipientCompanyName = $recipient->name;
-        $recipientAddressLines = (new Collection($recipient->lines))
+        $recipientCompanyName = $request->recipient->name;
+        $recipientAddressLines = (new Collection($request->recipient->lines))
             ->map(function (string $line) {
                 return "<AddressLine>{$line}</AddressLine>";
             })->join("\n");
 
-        $senderCompanyName = $sender->name;
-        $senderAddressLines = (new Collection($sender->lines))
+        $senderCompanyName = $request->sender->name;
+        $senderAddressLines = (new Collection($request->sender->lines))
             ->map(function (string $line) {
                 return "<AddressLine>{$line}</AddressLine>";
             })->join("\n");
 
         $countryNames = require __DIR__ . '/../../countries.php';
 
-        $amount = $options['amount'];
-        $currency = $options['currency'];
-        $content = $options['content'];
-
-        var_dump($sender);
-        var_dump($recipient);
-
-        $specialServices = (new Collection($options['special_services'] ?? []))->map(function (string $service): string {
+        $specialServices = (new Collection($request->specialServices))->map(function (string $service): string {
             return <<<EOD
 <SpecialService>
   <SpecialServiceType>{$service}</SpecialServiceType>
@@ -317,7 +305,7 @@ EOD;
 <req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd" schemaVersion="5.0">
    <Request>
       <ServiceHeader>
-         <MessageTime>{$dt->format('c')}</MessageTime>
+         <MessageTime>{$now}</MessageTime>
          <MessageReference>123456789012345678901234567890</MessageReference>
          <SiteID>{$this->credentials->getSiteID()}</SiteID>
          <Password>{$this->credentials->getPassword()}</Password>
@@ -335,18 +323,18 @@ EOD;
    <Consignee>
       <CompanyName>{$recipientCompanyName}</CompanyName>
       {$recipientAddressLines}
-      <City>{$recipient->city}</City>
-      <PostalCode>{$recipient->zip}</PostalCode>
-      <CountryCode>{$recipient->countryCode}</CountryCode>
-      <CountryName>{$countryNames[$recipient->countryCode]}</CountryName>
+      <City>{$request->recipient->city}</City>
+      <PostalCode>{$request->recipient->zip}</PostalCode>
+      <CountryCode>{$request->recipient->countryCode}</CountryCode>
+      <CountryName>{$countryNames[$request->recipient->countryCode]}</CountryName>
       <Contact>
-         <PersonName>{$recipient->contactName}</PersonName>
-         <PhoneNumber>{$recipient->contactPhone}</PhoneNumber>
+         <PersonName>{$request->recipient->contactName}</PersonName>
+         <PhoneNumber>{$request->recipient->contactPhone}</PhoneNumber>
       </Contact>
    </Consignee>
    <Dutiable>
-      <DeclaredValue>{$amount}</DeclaredValue>
-      <DeclaredCurrency>{$currency}</DeclaredCurrency>
+      <DeclaredValue>{$request->value}</DeclaredValue>
+      <DeclaredCurrency>{$request->currency}</DeclaredCurrency>
    </Dutiable>
    <ShipmentDetails>
       <NumberOfPieces>1</NumberOfPieces>
@@ -362,25 +350,25 @@ EOD;
       </Pieces>
       <Weight>{$package->getWeight()}</Weight>
       <WeightUnit>K</WeightUnit>
-      <GlobalProductCode>{$productCode}</GlobalProductCode>
-      <Date>{$date->format('Y-m-d')}</Date>
-      <Contents>{$content}</Contents>
+      <GlobalProductCode>{$request->service}</GlobalProductCode>
+      <Date>{$request->date->format('Y-m-d')}</Date>
+      <Contents>{$request->contents}</Contents>
       <DoorTo>DD</DoorTo>
       <DimensionUnit>C</DimensionUnit>
       <IsDutiable>Y</IsDutiable>
-      <CurrencyCode>{$currency}</CurrencyCode>
+      <CurrencyCode>{$request->currency}</CurrencyCode>
    </ShipmentDetails>
    <Shipper>
       <ShipperID>{$this->credentials->getAccountNumber()}</ShipperID>
       <CompanyName>{$senderCompanyName}</CompanyName>
       {$senderAddressLines}
-      <City>{$sender->city}</City>
-      <PostalCode>{$sender->zip}</PostalCode>
-      <CountryCode>{$sender->countryCode}</CountryCode>
-      <CountryName>{$countryNames[$sender->countryCode]}</CountryName>
+      <City>{$request->sender->city}</City>
+      <PostalCode>{$request->sender->zip}</PostalCode>
+      <CountryCode>{$request->sender->countryCode}</CountryCode>
+      <CountryName>{$countryNames[$request->sender->countryCode]}</CountryName>
       <Contact>
-         <PersonName>{$sender->contactName}</PersonName>
-         <PhoneNumber>{$sender->contactPhone}</PhoneNumber>
+         <PersonName>{$request->sender->contactName}</PersonName>
+         <PhoneNumber>{$request->sender->contactPhone}</PhoneNumber>
       </Contact>
    </Shipper>
    {$specialServices}
@@ -418,5 +406,15 @@ EOD;
 
             return new Label($number, 'DHL', 'PDF', $data);
         });
+    }
+
+    /**
+     * @param string $id
+     * @param array $data
+     * @return PromiseInterface
+     */
+    public function cancelShipment(string $id, array $data = []): PromiseInterface
+    {
+        // TODO: Implement cancelShipment() method.
     }
 }

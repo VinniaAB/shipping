@@ -9,10 +9,7 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\FedEx;
 
-
-use DateTimeInterface;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
@@ -25,8 +22,8 @@ use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 use DateTimeImmutable;
-use DateTimeZone;
 use SimpleXMLElement;
+use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\Xml;
@@ -296,16 +293,12 @@ EOD;
     }
 
     /**
-     * @param DateTimeInterface $date
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options
+     * @param ShipmentRequest $request
      * @return PromiseInterface
      */
-    public function createLabel(DateTimeInterface $date, Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
         $length = number_format($package->getLength()->getValue(), 0, '.', '');
@@ -332,25 +325,25 @@ EOD;
                     'Minor' => 0,
                 ],
                 'RequestedShipment' => [
-                    'ShipTimestamp' => $date->format('c'),
+                    'ShipTimestamp' => $request->date->format('c'),
                     'DropoffType' => 'REGULAR_PICKUP',
-                    'ServiceType' => 'FEDEX_GROUND', // TODO: should be configurable
+                    'ServiceType' => $request->service, // TODO: should be configurable
                     'PackagingType' => 'YOUR_PACKAGING',
                     'Shipper' => [
                         'Contact' => [
-                            'CompanyName' => $sender->name,
-                            'PersonName' => $sender->contactName,
-                            'PhoneNumber' => $sender->contactPhone,
+                            'CompanyName' => $request->sender->name,
+                            'PersonName' => $request->sender->contactName,
+                            'PhoneNumber' => $request->sender->contactPhone,
                         ],
-                        'Address' => $this->addressToArray($sender),
+                        'Address' => $this->addressToArray($request->sender),
                     ],
                     'Recipient' => [
                         'Contact' => [
-                            'CompanyName' => $recipient->name,
-                            'PersonName' => $recipient->contactName,
-                            'PhoneNumber' => $recipient->contactPhone,
+                            'CompanyName' => $request->recipient->name,
+                            'PersonName' => $request->recipient->contactName,
+                            'PhoneNumber' => $request->recipient->contactPhone,
                         ],
-                        'Address' => $this->addressToArray($recipient),
+                        'Address' => $this->addressToArray($request->recipient),
                     ],
                     'ShippingChargesPayment' => [
                         'PaymentType' => 'SENDER',
@@ -472,4 +465,13 @@ EOD;
         });
     }
 
+    /**
+     * @param string $id
+     * @param array $data
+     * @return PromiseInterface
+     */
+    public function cancelShipment(string $id, array $data = []): PromiseInterface
+    {
+        // TODO: Implement cancelShipment() method.
+    }
 }

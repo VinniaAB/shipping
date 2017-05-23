@@ -56,17 +56,7 @@ class FedExTest extends AbstractServiceTest
         /* @var Service $service */
         $service = $this->service;
 
-        $promise = $service->createLabel(
-            new DateTimeImmutable(),
-            new Address('Helmut 1', ['TESTING, DON\'T SHIP'], '68183', 'Omaha', 'Nebraska', 'US'),
-            new Address('Helmut 2', ['TESTING, DON\'T SHIP'], '68183', 'Omaha', 'Nebraska', 'US'),
-            new Package(
-                new Amount(30, Unit::CENTIMETER),
-                new Amount(30, Unit::CENTIMETER),
-                new Amount(30, Unit::CENTIMETER),
-                new Amount(1, Unit::KILOGRAM)
-            )
-        );
+        $promise = $service->createShipment();
 
         /* @var \Vinnia\Shipping\Label $label */
         $label = $promise->wait();

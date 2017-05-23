@@ -24,6 +24,7 @@ use Vinnia\Shipping\CompositeService;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Util\Measurement\Amount;
 
@@ -40,13 +41,10 @@ class CompositeServiceTest extends TestCase
             public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
             }
-            public function createLabel(
-                DateTimeInterface $date,
-                Address $sender,
-                Address $recipient,
-                Package $package,
-                array $options = []
-            ): PromiseInterface
+            public function createShipment(ShipmentRequest $request): PromiseInterface
+            {
+            }
+            public function cancelShipment(string $id, array $data = []): PromiseInterface
             {
             }
         };
@@ -58,13 +56,10 @@ class CompositeServiceTest extends TestCase
             public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
             }
-            public function createLabel(
-                DateTimeInterface $date,
-                Address $sender,
-                Address $recipient,
-                Package $package,
-                array $options = []
-            ): PromiseInterface
+            public function createShipment(ShipmentRequest $request): PromiseInterface
+            {
+            }
+            public function cancelShipment(string $id, array $data = []): PromiseInterface
             {
             }
         };
@@ -76,13 +71,10 @@ class CompositeServiceTest extends TestCase
             public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
             {
             }
-            public function createLabel(
-                DateTimeInterface $date,
-                Address $sender,
-                Address $recipient,
-                Package $package,
-                array $options = []
-            ): PromiseInterface
+            public function createShipment(ShipmentRequest $request): PromiseInterface
+            {
+            }
+            public function cancelShipment(string $id, array $data = []): PromiseInterface
             {
             }
         };
@@ -110,13 +102,10 @@ class CompositeServiceTest extends TestCase
             {
                 return \GuzzleHttp\Promise\promise_for(new Tracking('DHL', '', []));
             }
-            public function createLabel(
-                DateTimeInterface $date,
-                Address $sender,
-                Address $recipient,
-                Package $package,
-                array $options = []
-            ): PromiseInterface
+            public function createShipment(ShipmentRequest $request): PromiseInterface
+            {
+            }
+            public function cancelShipment(string $id, array $data = []): PromiseInterface
             {
             }
         };
@@ -128,13 +117,10 @@ class CompositeServiceTest extends TestCase
             {
                 return \GuzzleHttp\Promise\promise_for(new Tracking('DHL', '', []));
             }
-            public function createLabel(
-                DateTimeInterface $date,
-                Address $sender,
-                Address $recipient,
-                Package $package,
-                array $options = []
-            ): PromiseInterface
+            public function createShipment(ShipmentRequest $request): PromiseInterface
+            {
+            }
+            public function cancelShipment(string $id, array $data = []): PromiseInterface
             {
             }
         };

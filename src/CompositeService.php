@@ -113,16 +113,26 @@ class CompositeService implements ServiceInterface
     }
 
     /**
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options
+     * @param ShipmentRequest $request
      * @return PromiseInterface
+     * @internal param Address $sender
+     * @internal param Address $recipient
+     * @internal param Package $package
+     * @internal param array $options
      */
-    public function createLabel(DateTimeInterface $date, Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        return $this->aggregate('createLabel', [$sender, $recipient, $package, $options])->then(function (array $labels) {
+        return $this->aggregate('createLabel', [$request])->then(function (array $labels) {
             return $labels[0] ?? null;
         });
+    }
+
+    /**
+     * @param string $id
+     * @param array $data
+     * @return PromiseInterface
+     */
+    public function cancelShipment(string $id, array $data = []): PromiseInterface
+    {
     }
 }

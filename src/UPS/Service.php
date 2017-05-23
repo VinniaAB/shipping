@@ -9,10 +9,8 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\UPS;
 
-use DateTimeInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
-use Exception;
 use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
 use Money\Money;
@@ -21,6 +19,7 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
+use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Util\Collection;
@@ -298,15 +297,21 @@ class Service implements ServiceInterface
     }
 
     /**
-     * @param DateTimeInterface $date
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options
+     * @param ShipmentRequest $request
      * @return PromiseInterface
      */
-    public function createLabel(DateTimeInterface $date, Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function createShipment(ShipmentRequest $request): PromiseInterface
     {
         // TODO: Implement createLabel() method.
+    }
+
+    /**
+     * @param string $id
+     * @param array $data
+     * @return PromiseInterface
+     */
+    public function cancelShipment(string $id, array $data = []): PromiseInterface
+    {
+        // TODO: Implement cancelShipment() method.
     }
 }
