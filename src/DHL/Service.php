@@ -13,6 +13,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
@@ -415,6 +416,6 @@ EOD;
      */
     public function cancelShipment(string $id, array $data = []): PromiseInterface
     {
-        // TODO: Implement cancelShipment() method.
+        return new FulfilledPromise(true);
     }
 }

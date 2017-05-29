@@ -10,6 +10,7 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping\UPS;
 
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
@@ -312,6 +313,6 @@ class Service implements ServiceInterface
      */
     public function cancelShipment(string $id, array $data = []): PromiseInterface
     {
-        // TODO: Implement cancelShipment() method.
+        return new FulfilledPromise(true);
     }
 }

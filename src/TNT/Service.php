@@ -10,6 +10,7 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping\TNT;
 
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
@@ -235,6 +236,6 @@ EOD;
      */
     public function cancelShipment(string $id, array $data = []): PromiseInterface
     {
-        // TODO: Implement cancelShipment() method.
+        return new FulfilledPromise(true);
     }
 }
