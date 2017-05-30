@@ -21,6 +21,7 @@ use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use SimpleXMLElement;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
@@ -28,6 +29,7 @@ use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Shipping\Xml;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 
@@ -84,6 +86,47 @@ class Service implements ServiceInterface
         $height = number_format($package->height->getValue(), 2, '.', '');
         $weight = number_format($package->weight->getValue(), 2, '.', '');
 
+        $getQuoteRequest = Xml::fromArray([
+            'GetQuote' => [
+                'Request' => [
+                    'ServiceHeader' => [
+                        'MessageTime' => $dt->format('c'),
+                        'SiteID' => $this->credentials->getSiteID(),
+                        'Password' => $this->credentials->getPassword(),
+                    ],
+                ],
+                'From' => [
+                    'CountryCode' => $sender->countryCode,
+                    'Postalcode' => $sender->zip,
+                    'City' => $sender->city,
+                ],
+                'BkgDetails' => [
+                    'PaymentCountryCode' => $sender->countryCode,
+                    'Date' => $dt->format('Y-m-d'),
+                    'ReadyTime' => 'PT00H00M',
+                    'DimensionUnit' => 'CM',
+                    'WeightUnit' => 'KG',
+                    'Pieces' => [
+                        'Piece' => [
+                            [
+                                'PieceID' => 1,
+                                'Height' => $height,
+                                'Depth' => $length,
+                                'Width' => $width,
+                                'Weight' => $weight,
+                            ],
+                        ],
+                    ],
+                    'PaymentAccountNumber' => $this->credentials->getAccountNumber(),
+                ],
+                'To' => [
+                    'CountryCode' => $recipient->countryCode,
+                    'Postalcode' => $recipient->zip,
+                    'City' => $recipient->city,
+                ],
+            ],
+        ]);
+
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <p:DCTRequest xmlns:p="http://www.dhl.com"
@@ -91,42 +134,7 @@ class Service implements ServiceInterface
     xmlns:p2="http://www.dhl.com/DCTRequestdatatypes"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.dhl.com DCT-req.xsd ">
-   <GetQuote>
-      <Request>
-         <ServiceHeader>
-            <MessageTime>{$dt->format('c')}</MessageTime>
-            <SiteID>{$this->credentials->getSiteID()}</SiteID>
-            <Password>{$this->credentials->getPassword()}</Password>
-         </ServiceHeader>
-      </Request>
-      <From>
-         <CountryCode>{$sender->countryCode}</CountryCode>
-         <Postalcode>{$sender->zip}</Postalcode>
-         <City>{$sender->city}</City>
-      </From>
-      <BkgDetails>
-         <PaymentCountryCode>{$sender->countryCode}</PaymentCountryCode>
-         <Date>{$dt->format('Y-m-d')}</Date>
-         <ReadyTime>PT00H00M</ReadyTime>
-         <DimensionUnit>CM</DimensionUnit>
-         <WeightUnit>KG</WeightUnit>
-         <Pieces>
-            <Piece>
-               <PieceID>1</PieceID>
-               <Height>{$height}</Height>
-               <Depth>{$length}</Depth>
-               <Width>{$width}</Width>
-               <Weight>{$weight}</Weight>
-            </Piece>
-         </Pieces>
-         <PaymentAccountNumber>{$this->credentials->getAccountNumber()}</PaymentAccountNumber>
-      </BkgDetails>
-      <To>
-         <CountryCode>{$recipient->countryCode}</CountryCode>
-         <Postalcode>{$recipient->zip}</Postalcode>
-         <City>{$recipient->city}</City>
-      </To>
-   </GetQuote>
+   {$getQuoteRequest}
 </p:DCTRequest>
 EOD;
 
@@ -146,7 +154,7 @@ EOD;
             $qtdShip = $xml->xpath('/res:DCTResponse/GetQuoteResponse/BkgDetails/QtdShp');
 
             if (count($qtdShip) === 0) {
-                return new RejectedPromise($body);
+                $this->throwError($body);
             }
 
             $qtdShip =  new Collection($qtdShip);
@@ -176,21 +184,24 @@ EOD;
      */
     public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
     {
+        $trackRequest = Xml::fromArray([
+            'Request' => [
+                'ServiceHeader' => [
+                    'SiteID' => $this->credentials->getSiteID(),
+                    'Password' => $this->credentials->getPassword(),
+                ],
+            ],
+            'LanguageCode' => 'en',
+            'AWBNumber' => $trackingNumber,
+            'LevelOfDetails' => 'ALL_CHECK_POINTS',
+            'PiecesEnabled' => 'S',
+        ]);
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <req:KnownTrackingRequest xmlns:req="http://www.dhl.com"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.dhl.com TrackingRequestKnown.xsd">
-   <Request>
-      <ServiceHeader>
-         <SiteID>{$this->credentials->getSiteID()}</SiteID>
-         <Password>{$this->credentials->getPassword()}</Password>
-      </ServiceHeader>
-   </Request>
-   <LanguageCode>en</LanguageCode>
-   <AWBNumber>{$trackingNumber}</AWBNumber>
-   <LevelOfDetails>ALL_CHECK_POINTS</LevelOfDetails>
-   <PiecesEnabled>S</PiecesEnabled>
+    {$trackRequest}
 </req:KnownTrackingRequest>
 EOD;
 
@@ -210,7 +221,7 @@ EOD;
             $info = $xml->xpath('/req:TrackingResponse/AWBInfo/ShipmentInfo');
 
             if (!$info) {
-                return new RejectedPromise($body);
+                $this->throwError($body);
             }
 
             $activities = (new Collection($info[0]->xpath('ShipmentEvent')))->map(function (SimpleXMLElement $element) {
@@ -396,7 +407,7 @@ EOD;
             // eg. ÅÄÖ.
             // Also, http://stackoverflow.com/a/1732454 :)
             if (preg_match('/<AirwayBillNumber>(.+)<\/AirwayBillNumber>/', $body, $matches) === 0) {
-                return new RejectedPromise($body);
+                $this->throwError($body);
             }
 
             $number = $matches[1];
@@ -418,4 +429,27 @@ EOD;
     {
         return new FulfilledPromise(true);
     }
+
+    /**
+     * @param string $body
+     * @throws ServiceException
+     */
+    protected function throwError(string $body)
+    {
+        $errors = [];
+
+        // extract the status part of the body because
+        // we don't want to break simplexml with weird strings from DHL
+        preg_match('/<Status>.+<\/Status>/s', $body, $matches);
+
+        if (count($matches) !== 0) {
+            $xml = new SimpleXMLElement($matches[0]);
+            $errors = array_map(function (SimpleXMLElement $e): string {
+                return (string) $e;
+            }, $xml->xpath('//ConditionData'));
+        }
+
+        throw new ServiceException($errors, $body);
+    }
+
 }

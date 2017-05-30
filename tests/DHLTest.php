@@ -11,9 +11,11 @@ namespace Vinnia\Shipping\Tests;
 
 use DateTimeImmutable;
 use GuzzleHttp\Client;
+use GuzzleHttp\Promise\RejectionException;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Service as DHL;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
+use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\ServiceInterface;
@@ -70,6 +72,37 @@ class DHLTest extends AbstractServiceTest
         var_dump($res);
 
         $this->assertInstanceOf(Shipment::class, $res);
+    }
+
+    public function testQuoteError()
+    {
+
+        $sender = new Address('', [], '', '', '', '', '', '');
+        $package = new Package(
+            new Amount(1.0, Unit::METER),
+            new Amount(1.0, Unit::METER),
+            new Amount(1.0, Unit::METER),
+            new Amount(5.0, Unit::KILOGRAM)
+        );
+
+        $this->expectException(ServiceException::class);
+        $this->service->getQuotes($sender, $sender, $package)
+            ->wait();
+    }
+
+    public function testCreateShipmentError()
+    {
+        $sender = new Address('', [], '', '', '', 'US', '', '');
+        $package = new Package(
+            new Amount(1.0, Unit::METER),
+            new Amount(1.0, Unit::METER),
+            new Amount(1.0, Unit::METER),
+            new Amount(5.0, Unit::KILOGRAM)
+        );
+
+        $this->expectException(ServiceException::class);
+        $this->service->createShipment(new ShipmentRequest('', $sender, $sender, $package))
+            ->wait();
     }
 
 }
