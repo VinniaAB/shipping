@@ -54,22 +54,26 @@ class DHLTest extends AbstractServiceTest
     public function testCreateLabel()
     {
         $sender = new Address('Company AB', ['Street 1'], '111 57', 'Stockholm', '', 'SE', 'Helmut', '1234567890');
+        $recipient = new Address('Company AB', ['Street 2'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '12345');
         $package = new Package(
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(5.0, Unit::KILOGRAM)
         );
-        $req = new ShipmentRequest('Q', $sender, $sender, $package);
+        $req = new ShipmentRequest('Q', $sender, $recipient, $package);
         $req->specialServices = ['PT'];
+        $req->isDutiable = true;
         $req->currency = 'EUR';
+        $req->contents = 'Samples';
+        $req->incoterm = 'DAP';
 
         $promise = $this->service->createShipment($req);
 
         /* @var Shipment $res */
         $res = $promise->wait();
 
-        var_dump($res);
+        //var_dump($res);
 
         $this->assertInstanceOf(Shipment::class, $res);
     }

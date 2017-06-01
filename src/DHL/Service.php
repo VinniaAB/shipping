@@ -290,102 +290,98 @@ EOD;
         $now = date('c');
         $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
-        $recipientCompanyName = $request->recipient->name;
-        $recipientAddressLines = (new Collection($request->recipient->lines))
-            ->map(function (string $line) {
-                return "<AddressLine>{$line}</AddressLine>";
-            })->join("\n");
-
-        $senderCompanyName = $request->sender->name;
-        $senderAddressLines = (new Collection($request->sender->lines))
-            ->map(function (string $line) {
-                return "<AddressLine>{$line}</AddressLine>";
-            })->join("\n");
-
         $countryNames = require __DIR__ . '/../../countries.php';
 
-        $specialServices = (new Collection($request->specialServices))->map(function (string $service): string {
-            return <<<EOD
-<SpecialService>
-  <SpecialServiceType>{$service}</SpecialServiceType>
-</SpecialService>
-EOD;
-        })->join('');
+        $data = [
+            'Request' => [
+                'ServiceHeader' => [
+                    'MessageTime' => $now,
+                    'MessageReference' => '123456789012345678901234567890',
+                    'SiteID' => $this->credentials->getSiteID(),
+                    'Password' => $this->credentials->getPassword(),
+                ],
+            ],
+            'RegionCode' => 'EU',
+            'NewShipper' => 'N',
+            'LanguageCode' => 'en',
+            'PiecesEnabled' => 'Y',
+            'Billing' => [
+                'ShipperAccountNumber' => $this->credentials->getAccountNumber(),
+                'ShippingPaymentType' => 'S',
+                'DutyPaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT ? 'R' : 'S',
+            ],
+            'Consignee' => [
+                'CompanyName' => $request->recipient->name,
+                'AddressLine' => $request->recipient->lines,
+                'City' => $request->recipient->city,
+                'PostalCode' => $request->recipient->zip,
+                'CountryCode' => $request->recipient->countryCode,
+                'CountryName' => $countryNames[$request->recipient->countryCode],
+                'Contact' => [
+                    'PersonName' => $request->recipient->contactName,
+                    'PhoneNumber' => $request->recipient->contactPhone,
+                ],
+            ],
+            'Dutiable' => [
+                'DeclaredValue' => $request->value,
+                'DeclaredCurrency' => $request->currency,
+            ],
+            'ShipmentDetails' => [
+                'NumberOfPieces' => 1,
+                'Pieces' => [
+                    'Piece' => [
+                        [
+                            'PieceID' => 1,
+                            'PackageType' => 'YP',
+                            'Weight' => $package->weight,
+                            'Width' => $package->width,
+                            'Height' => $package->height,
+                            'Depth' => $package->length,
+                        ]
+                    ],
+                ],
+                'Weight' => $package->weight,
+                'WeightUnit' => 'K',
+                'GlobalProductCode' => $request->service,
+                'Date' => $request->date->format('Y-m-d'),
+                'Contents' => $request->contents,
+                'DoorTo' => 'DD',
+                'DimensionUnit' => 'C',
+                'IsDutiable' => $request->isDutiable ? 'Y' : 'N',
+                'CurrencyCode' => $request->currency,
+            ],
+            'Shipper' => [
+                'ShipperID' => $this->credentials->getAccountNumber(),
+                'CompanyName' => $request->sender->name,
+                'AddressLine' => $request->sender->lines,
+                'City' => $request->sender->city,
+                'PostalCode' => $request->sender->zip,
+                'CountryCode' => $request->sender->countryCode,
+                'CountryName' => $countryNames[$request->sender->countryCode],
+                'Contact' => [
+                    'PersonName' => $request->sender->contactName,
+                    'PhoneNumber' => $request->sender->contactPhone,
+                ],
+            ],
+            'SpecialService' => array_map(function (string $service): array {
+                return [
+                    'SpecialServiceType' => $service,
+                ];
+            }, $request->specialServices),
+            'EProcShip' => 'N',
+            'LabelImageFormat' => 'PDF',
+        ];
+
+        if ($request->isDutiable && $request->incoterm) {
+            $data['Dutiable']['TermsOfTrade'] = $request->incoterm;
+        }
+
+        $shipmentRequest = Xml::fromArray($data);
 
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd" schemaVersion="5.0">
-   <Request>
-      <ServiceHeader>
-         <MessageTime>{$now}</MessageTime>
-         <MessageReference>123456789012345678901234567890</MessageReference>
-         <SiteID>{$this->credentials->getSiteID()}</SiteID>
-         <Password>{$this->credentials->getPassword()}</Password>
-      </ServiceHeader>
-   </Request>
-   <RegionCode>EU</RegionCode>
-   <NewShipper>N</NewShipper>
-   <LanguageCode>en</LanguageCode>
-   <PiecesEnabled>Y</PiecesEnabled>
-   <Billing>
-      <ShipperAccountNumber>{$this->credentials->getAccountNumber()}</ShipperAccountNumber>
-      <ShippingPaymentType>S</ShippingPaymentType>
-      <DutyPaymentType>R</DutyPaymentType>
-   </Billing>
-   <Consignee>
-      <CompanyName>{$recipientCompanyName}</CompanyName>
-      {$recipientAddressLines}
-      <City>{$request->recipient->city}</City>
-      <PostalCode>{$request->recipient->zip}</PostalCode>
-      <CountryCode>{$request->recipient->countryCode}</CountryCode>
-      <CountryName>{$countryNames[$request->recipient->countryCode]}</CountryName>
-      <Contact>
-         <PersonName>{$request->recipient->contactName}</PersonName>
-         <PhoneNumber>{$request->recipient->contactPhone}</PhoneNumber>
-      </Contact>
-   </Consignee>
-   <Dutiable>
-      <DeclaredValue>{$request->value}</DeclaredValue>
-      <DeclaredCurrency>{$request->currency}</DeclaredCurrency>
-   </Dutiable>
-   <ShipmentDetails>
-      <NumberOfPieces>1</NumberOfPieces>
-      <Pieces>
-         <Piece>
-            <PieceID>1</PieceID>
-            <PackageType>YP</PackageType>
-            <Weight>{$package->weight}</Weight>
-            <Width>{$package->width}</Width>
-            <Height>{$package->height}</Height>
-            <Depth>{$package->length}</Depth>
-         </Piece>
-      </Pieces>
-      <Weight>{$package->weight}</Weight>
-      <WeightUnit>K</WeightUnit>
-      <GlobalProductCode>{$request->service}</GlobalProductCode>
-      <Date>{$request->date->format('Y-m-d')}</Date>
-      <Contents>{$request->contents}</Contents>
-      <DoorTo>DD</DoorTo>
-      <DimensionUnit>C</DimensionUnit>
-      <IsDutiable>Y</IsDutiable>
-      <CurrencyCode>{$request->currency}</CurrencyCode>
-   </ShipmentDetails>
-   <Shipper>
-      <ShipperID>{$this->credentials->getAccountNumber()}</ShipperID>
-      <CompanyName>{$senderCompanyName}</CompanyName>
-      {$senderAddressLines}
-      <City>{$request->sender->city}</City>
-      <PostalCode>{$request->sender->zip}</PostalCode>
-      <CountryCode>{$request->sender->countryCode}</CountryCode>
-      <CountryName>{$countryNames[$request->sender->countryCode]}</CountryName>
-      <Contact>
-         <PersonName>{$request->sender->contactName}</PersonName>
-         <PhoneNumber>{$request->sender->contactPhone}</PhoneNumber>
-      </Contact>
-   </Shipper>
-   {$specialServices}
-   <EProcShip>N</EProcShip>
-   <LabelImageFormat>PDF</LabelImageFormat>
+{$shipmentRequest}
 </req:ShipmentRequest>
 EOD;
 

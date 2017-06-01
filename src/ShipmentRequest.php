@@ -14,6 +14,9 @@ use DateTimeImmutable;
 class ShipmentRequest
 {
 
+    const PAYMENT_TYPE_SENDER = 'sender';
+    const PAYMENT_TYPE_RECIPIENT = 'recipient';
+
     /**
      * @var string
      */
@@ -58,6 +61,21 @@ class ShipmentRequest
      * @var string
      */
     public $currency = 'EUR';
+
+    /**
+     * @var bool
+     */
+    public $isDutiable = true;
+
+    /**
+     * @var string
+     */
+    public $dutyPaymentType = self::PAYMENT_TYPE_SENDER;
+
+    /**
+     * @var string
+     */
+    public $incoterm = '';
 
     /**
      * @var string[]
