@@ -301,8 +301,6 @@ EOD;
                     'Password' => $this->credentials->getPassword(),
                 ],
             ],
-            'RegionCode' => 'EU',
-            'NewShipper' => 'N',
             'LanguageCode' => 'en',
             'PiecesEnabled' => 'Y',
             'Billing' => [
@@ -368,7 +366,6 @@ EOD;
                     'SpecialServiceType' => $service,
                 ];
             }, $request->specialServices),
-            'EProcShip' => 'N',
             'LabelImageFormat' => 'PDF',
         ];
 
