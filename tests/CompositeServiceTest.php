@@ -129,7 +129,7 @@ class CompositeServiceTest extends TestCase
         $tracking = $service->getTrackingStatus('123')->wait();
 
         $this->assertInstanceOf(Tracking::class, $tracking);
-        $this->assertEquals('DHL', $tracking->getVendor());
+        $this->assertEquals('DHL', $tracking->vendor);
     }
 
     public function testWithOnlyFiltersCorrectlyWithSpecificClass()

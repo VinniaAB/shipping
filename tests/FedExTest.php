@@ -68,9 +68,9 @@ class FedExTest extends AbstractServiceTest
 
         $this->assertInstanceOf(Shipment::class, $shipment);
 
-        var_dump($shipment);
+        $this->assertNotEmpty($shipment->labelData);
 
-        file_put_contents('/Users/johan/Desktop/fedex.pdf', $shipment->labelData);
+        file_put_contents(dirname(__FILE__).'/labels/fedex.pdf', $shipment->labelData);
 
         $deleted = $this->service->cancelShipment($shipment->id, ['type' => 'FEDEX'])
             ->wait();

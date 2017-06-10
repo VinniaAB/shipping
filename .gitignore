@@ -17,3 +17,4 @@ Thumbs.db
 .idea/
 
 /credentials.php
+tests/labels/*.pdf
