@@ -351,8 +351,12 @@ EOD;
             'PiecesEnabled' => 'Y',
             'Billing' => [
                 'ShipperAccountNumber' => $this->credentials->getAccountNumber(),
-                'ShippingPaymentType' => 'S',
-                'DutyPaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT ? 'R' : 'S',
+                'ShippingPaymentType' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT ?
+                    'R' : 'S',
+                'BillingAccountNumber' => null,
+                'DutyPaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT ?
+                    'R' : 'S',
+                'DutyAccountNumber' => null,
             ],
             'Consignee' => [
                 'CompanyName' => $request->recipient->name,
@@ -389,7 +393,7 @@ EOD;
                 'GlobalProductCode' => $request->service,
                 'Date' => $request->date->format('Y-m-d'),
                 'Contents' => $request->contents,
-                'DoorTo' => 'DD',
+                //'DoorTo' => 'DD',
                 'DimensionUnit' => 'C',
                 'IsDutiable' => $request->isDutiable ? 'Y' : 'N',
                 'CurrencyCode' => $request->currency,
@@ -419,6 +423,11 @@ EOD;
             $data['Dutiable']['TermsOfTrade'] = $request->incoterm;
         }
 
+        foreach ($request->extra as $key => $value) {
+            Arrays::set($data, $key, $value);
+        }
+
+        $data = self::removeKeysWithEmptyValues($data);
         $shipmentRequest = Xml::fromArray($data);
 
         $body = <<<EOD
