@@ -21,6 +21,7 @@ use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use SimpleXMLElement;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Package;
@@ -30,6 +31,7 @@ use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\Xml;
+use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 
@@ -68,17 +70,33 @@ class Service implements ServiceInterface
     }
 
     /**
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options
+     * @param array $source
+     * @return array
+     */
+    public function removeKeysWithEmptyValues(array $source): array
+    {
+        $func = function (array &$slice) use (&$func): void {
+            foreach ($slice as $key => &$value) {
+                if ($value === [] || $value === null) {
+                    unset($slice[$key]);
+                }
+                elseif (is_array($value)) {
+                    $func($value);
+                }
+            }
+        };
+        $copy = $source;
+        $func($copy);
+        return $copy;
+    }
+
+    /**
+     * @param QuoteRequest $request
      * @return PromiseInterface
      */
-    public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function getQuotes(QuoteRequest $request): PromiseInterface
     {
-        $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-
-        $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
         $length = number_format($package->length->getValue(), 2, '.', '');
@@ -86,11 +104,14 @@ class Service implements ServiceInterface
         $height = number_format($package->height->getValue(), 2, '.', '');
         $weight = number_format($package->weight->getValue(), 2, '.', '');
 
-        $getQuoteRequest = Xml::fromArray([
+        $sender = $request->sender;
+        $recipient = $request->recipient;
+
+        $getQuoteRequest = [
             'GetQuote' => [
                 'Request' => [
                     'ServiceHeader' => [
-                        'MessageTime' => $dt->format('c'),
+                        'MessageTime' => $request->date->format('c'),
                         'SiteID' => $this->credentials->getSiteID(),
                         'Password' => $this->credentials->getPassword(),
                     ],
@@ -102,7 +123,7 @@ class Service implements ServiceInterface
                 ],
                 'BkgDetails' => [
                     'PaymentCountryCode' => $sender->countryCode,
-                    'Date' => $dt->format('Y-m-d'),
+                    'Date' => $request->date->format('Y-m-d'),
                     'ReadyTime' => 'PT00H00M',
                     'DimensionUnit' => 'CM',
                     'WeightUnit' => 'KG',
@@ -117,15 +138,40 @@ class Service implements ServiceInterface
                             ],
                         ],
                     ],
-                    'PaymentAccountNumber' => $this->credentials->getAccountNumber(),
+                    // we insert a null PaymentAccountNumber here so we can set
+                    // a correct value when needed. keys in PHP arrays keep the
+                    // position in which they are inserted and therefore we cannot
+                    // insert this key later - that would cause DHL validation
+                    // to fail.
+                    'PaymentAccountNumber' => null,
+                    'IsDutiable' => $request->isDutiable ? 'Y' : 'N',
+                    // same as above
+                    'QtdShp' => [],
                 ],
                 'To' => [
                     'CountryCode' => $recipient->countryCode,
                     'Postalcode' => $recipient->zip,
                     'City' => $recipient->city,
                 ],
+                'Dutiable' => [
+                    'DeclaredCurrency' => $request->currency,
+                    'DeclaredValue' => $request->value,
+                ],
             ],
-        ]);
+        ];
+
+        // if we have any generic extra fields, set them here.
+        foreach ($request->extra as $key => $value) {
+            Arrays::set($getQuoteRequest, $key, $value);
+        }
+
+        foreach ($request->specialServices as $key => $service) {
+            // magic
+            Arrays::set($getQuoteRequest, "GetQuote.BkgDetails.QtdShp.QtdShpExChrg.$key.SpecialServiceType", $service);
+        }
+
+        $getQuoteRequest = self::removeKeysWithEmptyValues($getQuoteRequest);
+        $getQuoteRequest = Xml::fromArray($getQuoteRequest);
 
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>

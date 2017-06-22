@@ -31,13 +31,14 @@ class CompositeService implements ServiceInterface
     }
 
     /**
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options
+     * @param QuoteRequest $request
      * @return PromiseInterface promise resolved with \Vinnia\Shipping\Quote[] on success
+     * @internal param Address $sender
+     * @internal param Address $recipient
+     * @internal param Package $package
+     * @internal param array $options
      */
-    public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function getQuotes(QuoteRequest $request): PromiseInterface
     {
         return $this->aggregate('getQuotes', [$sender, $recipient, $package, $options])->then(function (array $data) {
             return (new Collection($data))->flatten()->value();

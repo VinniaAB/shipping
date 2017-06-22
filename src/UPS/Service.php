@@ -73,13 +73,14 @@ class Service implements ServiceInterface
     }
 
     /**
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options
+     * @param QuoteRequest $request
      * @return PromiseInterface
+     * @internal param Address $sender
+     * @internal param Address $recipient
+     * @internal param Package $package
+     * @internal param array $options
      */
-    public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function getQuotes(QuoteRequest $request): PromiseInterface
     {
         // UPS doesn't allow us to use SI units inside some countries
         $nonSi = in_array(mb_strtoupper($sender->countryCode, 'utf-8'), self::NON_SI_COUNTRIES);

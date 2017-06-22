@@ -64,13 +64,14 @@ class Service implements ServiceInterface
     }
 
     /**
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options
+     * @param QuoteRequest $request
      * @return PromiseInterface promise resolved with an array of \Vinnia\Shipping\Quote on success
+     * @internal param Address $sender
+     * @internal param Address $recipient
+     * @internal param Package $package
+     * @internal param array $options
      */
-    public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function getQuotes(QuoteRequest $request): PromiseInterface
     {
         $package = $package->convertTo(Unit::METER, Unit::KILOGRAM);
         $length = number_format($package->length->getValue(), 2, '.', '');

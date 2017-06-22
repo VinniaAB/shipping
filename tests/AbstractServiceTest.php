@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
+use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
@@ -73,7 +74,10 @@ abstract class AbstractServiceTest extends TestCase
     {
         $size = new Amount(30, Unit::CENTIMETER);
         $package = new Package($size, $size, $size, new Amount(5, Unit::KILOGRAM));
-        $promise = $this->service->getQuotes($sender, $recipient, $package);
+        $request = new QuoteRequest($sender, $recipient, $package);
+        $request->currency = 'SEK';
+        $request->isDutiable = true;
+        $promise = $this->service->getQuotes($request);
 
         try {
             /* @var Quote[] $quotes */

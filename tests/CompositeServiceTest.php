@@ -34,7 +34,7 @@ class CompositeServiceTest extends TestCase
     public function testFlattensQuoteResponses()
     {
         $a = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+            public function getQuotes(QuoteRequest $request): PromiseInterface
             {
                 return \GuzzleHttp\Promise\promise_for([new Quote('DHL', '', new Money(0, new Currency('USD')))]);
             }
@@ -82,7 +82,7 @@ class CompositeServiceTest extends TestCase
         $address = new Address('', [], '', '', '', '');
         $size = new Amount(1, 'cm');
         $package = new Package($size, $size, $size, new Amount(1, 'kg'));
-        $promise = $service->getQuotes($address, $address, $package);
+        $promise = $service->getQuotes();
 
         /* @var Quote[] $quotes */
         $quotes = $promise->wait();

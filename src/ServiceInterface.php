@@ -10,19 +10,15 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping;
 
 use GuzzleHttp\Promise\PromiseInterface;
-use DateTimeInterface;
 
 interface ServiceInterface
 {
 
     /**
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options vendor specific options
+     * @param QuoteRequest $request
      * @return PromiseInterface promise resolved with an array of \Vinnia\Shipping\Quote on success
      */
-    public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface;
+    public function getQuotes(QuoteRequest $request): PromiseInterface;
 
     /**
      * @param string $trackingNumber

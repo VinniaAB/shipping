@@ -19,6 +19,7 @@ use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Package;
 use Vinnia\Shipping\Quote;
@@ -94,21 +95,21 @@ class Service implements ServiceInterface
     }
 
     /**
-     * @param Address $sender
-     * @param Address $recipient
-     * @param Package $package
-     * @param array $options
+     * @param QuoteRequest $request
      * @return PromiseInterface
      */
-    public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+    public function getQuotes(QuoteRequest $request): PromiseInterface
     {
-        $package = $package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
         $length = number_format($package->length->getValue(), 0, '.', '');
         $width = number_format($package->width->getValue(), 0, '.', '');
         $height = number_format($package->height->getValue(), 0, '.', '');
         $weight = number_format($package->weight->getValue(), 0, '.', '');
+
+        $sender = $request->sender;
+        $recipient = $request->recipient;
 
         $rateRequest = Xml::fromArray([
             'RateRequest' => [

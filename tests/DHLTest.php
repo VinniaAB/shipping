@@ -90,7 +90,7 @@ class DHLTest extends AbstractServiceTest
         );
 
         $this->expectException(ServiceException::class);
-        $this->service->getQuotes($sender, $sender, $package)
+        $this->service->getQuotes()
             ->wait();
     }
 
