@@ -65,7 +65,7 @@ class QuoteRequest
     /**
      * @var string
      */
-    public $dutyPaymentType = self::PAYMENT_TYPE_SENDER;
+    public $dutyPaymentType = self::PAYMENT_TYPE_RECIPIENT;
 
     /**
      * @var string
