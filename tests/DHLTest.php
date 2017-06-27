@@ -17,7 +17,7 @@ use Vinnia\Shipping\DHL\Service as DHL;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
-use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Util\Measurement\Amount;
@@ -55,7 +55,7 @@ class DHLTest extends AbstractServiceTest
     {
         $sender = new Address('Company AB', ['Street 1'], '111 57', 'Stockholm', '', 'SE', 'Helmut', '1234567890');
         $recipient = new Address('Company AB', ['Street 2'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '12345');
-        $package = new Package(
+        $package = new Parcel(
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
@@ -82,7 +82,7 @@ class DHLTest extends AbstractServiceTest
     {
 
         $sender = new Address('', [], '', '', '', '', '', '');
-        $package = new Package(
+        $package = new Parcel(
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
@@ -97,7 +97,7 @@ class DHLTest extends AbstractServiceTest
     public function testCreateShipmentError()
     {
         $sender = new Address('', [], '', '', '', 'US', '', '');
-        $package = new Package(
+        $package = new Parcel(
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),

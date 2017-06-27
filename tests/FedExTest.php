@@ -15,7 +15,7 @@ use Vinnia\Shipping\FedEx\Credentials;
 use Vinnia\Shipping\FedEx\Service as FedEx;
 use Vinnia\Shipping\FedEx\Service;
 use Vinnia\Shipping\Shipment;
-use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\ServiceInterface;
 use DateTimeImmutable;
 use Vinnia\Shipping\ShipmentRequest;
@@ -54,7 +54,7 @@ class FedExTest extends AbstractServiceTest
     public function testCreateLabel()
     {
         $sender = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
-        $package = new Package(
+        $package = new Parcel(
             new Amount(30, Unit::CENTIMETER),
             new Amount(30, Unit::CENTIMETER),
             new Amount(30, Unit::CENTIMETER),

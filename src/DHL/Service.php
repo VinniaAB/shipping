@@ -24,7 +24,7 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
-use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;

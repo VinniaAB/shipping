@@ -12,8 +12,9 @@ namespace Vinnia\Shipping;
 use Vinnia\Util\Measurement\Amount;
 
 use JsonSerializable;
+use Vinnia\Util\Measurement\Unit;
 
-class Package implements JsonSerializable
+class Parcel implements JsonSerializable
 {
 
     /**
@@ -53,7 +54,7 @@ class Package implements JsonSerializable
 
     public function convertTo(string $lengthUnit, string $weightUnit): self
     {
-        return new Package(
+        return new Parcel(
             $this->width->convertTo($lengthUnit),
             $this->height->convertTo($lengthUnit),
             $this->length->convertTo($lengthUnit),

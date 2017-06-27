@@ -21,7 +21,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\CompositeService;
-use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
@@ -49,7 +49,7 @@ class CompositeServiceTest extends TestCase
             }
         };
         $b = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+            public function getQuotes(Address $sender, Address $recipient, Parcel $package, array $options = []): PromiseInterface
             {
                 return \GuzzleHttp\Promise\rejection_for(false);
             }
@@ -64,7 +64,7 @@ class CompositeServiceTest extends TestCase
             }
         };
         $c = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+            public function getQuotes(Address $sender, Address $recipient, Parcel $package, array $options = []): PromiseInterface
             {
                 return \GuzzleHttp\Promise\promise_for([new Quote('UPS', '', new Money(0, new Currency('USD')))]);
             }
@@ -81,7 +81,7 @@ class CompositeServiceTest extends TestCase
         $service = new CompositeService([$a, $b, $c]);
         $address = new Address('', [], '', '', '', '');
         $size = new Amount(1, 'cm');
-        $package = new Package($size, $size, $size, new Amount(1, 'kg'));
+        $package = new Parcel($size, $size, $size, new Amount(1, 'kg'));
         $promise = $service->getQuotes();
 
         /* @var Quote[] $quotes */
@@ -95,7 +95,7 @@ class CompositeServiceTest extends TestCase
     public function testReturnsFirstSuccessfulTracking()
     {
         $a = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+            public function getQuotes(Address $sender, Address $recipient, Parcel $package, array $options = []): PromiseInterface
             {
             }
             public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
@@ -110,7 +110,7 @@ class CompositeServiceTest extends TestCase
             }
         };
         $b = new class implements ServiceInterface {
-            public function getQuotes(Address $sender, Address $recipient, Package $package, array $options = []): PromiseInterface
+            public function getQuotes(Address $sender, Address $recipient, Parcel $package, array $options = []): PromiseInterface
             {
             }
             public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface

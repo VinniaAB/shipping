@@ -28,7 +28,7 @@ class QuoteRequest
     public $recipient;
 
     /**
-     * @var Package
+     * @var Parcel
      */
     public $package;
 
@@ -91,9 +91,9 @@ class QuoteRequest
      * QuoteRequest constructor.
      * @param Address $sender
      * @param Address $recipient
-     * @param Package $package
+     * @param Parcel $package
      */
-    public function __construct(Address $sender, Address $recipient, Package $package)
+    public function __construct(Address $sender, Address $recipient, Parcel $package)
     {
         $this->sender = $sender;
         $this->recipient = $recipient;

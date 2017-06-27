@@ -13,7 +13,7 @@ use GuzzleHttp\Promise\RejectionException;
 use PHPUnit\Framework\TestCase;
 
 use Vinnia\Shipping\Address;
-use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceInterface;
@@ -73,7 +73,7 @@ abstract class AbstractServiceTest extends TestCase
     public function testGetQuotes(Address $sender, Address $recipient)
     {
         $size = new Amount(30, Unit::CENTIMETER);
-        $package = new Package($size, $size, $size, new Amount(5, Unit::KILOGRAM));
+        $package = new Parcel($size, $size, $size, new Amount(5, Unit::KILOGRAM));
         $request = new QuoteRequest($sender, $recipient, $package);
         $request->currency = 'SEK';
         $request->isDutiable = true;
