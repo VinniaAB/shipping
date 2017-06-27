@@ -63,6 +63,17 @@ class Parcel implements JsonSerializable
     }
 
     /**
+     * @return float
+     */
+    public function getVolume(): float
+    {
+        $amounts = [$this->width, $this->height, $this->length];
+        return array_reduce($amounts, function (float $carry, Amount $current): float {
+            return $carry * $current->getValue();
+        }, 0.0);
+    }
+
+    /**
      * @return array
      */
     public function toArray(): array
@@ -81,6 +92,32 @@ class Parcel implements JsonSerializable
     public function jsonSerialize()
     {
         return $this->toArray();
+    }
+
+    /**
+     * @param float $width
+     * @param float $height
+     * @param float $length
+     * @param float $weight
+     * @param string $lengthUnit
+     * @param string $weightUnit
+     * @return Parcel
+     */
+    public static function make(
+        float $width,
+        float $height,
+        float $length,
+        float $weight,
+        string $lengthUnit = Unit::METER,
+        string $weightUnit = Unit::KILOGRAM
+    ): Parcel
+    {
+        return new Parcel(
+            new Amount($width, $lengthUnit),
+            new Amount($height, $lengthUnit),
+            new Amount($length, $lengthUnit),
+            new Amount($weight, $weightUnit)
+        );
     }
 
 }
