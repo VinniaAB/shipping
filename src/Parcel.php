@@ -9,10 +9,12 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
+use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Unit;
 
 use JsonSerializable;
-use Vinnia\Util\Measurement\Unit;
+use LogicException;
 
 class Parcel implements JsonSerializable
 {
@@ -63,14 +65,18 @@ class Parcel implements JsonSerializable
     }
 
     /**
+     * @param string $lengthUnit
      * @return float
      */
-    public function getVolume(): float
+    public function getVolume(string $lengthUnit = Unit::METER): float
     {
         $amounts = [$this->width, $this->height, $this->length];
-        return array_reduce($amounts, function (float $carry, Amount $current): float {
-            return $carry * $current->getValue();
-        }, 0.0);
+        return array_reduce($amounts, function (float $carry, Amount $current) use ($lengthUnit): float {
+            $value = $current
+                ->convertTo($lengthUnit)
+                ->getValue();
+            return $carry * $value;
+        }, 1.0);
     }
 
     /**
