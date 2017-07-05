@@ -61,6 +61,7 @@ class FedExTest extends AbstractServiceTest
             new Amount(1, Unit::KILOGRAM)
         );
         $req = new ShipmentRequest('FEDEX_GROUND', $sender, $sender, $package);
+        $req->reference = 'ABC12345';
         $promise = $this->service->createShipment($req);
 
         /* @var \Vinnia\Shipping\Shipment $shipment */

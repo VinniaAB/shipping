@@ -383,6 +383,10 @@ EOD;
                             'Height' => $height,
                             'Units' => 'CM',
                         ],
+                        'CustomerReferences' => [
+                            'CustomerReferenceType' => 'CUSTOMER_REFERENCE',
+                            'Value' => $request->reference,
+                        ],
                     ],
                 ],
             ],
