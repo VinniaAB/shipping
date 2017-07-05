@@ -17,6 +17,11 @@ class ShipmentRequest extends QuoteRequest
     public $service;
 
     /**
+     * @var string
+     */
+    public $reference = '';
+
+    /**
      * ShipmentRequest constructor.
      * @param string $service
      * @param Address $sender

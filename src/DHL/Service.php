@@ -374,6 +374,9 @@ EOD;
                 'DeclaredValue' => $request->value,
                 'DeclaredCurrency' => $request->currency,
             ],
+            'Reference' => [
+                'ReferenceID' => $request->reference,
+            ],
             'ShipmentDetails' => [
                 'NumberOfPieces' => 1,
                 'Pieces' => [

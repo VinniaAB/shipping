@@ -67,6 +67,7 @@ class DHLTest extends AbstractServiceTest
         $req->currency = 'EUR';
         $req->contents = 'Samples';
         $req->incoterm = 'DAP';
+        $req->reference = 'ABC12345';
 
         $promise = $this->service->createShipment($req);
 
