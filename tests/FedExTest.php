@@ -37,7 +37,7 @@ class FedExTest extends AbstractServiceTest
             $c['fedex']['account_number'],
             $c['fedex']['meter_number']
         );
-        return new FedEx(new Client(), $credentials, FedEx::URL_PRODUCTION);
+        return new FedEx(new Client(), $credentials, FedEx::URL_TEST);
     }
 
     /**
