@@ -36,8 +36,8 @@ use Vinnia\Util\Measurement\Unit;
 class Service implements ServiceInterface
 {
 
-    const URL_TEST = 'https://test';
-    const URL_PRODUCTION = 'https://gateway.fedex.com/web-services';
+    const URL_TEST = 'https://wsbeta.fedex.com:443/web-services';
+    const URL_PRODUCTION = 'https://ws.fedex.com:443/web-services';
 
     /**
      * @var ClientInterface
@@ -125,7 +125,7 @@ class Service implements ServiceInterface
                 ],
                 'Version' => [
                     'ServiceId' => 'crs',
-                    'Major' => 20,
+                    'Major' => 22,
                     'Intermediate' => 0,
                     'Minor' => 0,
                 ],
@@ -163,7 +163,7 @@ class Service implements ServiceInterface
         ]);
 
         $body = <<<EOD
-<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/rate/v20">
+<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/rate/v22">
    <p:Body>{$rateRequest}</p:Body>
 </p:Envelope>
 EOD;
@@ -211,7 +211,7 @@ EOD;
                 ],
                 'Version' => [
                     'ServiceId' => 'trck',
-                    'Major' => 12,
+                    'Major' => 14,
                     'Intermediate' => 0,
                     'Minor' => 0,
                 ],
@@ -227,7 +227,7 @@ EOD;
 
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/track/v12">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/track/v14">
    <soapenv:Header />
    <soapenv:Body>{$trackRequest}</soapenv:Body>
 </soapenv:Envelope>
@@ -329,7 +329,7 @@ EOD;
                 ],
                 'Version' => [
                     'ServiceId' => 'ship',
-                    'Major' => 19,
+                    'Major' => 21,
                     'Intermediate' => 0,
                     'Minor' => 0,
                 ],
@@ -392,7 +392,7 @@ EOD;
             ],
         ]);
         $body = <<<EOD
-<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/ship/v19">
+<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/ship/v21">
    <p:Body>$shipRequest</p:Body>
 </p:Envelope>
 EOD;
@@ -437,7 +437,7 @@ EOD;
                 ],
                 'Version' => [
                     'ServiceId' => 'ship',
-                    'Major' => 19,
+                    'Major' => 21,
                     'Intermediate' => 0,
                     'Minor' => 0,
                 ],
@@ -450,7 +450,7 @@ EOD;
         ]);
 
         $body = <<<EOD
-<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/ship/v19">
+<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/ship/v21">
    <p:Body>$deleteRequest</p:Body>
 </p:Envelope>
 EOD;
