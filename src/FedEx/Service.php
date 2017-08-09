@@ -139,7 +139,14 @@ class Service implements ServiceInterface
                         'Address' => $this->addressToArray($recipient),
                     ],
                     'ShippingChargesPayment' => [
-                        'PaymentType' => 'SENDER',
+                        'PaymentType' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER ?
+                            'SENDER' :
+                            'RECIPIENT',
+                        'Payor' => [
+                            'ResponsibleParty' => [
+                                'AccountNumber' => $this->credentials->getAccountNumber(),
+                            ],
+                        ],
                     ],
                     'RateRequestTypes' => 'NONE',
                     'PackageCount' => 1,
@@ -336,7 +343,7 @@ EOD;
                 'RequestedShipment' => [
                     'ShipTimestamp' => $request->date->format('c'),
                     'DropoffType' => 'REGULAR_PICKUP',
-                    'ServiceType' => $request->service, // TODO: should be configurable
+                    'ServiceType' => $request->service,
                     'PackagingType' => 'YOUR_PACKAGING',
                     'Shipper' => [
                         'Contact' => [
@@ -353,16 +360,26 @@ EOD;
                         'Address' => $this->addressToArray($request->recipient),
                     ],
                     'ShippingChargesPayment' => [
-                        'PaymentType' => 'SENDER',
+                        'PaymentType' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER ?
+                            'SENDER' :
+                            'RECIPIENT',
                         'Payor' => [
                             'ResponsibleParty' => [
                                 'AccountNumber' => $this->credentials->getAccountNumber(),
                             ],
                         ],
                     ],
-                    //'CustomsClearanceDetail' => [
-                    //
-                    //]
+                    'CustomsClearanceDetail' => [
+                        'DutiesPayment' => [
+                            'PaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER ?
+                                'SENDER' :
+                                'RECIPIENT',
+                        ],
+                        'CustomsValue' => [
+                            'Currency' => $request->currency,
+                            'Amount' => $request->value,
+                        ],
+                    ],
                     'LabelSpecification' => [
                         'LabelFormatType' => 'COMMON2D',
                         'ImageType' => 'PDF',
