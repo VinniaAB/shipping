@@ -264,7 +264,7 @@ EOD;
             $body = (string)$response->getBody();
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
 
-            $info = $xml->xpath('/req:TrackingResponse/AWBInfo/ShipmentInfo');
+            $info = $xml->xpath('/req:TrackingResponse/AWBInfo/ShipmentInfo[ShipmentEvent]');
 
             if (!$info) {
                 $this->throwError($body);
