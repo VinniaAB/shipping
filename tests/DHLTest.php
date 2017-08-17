@@ -53,8 +53,8 @@ class DHLTest extends AbstractServiceTest
 
     public function testCreateLabel()
     {
-        $sender = new Address('Company AB', ['Street 1'], '111 57', 'Stockholm', '', 'SE', 'Helmut', '1234567890');
-        $recipient = new Address('Company AB', ['Street 2'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '12345');
+        $sender = new Address('Company & AB', ['Street 1'], '111 57', 'Stockholm', '', 'SE', 'Helmut', '1234567890');
+        $recipient = new Address('Company & AB', ['Street 2'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '12345');
         $package = new Parcel(
             new Amount(1.0, Unit::METER),
             new Amount(1.0, Unit::METER),

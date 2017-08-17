@@ -83,4 +83,13 @@ class Xml
         return $out;
     }
 
+    /**
+     * @param string $data
+     * @return string
+     */
+    public static function cdata(string $data): string
+    {
+        return "<![CDATA[$data]]>";
+    }
+
 }

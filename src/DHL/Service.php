@@ -119,7 +119,7 @@ class Service implements ServiceInterface
                 'From' => [
                     'CountryCode' => $sender->countryCode,
                     'Postalcode' => $sender->zip,
-                    'City' => $sender->city,
+                    'City' => Xml::cdata($sender->city),
                 ],
                 'BkgDetails' => [
                     'PaymentCountryCode' => $sender->countryCode,
@@ -151,7 +151,7 @@ class Service implements ServiceInterface
                 'To' => [
                     'CountryCode' => $recipient->countryCode,
                     'Postalcode' => $recipient->zip,
-                    'City' => $recipient->city,
+                    'City' => Xml::cdata($recipient->city),
                 ],
                 'Dutiable' => [
                     'DeclaredCurrency' => $request->currency,
@@ -359,14 +359,14 @@ EOD;
                 'DutyAccountNumber' => null,
             ],
             'Consignee' => [
-                'CompanyName' => $request->recipient->name,
-                'AddressLine' => $request->recipient->lines,
-                'City' => $request->recipient->city,
+                'CompanyName' => Xml::cdata($request->recipient->name),
+                'AddressLine' => array_map([Xml::class, 'cdata'], $request->recipient->lines),
+                'City' => Xml::cdata($request->recipient->city),
                 'PostalCode' => $request->recipient->zip,
                 'CountryCode' => $request->recipient->countryCode,
                 'CountryName' => $countryNames[$request->recipient->countryCode],
                 'Contact' => [
-                    'PersonName' => $request->recipient->contactName,
+                    'PersonName' => Xml::cdata($request->recipient->contactName),
                     'PhoneNumber' => $request->recipient->contactPhone,
                 ],
             ],
@@ -403,14 +403,14 @@ EOD;
             ],
             'Shipper' => [
                 'ShipperID' => $this->credentials->getAccountNumber(),
-                'CompanyName' => $request->sender->name,
-                'AddressLine' => $request->sender->lines,
-                'City' => $request->sender->city,
+                'CompanyName' => Xml::cdata($request->sender->name),
+                'AddressLine' => array_map([Xml::class, 'cdata'], $request->sender->lines),
+                'City' => Xml::cdata($request->sender->city),
                 'PostalCode' => $request->sender->zip,
                 'CountryCode' => $request->sender->countryCode,
                 'CountryName' => $countryNames[$request->sender->countryCode],
                 'Contact' => [
-                    'PersonName' => $request->sender->contactName,
+                    'PersonName' => Xml::cdata($request->sender->contactName),
                     'PhoneNumber' => $request->sender->contactPhone,
                 ],
             ],
