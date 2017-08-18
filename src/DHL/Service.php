@@ -264,7 +264,11 @@ EOD;
             $body = (string)$response->getBody();
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
 
-            $info = $xml->xpath('/req:TrackingResponse/AWBInfo/ShipmentInfo[ShipmentEvent]');
+            // previously we were using "ShipmentInfo[ShipmentEvent]" to determine if
+            // the track was successful. it turns out some labels do not have shipment
+            // events (especially when they're newly created). instead let's check if
+            // the product code exists, which should hopefully be accurate.
+            $info = $xml->xpath('/req:TrackingResponse/AWBInfo/ShipmentInfo[GlobalProductCode]');
 
             if (!$info) {
                 $this->throwError($body);

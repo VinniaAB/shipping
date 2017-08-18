@@ -126,7 +126,6 @@ abstract class AbstractServiceTest extends TestCase
         $tracking = $promise->wait();
 
         $this->assertInstanceOf(Tracking::class, $tracking);
-        $this->assertNotEmpty($tracking->activities);
 
         echo sprintf('%s %s' . PHP_EOL, $tracking->vendor, $tracking->service);
 
