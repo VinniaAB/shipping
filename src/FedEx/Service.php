@@ -19,6 +19,7 @@ use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Parcel;
@@ -379,6 +380,21 @@ EOD;
                             'Currency' => $request->currency,
                             'Amount' => $request->value,
                         ],
+                        'Commodities' => array_map(function (ExportDeclaration $decl) use ($request) {
+                            return [
+                                'NumberOfPieces' => $decl->quantity,
+                                'Description' => $decl->description,
+                                'CountryOfManufacture' => $decl->originCountryCode,
+                                'Weight' => [
+                                    'Units' => 'KG',
+                                    'Value' => $decl->weight->convertTo(Unit::KILOGRAM)->getValue(),
+                                ],
+                                'CustomsValue' => [
+                                    'Currency' => $request->currency,
+                                    'Amount' => $decl->value,
+                                ],
+                            ];
+                        }, $request->exportDeclarations),
                     ],
                     'LabelSpecification' => [
                         'LabelFormatType' => 'COMMON2D',

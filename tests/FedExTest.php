@@ -11,6 +11,7 @@ namespace Vinnia\Shipping\Tests;
 
 use GuzzleHttp\Client;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\FedEx\Credentials;
 use Vinnia\Shipping\FedEx\Service as FedEx;
 use Vinnia\Shipping\FedEx\Service;
@@ -62,6 +63,9 @@ class FedExTest extends AbstractServiceTest
         );
         $req = new ShipmentRequest('FEDEX_GROUND', $sender, $sender, $package);
         $req->reference = 'ABC12345';
+        $req->exportDeclarations = [
+            new ExportDeclaration('Shoes', 'US', 2, 100.00, new Amount(1.0, Unit::KILOGRAM)),
+        ];
         $promise = $this->service->createShipment($req);
 
         /* @var \Vinnia\Shipping\Shipment $shipment */
