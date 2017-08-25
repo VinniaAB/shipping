@@ -70,27 +70,6 @@ class Service implements ServiceInterface
     }
 
     /**
-     * @param array $source
-     * @return array
-     */
-    public function removeKeysWithEmptyValues(array $source): array
-    {
-        $func = function (array &$slice) use (&$func): void {
-            foreach ($slice as $key => &$value) {
-                if ($value === [] || $value === null) {
-                    unset($slice[$key]);
-                }
-                elseif (is_array($value)) {
-                    $func($value);
-                }
-            }
-        };
-        $copy = $source;
-        $func($copy);
-        return $copy;
-    }
-
-    /**
      * @param QuoteRequest $request
      * @return PromiseInterface
      */
@@ -170,7 +149,7 @@ class Service implements ServiceInterface
             Arrays::set($getQuoteRequest, "GetQuote.BkgDetails.QtdShp.QtdShpExChrg.$key.SpecialServiceType", $service);
         }
 
-        $getQuoteRequest = self::removeKeysWithEmptyValues($getQuoteRequest);
+        $getQuoteRequest = Xml::removeKeysWithEmptyValues($getQuoteRequest);
         $getQuoteRequest = Xml::fromArray($getQuoteRequest);
 
         $body = <<<EOD
@@ -434,7 +413,7 @@ EOD;
             Arrays::set($data, $key, $value);
         }
 
-        $data = self::removeKeysWithEmptyValues($data);
+        $data = Xml::removeKeysWithEmptyValues($data);
         $shipmentRequest = Xml::fromArray($data);
 
         $body = <<<EOD

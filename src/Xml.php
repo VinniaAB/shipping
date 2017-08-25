@@ -92,4 +92,25 @@ class Xml
         return "<![CDATA[$data]]>";
     }
 
+    /**
+     * @param array $source
+     * @return array
+     */
+    public static function removeKeysWithEmptyValues(array $source): array
+    {
+        $func = function (array &$slice) use (&$func): void {
+            foreach ($slice as $key => &$value) {
+                if ($value === [] || $value === null) {
+                    unset($slice[$key]);
+                }
+                elseif (is_array($value)) {
+                    $func($value);
+                }
+            }
+        };
+        $copy = $source;
+        $func($copy);
+        return $copy;
+    }
+
 }

@@ -55,17 +55,38 @@ class FedExTest extends AbstractServiceTest
     public function testCreateLabel()
     {
         $sender = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+        $recipient = new Address('Helmut Inc.', ['Road 2'], '100 00', 'Stockholm', '', 'SE', 'Helmut', '123456');
         $package = new Parcel(
             new Amount(30, Unit::CENTIMETER),
             new Amount(30, Unit::CENTIMETER),
             new Amount(30, Unit::CENTIMETER),
             new Amount(1, Unit::KILOGRAM)
         );
-        $req = new ShipmentRequest('FEDEX_GROUND', $sender, $sender, $package);
+        $req = new ShipmentRequest('INTERNATIONAL_ECONOMY', $sender, $recipient, $package);
         $req->reference = 'ABC12345';
         $req->exportDeclarations = [
             new ExportDeclaration('Shoes', 'US', 2, 100.00, new Amount(1.0, Unit::KILOGRAM)),
         ];
+        $req->specialServices = [
+            'ELECTRONIC_TRADE_DOCUMENTS',
+        ];
+        $req->extra = [
+            'ProcessShipmentRequest.RequestedShipment.SpecialServicesRequested.EtdDetail' => [
+                'RequestedDocumentCopies' => 'COMMERCIAL_INVOICE',
+            ],
+            'ProcessShipmentRequest.RequestedShipment.ShippingDocumentSpecification' => [
+                'ShippingDocumentTypes' => 'COMMERCIAL_INVOICE',
+                'CommercialInvoiceDetail' => [
+                    'Format' => [
+                        'ImageType' => 'PDF',
+                        'StockType' => 'PAPER_LETTER',
+                        'ProvideInstructions' => 1,
+                    ],
+                ],
+            ],
+        ];
+        $req->currency = 'USD';
+
         $promise = $this->service->createShipment($req);
 
         /* @var \Vinnia\Shipping\Shipment $shipment */

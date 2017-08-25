@@ -31,6 +31,7 @@ use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\Xml;
+use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 
@@ -323,7 +324,7 @@ EOD;
         $height = number_format($package->height->getValue(), 0, '.', '');
         $weight = number_format($package->weight->getValue(), 0, '.', '');
 
-        $shipRequest = Xml::fromArray([
+        $data = [
             'ProcessShipmentRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
@@ -370,6 +371,9 @@ EOD;
                             ],
                         ],
                     ],
+                    'SpecialServicesRequested' => [
+                        'SpecialServiceTypes' => $request->specialServices,
+                    ],
                     'CustomsClearanceDetail' => [
                         'DutiesPayment' => [
                             'PaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER ?
@@ -403,6 +407,7 @@ EOD;
                         'ImageType' => 'PDF',
                         'LabelStockType' => 'PAPER_LETTER',
                     ],
+                    'ShippingDocumentSpecification' => [],
                     'PackageCount' => 1,
                     'RequestedPackageLineItems' => [
                         'SequenceNumber' => 1,
@@ -425,7 +430,15 @@ EOD;
                     ],
                 ],
             ],
-        ]);
+        ];
+
+        foreach ($request->extra as $key => $value) {
+            Arrays::set($data, $key, $value);
+        }
+
+        $data = Xml::removeKeysWithEmptyValues($data);
+        $shipRequest = Xml::fromArray($data);
+
         $body = <<<EOD
 <p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/ship/v21">
    <p:Body>$shipRequest</p:Body>
@@ -443,7 +456,7 @@ EOD;
 
             $trackingNumber = $matches[1];
 
-            preg_match('/<Image>(.+)<\/Image>/', $body, $matches);
+            preg_match('/<Label>.*<Image>(.+)<\/Image>.*<\/Label>/', $body, $matches);
 
             $image = base64_decode($matches[1]);
 
