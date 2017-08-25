@@ -389,9 +389,11 @@ EOD;
                                     'Units' => 'KG',
                                     'Value' => $decl->weight->convertTo(Unit::KILOGRAM)->getValue(),
                                 ],
-                                'CustomsValue' => [
+                                'Quantity' => $decl->quantity,
+                                'QuantityUnits' => 'Pieces',
+                                'UnitPrice' => [
                                     'Currency' => $request->currency,
-                                    'Amount' => $decl->value,
+                                    'Amount' => $decl->value / $decl->quantity,
                                 ],
                             ];
                         }, $request->exportDeclarations),
