@@ -83,6 +83,11 @@ class QuoteRequest
     public $specialServices = [];
 
     /**
+     * @var ExportDeclaration[]
+     */
+    public $exportDeclarations = [];
+
+    /**
      * @var array
      */
     public $extra = [];
