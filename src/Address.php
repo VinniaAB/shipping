@@ -55,6 +55,11 @@ class Address implements JsonSerializable
     public $contactPhone;
 
     /**
+     * @var string
+     */
+    public $contactEmail;
+
+    /**
      * Address constructor.
      * @param string $name
      * @param string[] $lines
@@ -64,6 +69,7 @@ class Address implements JsonSerializable
      * @param string $countryCode
      * @param string $contactName
      * @param string $contactPhone
+     * @param string $contactEmail
      */
     function __construct(
         string $name,
@@ -73,7 +79,8 @@ class Address implements JsonSerializable
         string $state,
         string $countryCode,
         string $contactName = '',
-        string $contactPhone = ''
+        string $contactPhone = '',
+        string $contactEmail = ''
     )
     {
         $this->name = $name;
@@ -84,6 +91,7 @@ class Address implements JsonSerializable
         $this->countryCode = $countryCode;
         $this->contactName = $contactName;
         $this->contactPhone = $contactPhone;
+        $this->contactEmail = $contactEmail;
     }
 
     /**
@@ -100,6 +108,7 @@ class Address implements JsonSerializable
             'country_code' => $this->countryCode,
             'contact_name' => $this->contactName,
             'contact_phone' => $this->contactPhone,
+            'contact_email' => $this->contactEmail,
         ];
     }
 
@@ -125,7 +134,8 @@ class Address implements JsonSerializable
             $data['state'],
             $data['country_code'],
             $data['contact_name'] ?? '',
-            $data['contact_phone'] ?? ''
+            $data['contact_phone'] ?? '',
+            $data['contact_email'] ?? ''
         );
     }
 
