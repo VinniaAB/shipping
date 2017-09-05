@@ -19,6 +19,7 @@ use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\Quote;
+use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
@@ -65,6 +66,12 @@ class Service implements ServiceInterface
      */
     private $baseUrl;
 
+    /**
+     * Service constructor.
+     * @param ClientInterface $guzzle
+     * @param Credentials $credentials
+     * @param string $baseUrl
+     */
     function __construct(ClientInterface $guzzle, Credentials $credentials, string $baseUrl = self::URL_PRODUCTION)
     {
         $this->guzzle = $guzzle;
@@ -75,13 +82,13 @@ class Service implements ServiceInterface
     /**
      * @param QuoteRequest $request
      * @return PromiseInterface
-     * @internal param Address $sender
-     * @internal param Address $recipient
-     * @internal param Package $package
-     * @internal param array $options
      */
     public function getQuotes(QuoteRequest $request): PromiseInterface
     {
+        $sender = $request->sender;
+        $recipient = $request->recipient;
+        $package = $request->package;
+
         // UPS doesn't allow us to use SI units inside some countries
         $nonSi = in_array(mb_strtoupper($sender->countryCode, 'utf-8'), self::NON_SI_COUNTRIES);
         $lengthUnit = $nonSi ? 'IN' : 'CM';
