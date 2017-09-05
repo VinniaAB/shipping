@@ -24,6 +24,7 @@ use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Shipping\Xml;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 
@@ -266,6 +267,14 @@ class Service implements ServiceInterface
             }
 
             $activities = $body['TrackResponse']['Shipment']['Package']['Activity'];
+
+            // if there is only one activity UPS decides to not return
+            // an array of activities and instead they only list one.
+            // probably because they're converting from XML.
+            if (!Xml::isNumericKeyArray($activities)) {
+                $activities = [$activities];
+            }
+
             $activities = (new Collection($activities))->map(function (array $row): TrackingActivity {
                 $address = new Address(
                     '',

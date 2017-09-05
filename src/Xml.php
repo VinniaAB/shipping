@@ -17,7 +17,7 @@ class Xml
      * @param array $data
      * @return bool
      */
-    private static function isNumericKeyArray(array $data): bool
+    public static function isNumericKeyArray(array $data): bool
     {
         return (new Collection($data))->keys()->every(function ($value) {
             return is_int($value);
