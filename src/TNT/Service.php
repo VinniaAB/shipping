@@ -19,6 +19,7 @@ use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\Quote;
+use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
@@ -73,7 +74,7 @@ class Service implements ServiceInterface
      */
     public function getQuotes(QuoteRequest $request): PromiseInterface
     {
-        $package = $package->convertTo(Unit::METER, Unit::KILOGRAM);
+        $package = $request->package->convertTo(Unit::METER, Unit::KILOGRAM);
         $length = number_format($package->length->getValue(), 2, '.', '');
         $width = number_format($package->width->getValue(), 2, '.', '');
         $height = number_format($package->height->getValue(), 2, '.', '');
@@ -89,14 +90,14 @@ class Service implements ServiceInterface
    <priceCheck>
       <rateId>rate2</rateId>
       <sender>
-         <country>{$sender->countryCode}</country>
-         <town>{$sender->city}</town>
-         <postcode>{$sender->zip}</postcode>
+         <country>{$request->sender->countryCode}</country>
+         <town>{$request->sender->city}</town>
+         <postcode>{$request->sender->zip}</postcode>
       </sender>
       <delivery>
-         <country>{$recipient->countryCode}</country>
-         <town>{$recipient->city}</town>
-         <postcode>{$recipient->zip}</postcode>
+         <country>{$request->recipient->countryCode}</country>
+         <town>{$request->recipient->city}</town>
+         <postcode>{$request->recipient->zip}</postcode>
       </delivery>
       <collectionDateTime>{$dt->format('c')}</collectionDateTime>
       <product>
