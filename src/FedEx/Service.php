@@ -382,7 +382,7 @@ EOD;
                         ],
                         'CustomsValue' => [
                             'Currency' => $request->currency,
-                            'Amount' => $request->value,
+                            'Amount' => number_format($request->value, 2, '.', ''),
                         ],
                         'Commodities' => array_map(function (ExportDeclaration $decl) use ($request) {
                             return [
@@ -397,7 +397,7 @@ EOD;
                                 'QuantityUnits' => 'Pieces',
                                 'UnitPrice' => [
                                     'Currency' => $request->currency,
-                                    'Amount' => $decl->value / $decl->quantity,
+                                    'Amount' => number_format($decl->value / $decl->quantity, 2, '.', ''),
                                 ],
                             ];
                         }, $request->exportDeclarations),

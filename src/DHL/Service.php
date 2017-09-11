@@ -134,7 +134,7 @@ class Service implements ServiceInterface
                 ],
                 'Dutiable' => [
                     'DeclaredCurrency' => $request->currency,
-                    'DeclaredValue' => $request->value,
+                    'DeclaredValue' => number_format($request->value, 2, '.', ''),
                 ],
             ],
         ];
@@ -354,7 +354,7 @@ EOD;
                 ],
             ],
             'Dutiable' => [
-                'DeclaredValue' => $request->value,
+                'DeclaredValue' => number_format($request->value, 2, '.', ''),
                 'DeclaredCurrency' => $request->currency,
             ],
             'Reference' => [
