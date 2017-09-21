@@ -39,6 +39,11 @@ class ExportDeclaration
     public $value;
 
     /**
+     * @var string
+     */
+    public $currency;
+
+    /**
      * @var Amount
      */
     public $weight;
@@ -49,14 +54,23 @@ class ExportDeclaration
      * @param string $originCountryCode
      * @param int $quantity
      * @param float $value
+     * @param string $currency
      * @param Amount $weight
      */
-    public function __construct(string $description, string $originCountryCode, int $quantity, float $value, Amount $weight)
+    public function __construct(
+        string $description,
+        string $originCountryCode,
+        int $quantity,
+        float $value,
+        string $currency,
+        Amount $weight
+    )
     {
         $this->description = $description;
         $this->originCountryCode = $originCountryCode;
         $this->quantity = $quantity;
         $this->value = $value;
+        $this->currency = $currency;
         $this->weight = $weight;
     }
 

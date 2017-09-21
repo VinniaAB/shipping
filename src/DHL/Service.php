@@ -21,6 +21,7 @@ use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use SimpleXMLElement;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
@@ -356,6 +357,22 @@ EOD;
             'Dutiable' => [
                 'DeclaredValue' => number_format($request->value, 2, '.', ''),
                 'DeclaredCurrency' => $request->currency,
+            ],
+            'ExportDeclaration' => [
+                'ExportLineItem' => array_map(function (int $key, ExportDeclaration $decl): array {
+                    return [
+                        'LineNumber' => $key + 1,
+                        'Quantity' => $decl->quantity,
+                        'QuantityUnit' => 'Piece',
+                        'Description' => $decl->description,
+                        'Value' => number_format($decl->value, 2, '.', ''),
+                        'Weight' => [
+                            'Weight' => $decl->weight,
+                            'WeightUnit' => $decl->weight->getUnit() == Unit::POUND ? 'L' : 'K',
+                        ],
+                        'ManufactureCountryCode' => $decl->originCountryCode,
+                    ];
+                }, array_keys($request->exportDeclarations), $request->exportDeclarations),
             ],
             'Reference' => [
                 'ReferenceID' => $request->reference,

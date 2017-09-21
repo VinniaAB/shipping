@@ -15,6 +15,8 @@ use GuzzleHttp\Promise\RejectionException;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Service as DHL;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
+use Vinnia\Shipping\ExportDeclaration;
+use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Parcel;
@@ -68,6 +70,9 @@ class DHLTest extends AbstractServiceTest
         $req->contents = 'Samples';
         $req->incoterm = 'DAP';
         $req->reference = 'ABC12345';
+        $req->exportDeclarations = [
+            new ExportDeclaration('Samples', 'SE', 1, 10.0, 'SEK', new Amount(1, Unit::KILOGRAM)),
+        ];
 
         $promise = $this->service->createShipment($req);
 
@@ -90,8 +95,10 @@ class DHLTest extends AbstractServiceTest
             new Amount(5.0, Unit::KILOGRAM)
         );
 
+        $request = new QuoteRequest($sender, $sender, $package);
+
         $this->expectException(ServiceException::class);
-        $this->service->getQuotes()
+        $this->service->getQuotes($request)
             ->wait();
     }
 

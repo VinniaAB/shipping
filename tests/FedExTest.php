@@ -65,7 +65,7 @@ class FedExTest extends AbstractServiceTest
         $req = new ShipmentRequest('INTERNATIONAL_ECONOMY', $sender, $recipient, $package);
         $req->reference = 'ABC12345';
         $req->exportDeclarations = [
-            new ExportDeclaration('Shoes', 'US', 2, 100.00, new Amount(1.0, Unit::KILOGRAM)),
+            new ExportDeclaration('Shoes', 'US', 2, 100.00, 'USD', new Amount(1.0, Unit::KILOGRAM)),
         ];
         $req->specialServices = [
             'ELECTRONIC_TRADE_DOCUMENTS',

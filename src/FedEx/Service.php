@@ -396,7 +396,7 @@ EOD;
                                 'Quantity' => $decl->quantity,
                                 'QuantityUnits' => 'Pieces',
                                 'UnitPrice' => [
-                                    'Currency' => $request->currency,
+                                    'Currency' => $decl->currency,
                                     'Amount' => number_format($decl->value / $decl->quantity, 2, '.', ''),
                                 ],
                             ];
