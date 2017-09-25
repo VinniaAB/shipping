@@ -48,4 +48,31 @@ class XmlTest extends TestCase
         $this->assertEquals($expected, $xml);
     }
 
+    public function testToArray()
+    {
+        $xml = <<<EOD
+<One>
+    <Two>1</Two>
+    <Two>2</Two>
+    <Two>3</Two>
+    <Three>
+        <Hello>World</Hello>
+        <Hello>World Again</Hello>
+    </Three>    
+</One>
+EOD;
+        $el = new \SimpleXMLElement($xml);
+        $arrayed = Xml::toArray($el);
+
+        $this->assertEquals([
+            'Two' => [1, 2, 3],
+            'Three' => [
+                'Hello' => [
+                    'World',
+                    'World Again',
+                ],
+            ],
+        ], $arrayed);
+    }
+
 }

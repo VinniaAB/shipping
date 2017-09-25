@@ -9,6 +9,7 @@
 namespace Vinnia\Shipping;
 
 use Vinnia\Util\Collection;
+use SimpleXMLElement;
 
 class Xml
 {
@@ -111,6 +112,29 @@ class Xml
         $copy = $source;
         $func($copy);
         return $copy;
+    }
+
+    /**
+     * @param SimpleXMLElement $xml
+     * @return array
+     */
+    public static function toArray(SimpleXMLElement $xml): array
+    {
+        $func = function (array $slice, array &$out) use (&$func) {
+            foreach ($slice as $key => $element) {
+                $res = $element;
+                if ($element instanceof SimpleXMLElement) {
+                    $res = [];
+                    $func((array) $element, $res);
+                }
+                $out[$key] = $res;
+            }
+        };
+
+        $out = [];
+        $func((array) $xml, $out);
+
+        return $out;
     }
 
 }
