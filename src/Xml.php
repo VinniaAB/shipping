@@ -123,7 +123,7 @@ class Xml
         $func = function (array $slice, array &$out) use (&$func) {
             foreach ($slice as $key => $element) {
                 $res = $element;
-                if ($element instanceof SimpleXMLElement) {
+                if ($element instanceof SimpleXMLElement || is_array($element)) {
                     $res = [];
                     $func((array) $element, $res);
                 }
