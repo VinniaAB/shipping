@@ -34,6 +34,7 @@ use Vinnia\Shipping\Xml;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
+use Vinnia\Util\Validation\Validator;
 
 class Service implements ServiceInterface
 {
@@ -244,29 +245,35 @@ EOD;
 
         return $this->send('/track', $body, function (ResponseInterface $response) {
             $body = (string) $response->getBody();
-
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
+            $arrayed = Xml::toArray($xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body')[0]);
 
-            $details = $xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body/*[local-name()=\'TrackReply\']/*[local-name()=\'CompletedTrackDetails\']/*[local-name()=\'TrackDetails\']');
+            $validator = new Validator([
+                'TrackReply.CompletedTrackDetails.TrackDetails.Notification.Severity' => 'required|ne:ERROR',
+                'TrackReply.CompletedTrackDetails.TrackDetails.Events' => 'array',
+                'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type' => 'required|string',
+            ]);
 
-            if (!$details) {
+            $bag = $validator->validate($arrayed);
+
+            if (count($bag) !== 0) {
                 return new RejectedPromise($body);
             }
 
-            $service = (string) $details[0]->{'Service'}->{'Type'};
-            $events = $details[0]->xpath('*[local-name()=\'Events\']');
+            $service = (string) Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type');
+            $events = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Events');
 
-            $activities = (new Collection($events))->map(function (SimpleXMLElement $element) {
-                $status = $this->getStatusFromEventType((string) $element->{'EventType'});
-                $description = (string) $element->{'EventDescription'};
-                $dt = new DateTimeImmutable((string) $element->{'Timestamp'});
+            $activities = (new Collection($events))->map(function (array $element) {
+                $status = $this->getStatusFromEventType((string) $element['EventType']);
+                $description = $element['EventDescription'];
+                $dt = new DateTimeImmutable($element['Timestamp']);
                 $address = new Address(
                     '',
                     [],
-                    (string) $element->{'Address'}->{'PostalCode'},
-                    (string) $element->{'Address'}->{'City'},
-                    (string) $element->{'Address'}->{'StateOrProvinceCode'},
-                    (string) $element->{'Address'}->{'CountryName'}
+                    $element['Address']['PostalCode'] ?? '',
+                    $element['Address']['City'] ?? '',
+                    $element['Address']['StateOrProvinceCode'] ?? '',
+                    $element['Address']['CountryName'] ?? ''
                 );
 
                 return new TrackingActivity($status, $description, $dt, $address);
