@@ -106,9 +106,9 @@ class Service implements ServiceInterface
         $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
-        $length = number_format($package->length->getValue(), 2, '.', '');
-        $width = number_format($package->width->getValue(), 2, '.', '');
-        $height = number_format($package->height->getValue(), 2, '.', '');
+        $length = number_format($package->length->getValue(), 0, '.', '');
+        $width = number_format($package->width->getValue(), 0, '.', '');
+        $height = number_format($package->height->getValue(), 0, '.', '');
         $weight = number_format($package->weight->getValue(), 2, '.', '');
 
         $sender = $request->sender;
@@ -326,9 +326,9 @@ EOD;
         $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
-        $length = number_format($package->length->getValue(), 2, '.', '');
-        $width = number_format($package->width->getValue(), 2, '.', '');
-        $height = number_format($package->height->getValue(), 2, '.', '');
+        $length = number_format($package->length->getValue(), 0, '.', '');
+        $width = number_format($package->width->getValue(), 0, '.', '');
+        $height = number_format($package->height->getValue(), 0, '.', '');
         $weight = number_format($package->weight->getValue(), 2, '.', '');
 
         $data = [
