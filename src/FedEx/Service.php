@@ -21,6 +21,7 @@ use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\QuoteRequest;
+use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\Quote;
@@ -455,8 +456,11 @@ EOD;
         return $this->send('/ship', $body, function (ResponseInterface $response) {
             $body = (string) $response->getBody();
 
+            // remove namespace prefixes to ease parsing
+            $body = str_replace('SOAP-ENV:', '', $body);
+
             if (strpos($body, '<HighestSeverity>SUCCESS</HighestSeverity>') === false) {
-                return new RejectedPromise($body);
+                $this->throwError($body);
             }
 
             preg_match('/<TrackingNumber>(.+)<\/TrackingNumber>/', $body, $matches);
@@ -516,4 +520,26 @@ EOD;
             return $body;
         });
     }
+
+    protected function throwError(string $body)
+    {
+        $xml = new SimpleXMLElement($body);
+        $arrayed = Xml::toArray($xml);
+        $notifications = Arrays::get($arrayed, 'Body.ProcessShipmentReply.Notifications');
+
+        // when we convert XML-formatted data to an
+        // array we can't really be sure which elements
+        // may have multiple occurrences. in this case
+        // we know that there may be multiple notifications.
+        if (!Xml::isNumericKeyArray($notifications)) {
+            $notifications = [$notifications];
+        }
+
+        $errors = array_map(function (array $notification): string {
+            return $notification['Message'];
+        }, $notifications);
+
+        throw new ServiceException($errors, $body);
+    }
+
 }
