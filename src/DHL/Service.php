@@ -493,11 +493,14 @@ EOD;
         // we don't want to break simplexml with weird strings from DHL
         preg_match('/<Status>.+<\/Status>/s', $body, $matches);
 
-        if (count($matches) !== 0) {
-            $xml = new SimpleXMLElement($matches[0]);
-            $errors = array_map(function (SimpleXMLElement $e): string {
-                return (string) $e;
-            }, $xml->xpath('//ConditionData'));
+        if (strpos($body, '<ActionStatus>Error</ActionStatus>') !== false) {
+            $xml = new SimpleXMLElement($body);
+            $arrayed = Xml::toArray($xml);
+            $error = htmlspecialchars_decode(
+                Arrays::get($arrayed, 'Response.Status.Condition.ConditionData')
+            );
+            $error = preg_replace('/\s+/', ' ', $error);
+            $errors[] = $error;
         }
 
         throw new ServiceException($errors, $body);
