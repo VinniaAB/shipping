@@ -67,24 +67,6 @@ class FedExTest extends AbstractServiceTest
         $req->exportDeclarations = [
             new ExportDeclaration('Shoes', 'US', 2, 100.00, 'USD', new Amount(1.0, Unit::KILOGRAM)),
         ];
-        $req->specialServices = [
-            'ELECTRONIC_TRADE_DOCUMENTS',
-        ];
-        $req->extra = [
-            'ProcessShipmentRequest.RequestedShipment.SpecialServicesRequested.EtdDetail' => [
-                'RequestedDocumentCopies' => 'COMMERCIAL_INVOICE',
-            ],
-            'ProcessShipmentRequest.RequestedShipment.ShippingDocumentSpecification' => [
-                'ShippingDocumentTypes' => 'COMMERCIAL_INVOICE',
-                'CommercialInvoiceDetail' => [
-                    'Format' => [
-                        'ImageType' => 'PDF',
-                        'StockType' => 'PAPER_LETTER',
-                        'ProvideInstructions' => 1,
-                    ],
-                ],
-            ],
-        ];
         $req->currency = 'USD';
 
         $promise = $this->service->createShipment($req);
