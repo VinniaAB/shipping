@@ -14,11 +14,10 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\FedEx\Credentials;
 use Vinnia\Shipping\FedEx\Service as FedEx;
-use Vinnia\Shipping\FedEx\Service;
+use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\ServiceInterface;
-use DateTimeImmutable;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
@@ -111,6 +110,23 @@ class FedExTest extends AbstractServiceTest
 
         $this->service->cancelShipment($shipment->id, ['type' => 'FEDEX'])
             ->wait();
+    }
+
+    public function testGetAvailableServices()
+    {
+        $sender = new Address('Company & AB', ['Street 1'], '11157', 'Stockholm', '', 'SE', 'Helmut', '1234567890');
+        $recipient = new Address('Company & AB', ['Street 2'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '12345');
+        $package = new Parcel(
+            new Amount(10.0, Unit::INCH),
+            new Amount(10.0, Unit::INCH),
+            new Amount(10.0, Unit::INCH),
+            new Amount(5.0, Unit::POUND)
+        );
+        $req = new QuoteRequest($recipient, $sender, $package);
+        $services = $this->service->getAvailableServices($req)
+            ->wait();
+
+        $this->assertNotEmpty($services);
     }
 
 }

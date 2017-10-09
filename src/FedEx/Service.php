@@ -555,7 +555,58 @@ EOD;
      */
     public function getAvailableServices(QuoteRequest $request): PromiseInterface
     {
-        return promise_for([]);
+        $data = [
+            'ServiceAvailabilityRequest' => [
+                'WebAuthenticationDetail' => [
+                    'UserCredential' => [
+                        'Key' => $this->credentials->getCredentialKey(),
+                        'Password' => $this->credentials->getCredentialPassword(),
+                    ],
+                ],
+                'ClientDetail' => [
+                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                ],
+                'Version' => [
+                    'ServiceId' => 'vacs',
+                    'Major' => 8,
+                    'Intermediate' => 0,
+                    'Minor' => 0,
+                ],
+                'Origin' => [
+                    'PostalCode' => $request->sender->zip,
+                    'CountryCode' => $request->sender->countryCode,
+                ],
+                'Destination' => [
+                    'PostalCode' => $request->recipient->zip,
+                    'CountryCode' => $request->recipient->countryCode,
+                ],
+                'ShipDate' => $request->date->format('Y-m-d'),
+            ]
+        ];
+
+        $xml = Xml::fromArray($data);
+        $body = <<<EOD
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/vacs/v8">
+   <soapenv:Body>$xml</soapenv:Body>
+</soapenv:Envelope>
+EOD;
+
+        return $this->send('/vacs', $body, function (ResponseInterface $response) {
+            $body = (string) $response->getBody();
+            $body = str_replace('SOAP-ENV:', '', $body);
+            $xml = new SimpleXMLElement($body);
+            $arrayed = Xml::toArray($xml);
+            $services = Arrays::get($arrayed, 'Body.ServiceAvailabilityReply.Options');
+
+            if (!Xml::isNumericKeyArray($services)) {
+                $services = [$services];
+            }
+
+            return (new Collection($services))->map(function (array $service): string {
+                return $service['Service'];
+            });
+        });
     }
 
 }
