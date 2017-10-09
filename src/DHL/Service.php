@@ -444,7 +444,7 @@ EOD;
 
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
-<req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd" schemaVersion="5.0">
+<req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd" schemaVersion="6.0">
 {$shipmentRequest}
 </req:ShipmentRequest>
 EOD;
