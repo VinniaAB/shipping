@@ -71,27 +71,17 @@ class Service implements ServiceInterface
         $this->baseUrl = $baseUrl;
     }
 
-    /**
-     * @param QuoteRequest $request
-     * @return PromiseInterface
-     */
-    public function getQuotes(QuoteRequest $request): PromiseInterface
+    protected function getQuoteOrCapability(QuoteRequest $request, string $elementName): PromiseInterface
     {
-        $package = $request->units == ShipmentRequest::UNITS_IMPERIAL ?
+        $package = $request->units == QuoteRequest::UNITS_IMPERIAL ?
             $request->package->convertTo(Unit::INCH, Unit::POUND) :
             $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
-
-        // after value conversions we might get lots of decimals. deal with that
-        $length = number_format($package->length->getValue(), 2, '.', '');
-        $width = number_format($package->width->getValue(), 2, '.', '');
-        $height = number_format($package->height->getValue(), 2, '.', '');
-        $weight = number_format($package->weight->getValue(), 2, '.', '');
 
         $sender = $request->sender;
         $recipient = $request->recipient;
 
         $getQuoteRequest = [
-            'GetQuote' => [
+            $elementName => [
                 'Request' => [
                     'ServiceHeader' => [
                         'MessageTime' => $request->date->format('c'),
@@ -114,10 +104,10 @@ class Service implements ServiceInterface
                         'Piece' => [
                             [
                                 'PieceID' => 1,
-                                'Height' => $height,
-                                'Depth' => $length,
-                                'Width' => $width,
-                                'Weight' => $weight,
+                                'Height' => $package->height->format(2),
+                                'Depth' => $package->length->format(2),
+                                'Width' => $package->width->format(2),
+                                'Weight' => $package->weight->format(2),
                             ],
                         ],
                     ],
@@ -176,7 +166,16 @@ EOD;
                 'Content-Type' => 'text/xml',
             ],
             'body' => $body,
-        ])->then(function (ResponseInterface $response) {
+        ]);
+    }
+
+    /**
+     * @param QuoteRequest $request
+     * @return PromiseInterface
+     */
+    public function getQuotes(QuoteRequest $request): PromiseInterface
+    {
+        return $this->getQuoteOrCapability($request, 'GetQuote')->then(function (ResponseInterface $response) {
             $body = (string)$response->getBody();
 
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
@@ -522,6 +521,19 @@ EOD;
      */
     public function getAvailableServices(QuoteRequest $request): PromiseInterface
     {
-        return promise_for([]);
+        return $this->getQuoteOrCapability($request, 'GetCapability')->then(function (ResponseInterface $response) {
+            $body = (string) $response->getBody();
+            $xml = new SimpleXMLElement($body);
+            $arrayed = Xml::toArray($xml);
+            $services = Arrays::get($arrayed, 'GetCapabilityResponse.Srvs.Srv');
+
+            if (!Xml::isNumericKeyArray($services)) {
+                $services = [$services];
+            }
+
+            return (new Collection($services))->map(function (array $service): string {
+                return $service['GlobalProductCode'];
+            });
+        });
     }
 }

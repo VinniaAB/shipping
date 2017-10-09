@@ -189,16 +189,16 @@
         },
         {
             "name": "moneyphp/money",
-            "version": "v3.0.7",
+            "version": "v3.0.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/moneyphp/money.git",
-                "reference": "52d80135bd820f0486d14e03789ebcb45323b2d5"
+                "reference": "149ba5943511e118bf68f9118e3c84bbe42bf94f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/moneyphp/money/zipball/52d80135bd820f0486d14e03789ebcb45323b2d5",
-                "reference": "52d80135bd820f0486d14e03789ebcb45323b2d5",
+                "url": "https://api.github.com/repos/moneyphp/money/zipball/149ba5943511e118bf68f9118e3c84bbe42bf94f",
+                "reference": "149ba5943511e118bf68f9118e3c84bbe42bf94f",
                 "shasum": ""
             },
             "require": {
@@ -263,7 +263,7 @@
                 "money",
                 "vo"
             ],
-            "time": "2017-08-04T16:41:06+00:00"
+            "time": "2017-10-03T09:21:46+00:00"
         },
         {
             "name": "psr/http-message",
@@ -321,12 +321,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/VinniaAB/util.git",
-                "reference": "13cdcb950bb85e7ee85e2abf738edb316a351ad1"
+                "reference": "b22fe22bb8d381d09926a3f45c78c286211e153e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VinniaAB/util/zipball/13cdcb950bb85e7ee85e2abf738edb316a351ad1",
-                "reference": "13cdcb950bb85e7ee85e2abf738edb316a351ad1",
+                "url": "https://api.github.com/repos/VinniaAB/util/zipball/b22fe22bb8d381d09926a3f45c78c286211e153e",
+                "reference": "b22fe22bb8d381d09926a3f45c78c286211e153e",
                 "shasum": ""
             },
             "require": {
@@ -359,7 +359,7 @@
                 "source": "https://github.com/VinniaAB/util/tree/master",
                 "issues": "https://github.com/VinniaAB/util/issues"
             },
-            "time": "2017-09-26T00:13:56+00:00"
+            "time": "2017-10-09T16:15:43+00:00"
         }
     ],
     "packages-dev": [
@@ -1022,16 +1022,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "6.3.1",
+            "version": "6.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "c0ff817b36a827e64bf5f57bc72278150cf30a77"
+                "reference": "b770d8ba7e60295ee91d69d5a5e01ae833cac220"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/c0ff817b36a827e64bf5f57bc72278150cf30a77",
-                "reference": "c0ff817b36a827e64bf5f57bc72278150cf30a77",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/b770d8ba7e60295ee91d69d5a5e01ae833cac220",
+                "reference": "b770d8ba7e60295ee91d69d5a5e01ae833cac220",
                 "shasum": ""
             },
             "require": {
@@ -1076,7 +1076,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "6.3.x-dev"
+                    "dev-master": "6.4.x-dev"
                 }
             },
             "autoload": {
@@ -1102,7 +1102,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2017-09-24T07:25:54+00:00"
+            "time": "2017-10-07T17:53:53+00:00"
         },
         {
             "name": "phpunit/phpunit-mock-objects",

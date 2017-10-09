@@ -145,4 +145,22 @@ class DHLTest extends AbstractServiceTest
             ->wait();
     }
 
+    public function testGetAvailableServices()
+    {
+        $sender = new Address('Company & AB', ['Street 1'], '11157', 'Stockholm', '', 'SE', 'Helmut', '1234567890');
+        $recipient = new Address('Company & AB', ['Street 2'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '12345');
+        $package = new Parcel(
+            new Amount(10.0, Unit::INCH),
+            new Amount(10.0, Unit::INCH),
+            new Amount(10.0, Unit::INCH),
+            new Amount(5.0, Unit::POUND)
+        );
+        $req = new QuoteRequest($recipient, $sender, $package);
+
+        $services = $this->service->getAvailableServices($req)
+            ->wait();
+
+        $this->assertNotEmpty($services);
+    }
+
 }
