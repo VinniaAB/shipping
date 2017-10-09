@@ -78,11 +78,39 @@ class FedExTest extends AbstractServiceTest
 
         $this->assertNotEmpty($shipment->labelData);
 
-        file_put_contents(dirname(__FILE__).'/labels/fedex.pdf', $shipment->labelData);
-
-        $deleted = $this->service->cancelShipment($shipment->id, ['type' => 'FEDEX'])
+        $this->service->cancelShipment($shipment->id, ['type' => 'FEDEX'])
             ->wait();
-
-        var_dump($deleted);
     }
+
+    public function testCreateLabelWithImperialUnits()
+    {
+        $sender = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+        $recipient = new Address('Helmut Inc.', ['Road 2'], '100 00', 'Stockholm', '', 'SE', 'Helmut', '123456');
+        $package = new Parcel(
+            new Amount(5, Unit::INCH),
+            new Amount(5, Unit::INCH),
+            new Amount(5, Unit::INCH),
+            new Amount(1, Unit::POUND)
+        );
+        $req = new ShipmentRequest('INTERNATIONAL_ECONOMY', $sender, $recipient, $package);
+        $req->reference = 'ABC12345';
+        $req->exportDeclarations = [
+            new ExportDeclaration('Shoes', 'US', 2, 100.00, 'USD', new Amount(1.0, Unit::POUND)),
+        ];
+        $req->currency = 'USD';
+        $req->units = ShipmentRequest::UNITS_IMPERIAL;
+
+        $promise = $this->service->createShipment($req);
+
+        /* @var \Vinnia\Shipping\Shipment $shipment */
+        $shipment = $promise->wait();
+
+        $this->assertInstanceOf(Shipment::class, $shipment);
+
+        $this->assertNotEmpty($shipment->labelData);
+
+        $this->service->cancelShipment($shipment->id, ['type' => 'FEDEX'])
+            ->wait();
+    }
+
 }

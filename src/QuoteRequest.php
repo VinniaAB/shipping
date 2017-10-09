@@ -17,6 +17,9 @@ class QuoteRequest
     const PAYMENT_TYPE_SENDER = 'sender';
     const PAYMENT_TYPE_RECIPIENT = 'recipient';
 
+    const UNITS_METRIC = 'metric';
+    const UNITS_IMPERIAL = 'imperial';
+
     /**
      * @var Address
      */
@@ -91,6 +94,11 @@ class QuoteRequest
      * @var array
      */
     public $extra = [];
+
+    /**
+     * @var string
+     */
+    public $units = self::UNITS_METRIC;
 
     /**
      * QuoteRequest constructor.

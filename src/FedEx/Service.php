@@ -104,7 +104,9 @@ class Service implements ServiceInterface
      */
     public function getQuotes(QuoteRequest $request): PromiseInterface
     {
-        $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $package = $request->units == QuoteRequest::UNITS_IMPERIAL ?
+            $request->package->convertTo(Unit::INCH, Unit::POUND) :
+            $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
         $length = number_format($package->length->getValue(), 0, '.', '');
@@ -159,14 +161,14 @@ class Service implements ServiceInterface
                         'GroupNumber' => 1,
                         'GroupPackageCount' => 1,
                         'Weight' => [
-                            'Units' => 'KG',
+                            'Units' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
                             'Value' => $weight,
                         ],
                         'Dimensions' => [
                             'Length' => $length,
                             'Width' => $width,
                             'Height' => $height,
-                            'Units' => 'CM',
+                            'Units' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
                         ],
                     ],
                 ],
@@ -324,7 +326,9 @@ EOD;
      */
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $package = $request->units == ShipmentRequest::UNITS_IMPERIAL ?
+            $request->package->convertTo(Unit::INCH, Unit::POUND) :
+            $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
         $length = number_format($package->length->getValue(), 0, '.', '');
@@ -398,8 +402,10 @@ EOD;
                                 'Description' => $decl->description,
                                 'CountryOfManufacture' => $decl->originCountryCode,
                                 'Weight' => [
-                                    'Units' => 'KG',
-                                    'Value' => $decl->weight->convertTo(Unit::KILOGRAM)->getValue(),
+                                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
+                                    'Value' => $decl->weight
+                                        ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
+                                        ->getValue(),
                                 ],
                                 'Quantity' => $decl->quantity,
                                 'QuantityUnits' => 'Pieces',
@@ -422,14 +428,14 @@ EOD;
                         'GroupNumber' => 1,
                         'GroupPackageCount' => 1,
                         'Weight' => [
-                            'Units' => 'KG',
+                            'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
                             'Value' => $weight,
                         ],
                         'Dimensions' => [
                             'Length' => $length,
                             'Width' => $width,
                             'Height' => $height,
-                            'Units' => 'CM',
+                            'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
                         ],
                         'CustomerReferences' => [
                             'CustomerReferenceType' => 'CUSTOMER_REFERENCE',

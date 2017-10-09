@@ -79,7 +79,35 @@ class DHLTest extends AbstractServiceTest
         /* @var Shipment $res */
         $res = $promise->wait();
 
-        //var_dump($res);
+        $this->assertInstanceOf(Shipment::class, $res);
+    }
+
+    public function testCreateLabelWithImperialUnits()
+    {
+        $sender = new Address('Company & AB', ['Street 1'], '111 57', 'Stockholm', '', 'SE', 'Helmut', '1234567890');
+        $recipient = new Address('Company & AB', ['Street 2'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '12345');
+        $package = new Parcel(
+            new Amount(10.0, Unit::INCH),
+            new Amount(10.0, Unit::INCH),
+            new Amount(10.0, Unit::INCH),
+            new Amount(5.0, Unit::POUND)
+        );
+        $req = new ShipmentRequest('Q', $sender, $recipient, $package);
+        $req->specialServices = ['PT'];
+        $req->isDutiable = true;
+        $req->currency = 'USD';
+        $req->contents = 'Samples';
+        $req->incoterm = 'DAP';
+        $req->reference = 'ABC12345';
+        $req->exportDeclarations = [
+            new ExportDeclaration('Samples', 'US', 1, 10.0, 'USD', new Amount(5.0, Unit::POUND)),
+        ];
+        $req->units = ShipmentRequest::UNITS_IMPERIAL;
+
+        $promise = $this->service->createShipment($req);
+
+        /* @var Shipment $res */
+        $res = $promise->wait();
 
         $this->assertInstanceOf(Shipment::class, $res);
     }

@@ -76,7 +76,9 @@ class Service implements ServiceInterface
      */
     public function getQuotes(QuoteRequest $request): PromiseInterface
     {
-        $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $package = $request->units == ShipmentRequest::UNITS_IMPERIAL ?
+            $request->package->convertTo(Unit::INCH, Unit::POUND) :
+            $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         // after value conversions we might get lots of decimals. deal with that
         $length = number_format($package->length->getValue(), 2, '.', '');
@@ -105,8 +107,8 @@ class Service implements ServiceInterface
                     'PaymentCountryCode' => $sender->countryCode,
                     'Date' => $request->date->format('Y-m-d'),
                     'ReadyTime' => 'PT00H00M',
-                    'DimensionUnit' => 'CM',
-                    'WeightUnit' => 'KG',
+                    'DimensionUnit' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
+                    'WeightUnit' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
                     'Pieces' => [
                         'Piece' => [
                             [
@@ -318,7 +320,12 @@ EOD;
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
         $now = date('c');
-        $package = $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $package = $request->units == ShipmentRequest::UNITS_IMPERIAL ?
+            $request->package->convertTo(Unit::INCH, Unit::POUND) :
+            $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+        $lengthUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'I' : 'C';
+        $weightUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'L' : 'K';
 
         $countryNames = require __DIR__ . '/../../countries.php';
 
@@ -359,7 +366,7 @@ EOD;
                 'DeclaredCurrency' => $request->currency,
             ],
             'ExportDeclaration' => [
-                'ExportLineItem' => array_map(function (int $key, ExportDeclaration $decl): array {
+                'ExportLineItem' => array_map(function (int $key, ExportDeclaration $decl) use ($request, $weightUnitName): array {
                     return [
                         'LineNumber' => $key + 1,
                         'Quantity' => $decl->quantity,
@@ -367,8 +374,10 @@ EOD;
                         'Description' => $decl->description,
                         'Value' => number_format($decl->value, 2, '.', ''),
                         'Weight' => [
-                            'Weight' => $decl->weight,
-                            'WeightUnit' => $decl->weight->getUnit() == Unit::POUND ? 'L' : 'K',
+                            'Weight' => $decl->weight
+                                ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
+                                ->getValue(),
+                            'WeightUnit' => $weightUnitName,
                         ],
                         'ManufactureCountryCode' => $decl->originCountryCode,
                     ];
@@ -392,12 +401,12 @@ EOD;
                     ],
                 ],
                 'Weight' => $package->weight,
-                'WeightUnit' => 'K',
+                'WeightUnit' => $weightUnitName,
                 'GlobalProductCode' => $request->service,
                 'Date' => $request->date->format('Y-m-d'),
                 'Contents' => $request->contents,
                 //'DoorTo' => 'DD',
-                'DimensionUnit' => 'C',
+                'DimensionUnit' => $lengthUnitName,
                 'IsDutiable' => $request->isDutiable ? 'Y' : 'N',
                 'CurrencyCode' => $request->currency,
             ],
