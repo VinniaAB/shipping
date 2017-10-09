@@ -11,6 +11,7 @@ namespace Vinnia\Shipping\UPS;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
+use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
@@ -332,4 +333,14 @@ class Service implements ServiceInterface
     {
         return new FulfilledPromise(true);
     }
+
+    /**
+     * @param QuoteRequest $request
+     * @return PromiseInterface promise resolved with an array of strings
+     */
+    public function getAvailableServices(QuoteRequest $request): PromiseInterface
+    {
+        return promise_for([]);
+    }
+
 }

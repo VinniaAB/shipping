@@ -45,6 +45,12 @@ interface ServiceInterface
      * @return PromiseInterface
      */
     public function cancelShipment(string $id, array $data = []): PromiseInterface;
+    
+    /**
+     * @param QuoteRequest $request
+     * @return PromiseInterface promise resolved with an array of strings
+     */
+    public function getAvailableServices(QuoteRequest $request): PromiseInterface;
 
 }
 

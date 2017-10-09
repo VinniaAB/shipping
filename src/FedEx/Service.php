@@ -13,6 +13,7 @@ use Closure;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Promise\Promise;
+use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
@@ -546,6 +547,15 @@ EOD;
         }, $notifications);
 
         throw new ServiceException($errors, $body);
+    }
+
+    /**
+     * @param QuoteRequest $request
+     * @return PromiseInterface promise resolved with an array of strings
+     */
+    public function getAvailableServices(QuoteRequest $request): PromiseInterface
+    {
+        return promise_for([]);
     }
 
 }
