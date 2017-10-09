@@ -605,7 +605,7 @@ EOD;
 
             return (new Collection($services))->map(function (array $service): string {
                 return $service['Service'];
-            });
+            })->value();
         });
     }
 
