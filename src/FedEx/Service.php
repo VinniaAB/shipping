@@ -267,6 +267,10 @@ EOD;
             $service = (string) Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type');
             $events = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Events');
 
+            if (!Xml::isNumericKeyArray($events)) {
+                $events = [$events];
+            }
+
             $activities = (new Collection($events))->map(function (array $element) {
                 $status = $this->getStatusFromEventType((string) $element['EventType']);
                 $description = $element['EventDescription'];
