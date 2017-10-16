@@ -376,7 +376,7 @@ EOD;
                         'Weight' => [
                             'Weight' => $decl->weight
                                 ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
-                                ->getValue(),
+                                ->format(2),
                             'WeightUnit' => $weightUnitName,
                         ],
                         'ManufactureCountryCode' => $decl->originCountryCode,
@@ -393,14 +393,14 @@ EOD;
                         [
                             'PieceID' => 1,
                             'PackageType' => 'YP',
-                            'Weight' => $package->weight,
-                            'Width' => $package->width,
-                            'Height' => $package->height,
-                            'Depth' => $package->length,
+                            'Weight' => $package->weight->format(2),
+                            'Width' => $package->width->format(2),
+                            'Height' => $package->height->format(2),
+                            'Depth' => $package->length->format(2),
                         ]
                     ],
                 ],
-                'Weight' => $package->weight,
+                'Weight' => $package->weight->format(2),
                 'WeightUnit' => $weightUnitName,
                 'GlobalProductCode' => $request->service,
                 'Date' => $request->date->format('Y-m-d'),

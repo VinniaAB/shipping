@@ -109,12 +109,6 @@ class Service implements ServiceInterface
             $request->package->convertTo(Unit::INCH, Unit::POUND) :
             $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
-        // after value conversions we might get lots of decimals. deal with that
-        $length = number_format($package->length->getValue(), 0, '.', '');
-        $width = number_format($package->width->getValue(), 0, '.', '');
-        $height = number_format($package->height->getValue(), 0, '.', '');
-        $weight = number_format($package->weight->getValue(), 2, '.', '');
-
         $sender = $request->sender;
         $recipient = $request->recipient;
 
@@ -163,12 +157,12 @@ class Service implements ServiceInterface
                         'GroupPackageCount' => 1,
                         'Weight' => [
                             'Units' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
-                            'Value' => $weight,
+                            'Value' => $package->weight->format(2),
                         ],
                         'Dimensions' => [
-                            'Length' => $length,
-                            'Width' => $width,
-                            'Height' => $height,
+                            'Length' => $package->length->format(0),
+                            'Width' => $package->width->format(0),
+                            'Height' => $package->height->format(0),
                             'Units' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
                         ],
                     ],
@@ -335,12 +329,6 @@ EOD;
             $request->package->convertTo(Unit::INCH, Unit::POUND) :
             $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
-        // after value conversions we might get lots of decimals. deal with that
-        $length = number_format($package->length->getValue(), 0, '.', '');
-        $width = number_format($package->width->getValue(), 0, '.', '');
-        $height = number_format($package->height->getValue(), 0, '.', '');
-        $weight = number_format($package->weight->getValue(), 2, '.', '');
-
         $data = [
             'ProcessShipmentRequest' => [
                 'WebAuthenticationDetail' => [
@@ -410,7 +398,7 @@ EOD;
                                     'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
                                     'Value' => $decl->weight
                                         ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
-                                        ->getValue(),
+                                        ->format(2)
                                 ],
                                 'Quantity' => $decl->quantity,
                                 'QuantityUnits' => 'Pieces',
@@ -434,12 +422,12 @@ EOD;
                         'GroupPackageCount' => 1,
                         'Weight' => [
                             'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
-                            'Value' => $weight,
+                            'Value' => $package->weight->format(2),
                         ],
                         'Dimensions' => [
-                            'Length' => $length,
-                            'Width' => $width,
-                            'Height' => $height,
+                            'Length' => $package->length->format(0),
+                            'Width' => $package->width->format(0),
+                            'Height' => $package->height->format(0),
                             'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
                         ],
                         'CustomerReferences' => [
