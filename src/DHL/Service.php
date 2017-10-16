@@ -104,10 +104,10 @@ class Service implements ServiceInterface
                         'Piece' => [
                             [
                                 'PieceID' => 1,
-                                'Height' => $package->height->format(2),
+                                'Height' => $package->height->format(0),
                                 'Depth' => $package->length->format(0),
                                 'Width' => $package->width->format(0),
-                                'Weight' => $package->weight->format(0),
+                                'Weight' => $package->weight->format(2),
                             ],
                         ],
                     ],
