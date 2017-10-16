@@ -601,7 +601,7 @@ EOD;
             $body = str_replace('SOAP-ENV:', '', $body);
             $xml = new SimpleXMLElement($body);
             $arrayed = Xml::toArray($xml);
-            $services = Arrays::get($arrayed, 'Body.ServiceAvailabilityReply.Options');
+            $services = Arrays::get($arrayed, 'Body.ServiceAvailabilityReply.Options') ?? [];
 
             if (!Xml::isNumericKeyArray($services)) {
                 $services = [$services];

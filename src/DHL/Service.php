@@ -525,7 +525,7 @@ EOD;
             $body = (string) $response->getBody();
             $xml = new SimpleXMLElement($body);
             $arrayed = Xml::toArray($xml);
-            $services = Arrays::get($arrayed, 'GetCapabilityResponse.Srvs.Srv');
+            $services = Arrays::get($arrayed, 'GetCapabilityResponse.Srvs.Srv') ?? [];
 
             if (!Xml::isNumericKeyArray($services)) {
                 $services = [$services];
