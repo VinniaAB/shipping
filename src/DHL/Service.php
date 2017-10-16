@@ -496,23 +496,37 @@ EOD;
      */
     protected function throwError(string $body)
     {
-        $errors = [];
+        $errors = $this->getErrors($body);
+        throw new ServiceException($errors, $body);
+    }
 
-        // extract the status part of the body because
-        // we don't want to break simplexml with weird strings from DHL
-        preg_match('/<Status>.+<\/Status>/s', $body, $matches);
+    /**
+     * @param string $body
+     * @return string[]
+     */
+    protected function getErrors(string $body): array
+    {
+        $xml = new SimpleXMLElement($body);
+        $arrayed = Xml::toArray($xml);
+        $error = Arrays::get($arrayed, 'Response.Status.Condition.ConditionData');
 
-        if (strpos($body, '<ActionStatus>Error</ActionStatus>') !== false) {
-            $xml = new SimpleXMLElement($body);
-            $arrayed = Xml::toArray($xml);
-            $error = htmlspecialchars_decode(
-                Arrays::get($arrayed, 'Response.Status.Condition.ConditionData')
-            );
-            $error = preg_replace('/\s+/', ' ', $error);
-            $errors[] = $error;
+        if (!$error) {
+            return [];
         }
 
-        throw new ServiceException($errors, $body);
+        $error = htmlspecialchars_decode($error);
+        $error = preg_replace('/\s+/', ' ', $error);
+
+        return [$error];
+    }
+
+    protected function getErrorsAndMaybeThrow(string $body): void
+    {
+        $errors = $this->getErrors($body);
+
+        if (!empty($errors)) {
+            throw new ServiceException($errors, $body);
+        }
     }
 
     /**
@@ -523,6 +537,9 @@ EOD;
     {
         return $this->getQuoteOrCapability($request, 'GetCapability')->then(function (ResponseInterface $response) {
             $body = (string) $response->getBody();
+
+            $this->getErrorsAndMaybeThrow($body);
+
             $xml = new SimpleXMLElement($body);
             $arrayed = Xml::toArray($xml);
             $services = Arrays::get($arrayed, 'GetCapabilityResponse.Srvs.Srv') ?? [];
