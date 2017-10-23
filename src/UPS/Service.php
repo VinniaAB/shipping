@@ -129,7 +129,7 @@ class Service implements ServiceInterface
                         'Name' => '',
                         'ShipperNumber' => '',
                         'Address' => [
-                            'AddressLine' => $sender->lines,
+                            'AddressLine' => array_filter($sender->lines),
                             'City' => $sender->city,
                             'StateProvinceCode' => '',
                             'PostalCode' => $sender->zip,
@@ -139,7 +139,7 @@ class Service implements ServiceInterface
                     'ShipTo' => [
                         'Name' => '',
                         'Address' => [
-                            'AddressLine' => $recipient->lines,
+                            'AddressLine' => array_filter($recipient->lines),
                             'City' => $recipient->city,
                             'StateProvinceCode' => '',
                             'PostalCode' => $recipient->zip,
@@ -149,7 +149,7 @@ class Service implements ServiceInterface
                     'ShipFrom' => [
                         'Name' => '',
                         'Address' => [
-                            'AddressLine' => $sender->lines,
+                            'AddressLine' => array_filter($sender->lines),
                             'City' => $sender->city,
                             'StateProvinceCode' => '',
                             'PostalCode' => $sender->zip,

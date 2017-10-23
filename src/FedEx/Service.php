@@ -73,7 +73,7 @@ class Service implements ServiceInterface
     private function addressToArray(Address $address): array
     {
         return [
-            'StreetLines' => $address->lines,
+            'StreetLines' => array_filter($address->lines),
             'City' => $address->city,
             'StateOrProvinceCode' => $address->state,
             'PostalCode' => $address->zip,

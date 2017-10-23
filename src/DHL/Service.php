@@ -351,7 +351,7 @@ EOD;
             ],
             'Consignee' => [
                 'CompanyName' => Xml::cdata($request->recipient->name),
-                'AddressLine' => array_map([Xml::class, 'cdata'], $request->recipient->lines),
+                'AddressLine' => array_map([Xml::class, 'cdata'], array_filter($request->recipient->lines)),
                 'City' => Xml::cdata($request->recipient->city),
                 'PostalCode' => $request->recipient->zip,
                 'CountryCode' => $request->recipient->countryCode,
