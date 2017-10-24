@@ -355,6 +355,7 @@ EOD;
                     'Shipper' => [
                         'Contact' => [
                             'PersonName' => $request->sender->contactName,
+                            'CompanyName' => $request->sender->name,
                             'PhoneNumber' => $request->sender->contactPhone,
                         ],
                         'Address' => $this->addressToArray($request->sender),
@@ -362,6 +363,7 @@ EOD;
                     'Recipient' => [
                         'Contact' => [
                             'PersonName' => $request->recipient->contactName,
+                            'CompanyName' => $request->recipient->name,
                             'PhoneNumber' => $request->recipient->contactPhone,
                         ],
                         'Address' => $this->addressToArray($request->recipient),
