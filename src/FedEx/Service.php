@@ -354,14 +354,14 @@ EOD;
                     'PackagingType' => 'YOUR_PACKAGING',
                     'Shipper' => [
                         'Contact' => [
-                            'CompanyName' => $request->sender->name,
+                            'PersonName' => $request->sender->contactName,
                             'PhoneNumber' => $request->sender->contactPhone,
                         ],
                         'Address' => $this->addressToArray($request->sender),
                     ],
                     'Recipient' => [
                         'Contact' => [
-                            'CompanyName' => $request->recipient->name,
+                            'PersonName' => $request->recipient->contactName,
                             'PhoneNumber' => $request->recipient->contactPhone,
                         ],
                         'Address' => $this->addressToArray($request->recipient),
