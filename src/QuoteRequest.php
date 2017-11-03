@@ -31,9 +31,9 @@ class QuoteRequest
     public $recipient;
 
     /**
-     * @var Parcel
+     * @var Parcel[]
      */
-    public $package;
+    public $parcels;
 
     /**
      * @var DateTimeInterface
@@ -104,13 +104,13 @@ class QuoteRequest
      * QuoteRequest constructor.
      * @param Address $sender
      * @param Address $recipient
-     * @param Parcel $package
+     * @param Parcel[] $parcels
      */
-    public function __construct(Address $sender, Address $recipient, Parcel $package)
+    public function __construct(Address $sender, Address $recipient, array $parcels)
     {
         $this->sender = $sender;
         $this->recipient = $recipient;
-        $this->package = $package;
+        $this->parcels = $parcels;
 
         $this->date = new DateTimeImmutable();
     }

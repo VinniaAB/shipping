@@ -35,6 +35,7 @@ use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\Xml;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
+use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 
 class Service implements ServiceInterface
@@ -73,9 +74,19 @@ class Service implements ServiceInterface
 
     protected function getQuoteOrCapability(QuoteRequest $request, string $elementName): PromiseInterface
     {
-        $package = $request->units == QuoteRequest::UNITS_IMPERIAL ?
-            $request->package->convertTo(Unit::INCH, Unit::POUND) :
-            $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $parcels = array_map(function (Parcel $parcel, int $idx) use ($request): array {
+            $p = $request->units == ShipmentRequest::UNITS_IMPERIAL ?
+                $parcel->convertTo(Unit::INCH, Unit::POUND) :
+                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+            return [
+                'PieceID' => $idx + 1,
+                'Height' => $p->height->format(0),
+                'Depth' => $p->length->format(0),
+                'Width' => $p->width->format(0),
+                'Weight' => $p->weight->format(2),
+            ];
+        }, $request->parcels, array_keys($request->parcels));
 
         $sender = $request->sender;
         $recipient = $request->recipient;
@@ -101,15 +112,7 @@ class Service implements ServiceInterface
                     'DimensionUnit' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
                     'WeightUnit' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
                     'Pieces' => [
-                        'Piece' => [
-                            [
-                                'PieceID' => 1,
-                                'Height' => $package->height->format(0),
-                                'Depth' => $package->length->format(0),
-                                'Width' => $package->width->format(0),
-                                'Weight' => $package->weight->format(2),
-                            ],
-                        ],
+                        'Piece' => $parcels,
                     ],
                     // we insert a null PaymentAccountNumber here so we can set
                     // a correct value when needed. keys in PHP arrays keep the
@@ -320,9 +323,22 @@ EOD;
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
         $now = date('c');
-        $package = $request->units == ShipmentRequest::UNITS_IMPERIAL ?
-            $request->package->convertTo(Unit::INCH, Unit::POUND) :
-            $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $parcels = array_map(function (Parcel $parcel) use ($request): Parcel {
+            return $request->units == ShipmentRequest::UNITS_IMPERIAL ?
+                $parcel->convertTo(Unit::INCH, Unit::POUND) :
+                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        }, $request->parcels);
+
+        $parcelsData = array_map(function (Parcel $parcel, int $idx): array {
+            return [
+                'PieceID' => $idx + 1,
+                'PackageType' => 'YP',
+                'Weight' => $parcel->weight->format(2),
+                'Width' => $parcel->width->format(0),
+                'Height' => $parcel->height->format(0),
+                'Depth' => $parcel->length->format(0),
+            ];
+        }, $parcels, array_keys($parcels));
 
         $lengthUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'I' : 'C';
         $weightUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'L' : 'K';
@@ -387,20 +403,16 @@ EOD;
                 'ReferenceID' => $request->reference,
             ],
             'ShipmentDetails' => [
-                'NumberOfPieces' => 1,
+                'NumberOfPieces' => count($request->parcels),
                 'Pieces' => [
-                    'Piece' => [
-                        [
-                            'PieceID' => 1,
-                            'PackageType' => 'YP',
-                            'Weight' => $package->weight->format(2),
-                            'Width' => $package->width->format(0),
-                            'Height' => $package->height->format(0),
-                            'Depth' => $package->length->format(0),
-                        ]
-                    ],
+                    'Piece' => $parcelsData,
                 ],
-                'Weight' => $package->weight->format(2),
+                'Weight' => array_reduce($parcels, function (Amount $carry, Parcel $parcel) {
+                    return new Amount(
+                        $carry->getValue() + $parcel->weight->getValue(),
+                        $parcel->weight->getUnit()
+                    );
+                }, new Amount(0, ''))->format(2),
                 'WeightUnit' => $weightUnitName,
                 'GlobalProductCode' => $request->service,
                 'Date' => $request->date->format('Y-m-d'),

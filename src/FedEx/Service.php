@@ -105,9 +105,27 @@ class Service implements ServiceInterface
      */
     public function getQuotes(QuoteRequest $request): PromiseInterface
     {
-        $package = $request->units == QuoteRequest::UNITS_IMPERIAL ?
-            $request->package->convertTo(Unit::INCH, Unit::POUND) :
-            $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $parcels = array_map(function (Parcel $parcel, int $idx) use ($request): array {
+            $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
+                $parcel->convertTo(Unit::INCH, Unit::POUND) :
+                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+            return [
+                'SequenceNumber' => $idx + 1,
+                'GroupNumber' => 1,
+                'GroupPackageCount' => 1,
+                'Weight' => [
+                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
+                    'Value' => $parcel->weight->format(2),
+                ],
+                'Dimensions' => [
+                    'Length' => $parcel->length->format(0),
+                    'Width' => $parcel->width->format(0),
+                    'Height' => $parcel->height->format(0),
+                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
+                ],
+            ];
+        }, $request->parcels, array_keys($request->parcels));
 
         $sender = $request->sender;
         $recipient = $request->recipient;
@@ -150,22 +168,8 @@ class Service implements ServiceInterface
                         ],
                     ],
                     'RateRequestTypes' => 'NONE',
-                    'PackageCount' => 1,
-                    'RequestedPackageLineItems' => [
-                        'SequenceNumber' => 1,
-                        'GroupNumber' => 1,
-                        'GroupPackageCount' => 1,
-                        'Weight' => [
-                            'Units' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
-                            'Value' => $package->weight->format(2),
-                        ],
-                        'Dimensions' => [
-                            'Length' => $package->length->format(0),
-                            'Width' => $package->width->format(0),
-                            'Height' => $package->height->format(0),
-                            'Units' => $request->units == QuoteRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
-                        ],
-                    ],
+                    'PackageCount' => count($request->parcels),
+                    'RequestedPackageLineItems' => $parcels,
                 ],
             ],
         ]);
@@ -325,9 +329,32 @@ EOD;
      */
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        $package = $request->units == ShipmentRequest::UNITS_IMPERIAL ?
-            $request->package->convertTo(Unit::INCH, Unit::POUND) :
-            $request->package->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $parcels = array_map(function (Parcel $parcel, int $idx) use ($request): array {
+            $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
+                $parcel->convertTo(Unit::INCH, Unit::POUND) :
+                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+            return [
+                'SequenceNumber' => $idx + 1,
+                'GroupNumber' => 1,
+                'GroupPackageCount' => 1,
+                'Weight' => [
+                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
+                    'Value' => $parcel->weight->format(2),
+                ],
+                'Dimensions' => [
+                    'Length' => $parcel->length->format(0),
+                    'Width' => $parcel->width->format(0),
+                    'Height' => $parcel->height->format(0),
+                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
+                ],
+                'CustomerReferences' => [
+                    'CustomerReferenceType' => 'CUSTOMER_REFERENCE',
+                    'Value' => $request->reference,
+                ],
+            ];
+        }, $request->parcels, array_keys($request->parcels));
+
 
         $data = [
             'ProcessShipmentRequest' => [
@@ -417,26 +444,8 @@ EOD;
                         'LabelStockType' => 'PAPER_LETTER',
                     ],
                     'ShippingDocumentSpecification' => [],
-                    'PackageCount' => 1,
-                    'RequestedPackageLineItems' => [
-                        'SequenceNumber' => 1,
-                        'GroupNumber' => 1,
-                        'GroupPackageCount' => 1,
-                        'Weight' => [
-                            'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
-                            'Value' => $package->weight->format(2),
-                        ],
-                        'Dimensions' => [
-                            'Length' => $package->length->format(0),
-                            'Width' => $package->width->format(0),
-                            'Height' => $package->height->format(0),
-                            'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
-                        ],
-                        'CustomerReferences' => [
-                            'CustomerReferenceType' => 'CUSTOMER_REFERENCE',
-                            'Value' => $request->reference,
-                        ],
-                    ],
+                    'PackageCount' => count($request->parcels),
+                    'RequestedPackageLineItems' => $parcels,
                 ],
             ],
         ];

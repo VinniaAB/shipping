@@ -61,7 +61,7 @@ class FedExTest extends AbstractServiceTest
             new Amount(30, Unit::CENTIMETER),
             new Amount(1, Unit::KILOGRAM)
         );
-        $req = new ShipmentRequest('INTERNATIONAL_ECONOMY', $sender, $recipient, $package);
+        $req = new ShipmentRequest('INTERNATIONAL_ECONOMY', $sender, $recipient, [$package]);
         $req->reference = 'ABC12345';
         $req->exportDeclarations = [
             new ExportDeclaration('Shoes', 'US', 2, 100.00, 'USD', new Amount(1.0, Unit::KILOGRAM)),
@@ -91,7 +91,7 @@ class FedExTest extends AbstractServiceTest
             new Amount(5, Unit::INCH),
             new Amount(1, Unit::POUND)
         );
-        $req = new ShipmentRequest('INTERNATIONAL_ECONOMY', $sender, $recipient, $package);
+        $req = new ShipmentRequest('INTERNATIONAL_ECONOMY', $sender, $recipient, [$package]);
         $req->reference = 'ABC12345';
         $req->exportDeclarations = [
             new ExportDeclaration('Shoes', 'US', 2, 100.00, 'USD', new Amount(1.0, Unit::POUND)),
@@ -122,7 +122,7 @@ class FedExTest extends AbstractServiceTest
             new Amount(10.0, Unit::INCH),
             new Amount(5.0, Unit::POUND)
         );
-        $req = new QuoteRequest($recipient, $sender, $package);
+        $req = new QuoteRequest($recipient, $sender, [$package]);
         $services = $this->service->getAvailableServices($req)
             ->wait();
 

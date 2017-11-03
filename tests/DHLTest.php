@@ -63,7 +63,7 @@ class DHLTest extends AbstractServiceTest
             new Amount(1.0, Unit::METER),
             new Amount(5.0, Unit::KILOGRAM)
         );
-        $req = new ShipmentRequest('Q', $sender, $recipient, $package);
+        $req = new ShipmentRequest('Q', $sender, $recipient, [$package]);
         $req->specialServices = ['PT'];
         $req->isDutiable = true;
         $req->currency = 'EUR';
@@ -92,7 +92,7 @@ class DHLTest extends AbstractServiceTest
             new Amount(10.0, Unit::INCH),
             new Amount(5.0, Unit::POUND)
         );
-        $req = new ShipmentRequest('Q', $sender, $recipient, $package);
+        $req = new ShipmentRequest('Q', $sender, $recipient, [$package]);
         $req->specialServices = ['PT'];
         $req->isDutiable = true;
         $req->currency = 'USD';
@@ -123,7 +123,7 @@ class DHLTest extends AbstractServiceTest
             new Amount(5.0, Unit::KILOGRAM)
         );
 
-        $request = new QuoteRequest($sender, $sender, $package);
+        $request = new QuoteRequest($sender, $sender, [$package]);
 
         $this->expectException(ServiceException::class);
         $this->service->getQuotes($request)
@@ -141,7 +141,7 @@ class DHLTest extends AbstractServiceTest
         );
 
         $this->expectException(ServiceException::class);
-        $this->service->createShipment(new ShipmentRequest('', $sender, $sender, $package))
+        $this->service->createShipment(new ShipmentRequest('', $sender, $sender, [$package]))
             ->wait();
     }
 
@@ -155,7 +155,7 @@ class DHLTest extends AbstractServiceTest
             new Amount(10.0, Unit::INCH),
             new Amount(5.0, Unit::POUND)
         );
-        $req = new QuoteRequest($recipient, $sender, $package);
+        $req = new QuoteRequest($recipient, $sender, [$package]);
 
         $services = $this->service->getAvailableServices($req)
             ->wait();

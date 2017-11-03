@@ -26,13 +26,13 @@ class ShipmentRequest extends QuoteRequest
      * @param string $service
      * @param Address $sender
      * @param Address $recipient
-     * @param Parcel $package
+     * @param Parcel[] $parcels
      */
-    function __construct(string $service, Address $sender, Address $recipient, Parcel $package)
+    function __construct(string $service, Address $sender, Address $recipient, array $parcels)
     {
         $this->service = $service;
 
-        parent::__construct($sender, $recipient, $package);
+        parent::__construct($sender, $recipient, $parcels);
     }
 
 }
