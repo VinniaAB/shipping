@@ -440,7 +440,10 @@ EOD;
                     'SpecialServiceType' => $service,
                 ];
             }, $request->specialServices),
-            'LabelImageFormat' => 'PDF',
+            'LabelImageFormat' => $request->labelFormat ?? 'PDF',
+            'Label' => [
+                'LabelTemplate' => $request->labelSize ?? '8X4_A4_PDF',
+            ],
         ];
 
         if ($request->isDutiable && $request->incoterm) {

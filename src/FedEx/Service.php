@@ -440,8 +440,8 @@ EOD;
                     ],
                     'LabelSpecification' => [
                         'LabelFormatType' => 'COMMON2D',
-                        'ImageType' => 'PDF',
-                        'LabelStockType' => 'PAPER_LETTER',
+                        'ImageType' => $request->labelFormat ?? 'PDF',
+                        'LabelStockType' => $request->labelSize ?? 'PAPER_LETTER',
                     ],
                     'ShippingDocumentSpecification' => [],
                     'PackageCount' => count($request->parcels),
