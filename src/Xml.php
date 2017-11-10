@@ -5,7 +5,6 @@
  * Date: 2017-05-22
  * Time: 21:37
  */
-declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
@@ -43,12 +42,9 @@ class Xml
             // otherwise just transform the array into nested XML
             $value = self::fromArray($value);
         }
-        elseif (is_string($value)) {
-            $value = static::cdata($value);
-        }
 
         // finally create a simple string node
-        return self::createStringNode($name, (string) $value);
+        return self::createStringNode($name, $value);
     }
 
     /**
