@@ -20,19 +20,19 @@ class XmlTest extends TestCase
         return [
             [[
                 'key' => 'value',
-            ], '<key>value</key>'],
+            ], '<key><![CDATA[value]]></key>'],
             [[
                'a' => [
                    'b' => 'c',
                    'd' => 'e',
                ],
-            ], '<a><b>c</b><d>e</d></a>'],
+            ], '<a><b><![CDATA[c]]></b><d><![CDATA[e]]></d></a>'],
             [[
                 'a' => [
                     'one',
                     'two',
                 ],
-            ], '<a>one</a><a>two</a>'],
+            ], '<a><![CDATA[one]]></a><a><![CDATA[two]]></a>'],
         ];
     }
 
