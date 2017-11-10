@@ -129,4 +129,42 @@ class FedExTest extends AbstractServiceTest
         $this->assertNotEmpty($services);
     }
 
+    public function testCreateMultiPieceShipment()
+    {
+        $sender = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+        $recipient = new Address('Helmut Inc.', ['Road 2'], '100 00', 'Stockholm', '', 'SE', 'Helmut', '123456');
+        $parcels = [
+            new Parcel(
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(1, Unit::KILOGRAM)
+            ),
+            new Parcel(
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(1, Unit::KILOGRAM)
+            ),
+        ];
+        $req = new ShipmentRequest('INTERNATIONAL_ECONOMY', $sender, $recipient, $parcels);
+        $req->reference = 'ABC12345';
+        $req->exportDeclarations = [
+            new ExportDeclaration('Shoes', 'US', 2, 100.00, 'USD', new Amount(1.0, Unit::KILOGRAM)),
+        ];
+        $req->currency = 'USD';
+
+        $promise = $this->service->createShipment($req);
+
+        /* @var \Vinnia\Shipping\Shipment $shipment */
+        $shipment = $promise->wait();
+
+        $this->assertInstanceOf(Shipment::class, $shipment);
+
+        $this->assertNotEmpty($shipment->labelData);
+
+        $this->service->cancelShipment($shipment->id, ['type' => 'FEDEX'])
+            ->wait();
+    }
+
 }

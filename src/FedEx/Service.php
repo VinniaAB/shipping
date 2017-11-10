@@ -10,7 +10,9 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping\FedEx;
 
 use Closure;
+use Exception;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Promise\Promise;
 use function GuzzleHttp\Promise\promise_for;
@@ -35,6 +37,7 @@ use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\Xml;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
+use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Validation\Validator;
 
@@ -326,35 +329,64 @@ EOD;
     /**
      * @param ShipmentRequest $request
      * @return PromiseInterface
+     * @throws Exception
      */
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        $parcels = array_map(function (Parcel $parcel, int $idx) use ($request): array {
+        /* @var Amount $totalWeight */
+        $totalWeight = array_reduce($request->parcels, function (Amount $carry, Parcel $current) use ($request): Amount {
             $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
-                $parcel->convertTo(Unit::INCH, Unit::POUND) :
-                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+                $current->convertTo(Unit::INCH, Unit::POUND) :
+                $current->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
-            return [
-                'SequenceNumber' => $idx + 1,
-                'GroupNumber' => 1,
-                'GroupPackageCount' => 1,
-                'Weight' => [
-                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
-                    'Value' => $parcel->weight->format(2),
-                ],
-                'Dimensions' => [
-                    'Length' => $parcel->length->format(0),
-                    'Width' => $parcel->width->format(0),
-                    'Height' => $parcel->height->format(0),
-                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
-                ],
-                'CustomerReferences' => [
-                    'CustomerReferenceType' => 'CUSTOMER_REFERENCE',
-                    'Value' => $request->reference,
-                ],
-            ];
-        }, $request->parcels, array_keys($request->parcels));
+            return new Amount($carry->getValue() + $parcel->weight->getValue(), $parcel->weight->getUnit());
+        }, new Amount(0, ''));
 
+        /* @var Shipment[] $shipments */
+        $shipments = [];
+
+        $masterTrackingId = null;
+
+        // if this shipment contains multiple parcels we need
+        // to send one request per parcel. if one request fails
+        // we need to cancel the other shipments.
+        foreach ($request->parcels as $idx => $parcel) {
+            $body = $this->buildShipmentRequestBody($request, $idx, $totalWeight, $masterTrackingId);
+
+            try {
+                /* @var Shipment $shipment */
+                $shipment = $this->send('/ship', $body, function (ResponseInterface $response) {
+                    return $this->parseShipmentRequestResponse($response);
+                })->wait();
+
+                $masterTrackingId = $masterTrackingId ?? $shipment->id;
+
+                $shipments[] = $shipment;
+            } catch (Exception $e) {
+                // if one parcel fails we need to rollback the other shipments
+                foreach ($shipments as $shipment) {
+                    $this->cancelShipment($shipment->id, [
+                        'type' => 'FEDEX',
+                    ])->wait();
+                }
+
+                throw $e;
+            }
+        }
+
+        return promise_for($shipments[0]);
+    }
+
+    protected function buildShipmentRequestBody(
+        ShipmentRequest $request,
+        int $parcelIndex,
+        Amount $totalWeight,
+        ?string $masterTrackingId = null
+    ): string
+    {
+        $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
+            $request->parcels[$parcelIndex]->convertTo(Unit::INCH, Unit::POUND) :
+            $request->parcels[$parcelIndex]->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
 
         $data = [
             'ProcessShipmentRequest' => [
@@ -379,6 +411,10 @@ EOD;
                     'DropoffType' => 'REGULAR_PICKUP',
                     'ServiceType' => $request->service,
                     'PackagingType' => 'YOUR_PACKAGING',
+                    'TotalWeight' => $parcelIndex === 0 ? [
+                        'Units' => $totalWeight->getUnit() === Unit::POUND ? 'LB' : 'KG',
+                        'Value' => $totalWeight->format(2),
+                    ] : null,
                     'Shipper' => [
                         'Contact' => [
                             'PersonName' => Xml::cdata($request->sender->contactName),
@@ -444,8 +480,31 @@ EOD;
                         'LabelStockType' => $request->labelSize ?? 'PAPER_LETTER',
                     ],
                     'ShippingDocumentSpecification' => [],
+                    'MasterTrackingId' => $parcelIndex === 0 ? null : [
+                        'TrackingNumber' => $masterTrackingId,
+                    ],
                     'PackageCount' => count($request->parcels),
-                    'RequestedPackageLineItems' => $parcels,
+                    'RequestedPackageLineItems' => [
+                        [
+                            'SequenceNumber' => $parcelIndex + 1,
+                            'GroupNumber' => 1,
+                            'GroupPackageCount' => 1,
+                            'Weight' => [
+                                'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
+                                'Value' => $parcel->weight->format(2),
+                            ],
+                            'Dimensions' => [
+                                'Length' => $parcel->length->format(0),
+                                'Width' => $parcel->width->format(0),
+                                'Height' => $parcel->height->format(0),
+                                'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
+                            ],
+                            'CustomerReferences' => [
+                                'CustomerReferenceType' => 'CUSTOMER_REFERENCE',
+                                'Value' => $request->reference,
+                            ],
+                        ],
+                    ],
                 ],
             ],
         ];
@@ -463,26 +522,29 @@ EOD;
 </p:Envelope>
 EOD;
 
-        return $this->send('/ship', $body, function (ResponseInterface $response) {
-            $body = (string) $response->getBody();
+        return $body;
+    }
 
-            // remove namespace prefixes to ease parsing
-            $body = str_replace('SOAP-ENV:', '', $body);
+    protected function parseShipmentRequestResponse(ResponseInterface $response): Shipment
+    {
+        $body = (string) $response->getBody();
 
-            if (strpos($body, '<HighestSeverity>SUCCESS</HighestSeverity>') === false) {
-                $this->throwError($body);
-            }
+        // remove namespace prefixes to ease parsing
+        $body = str_replace('SOAP-ENV:', '', $body);
 
-            preg_match('/<TrackingNumber>(.+)<\/TrackingNumber>/', $body, $matches);
+        if ($this->isErrorResponse($body)) {
+            $this->throwError($body);
+        }
 
-            $trackingNumber = $matches[1];
+        preg_match('/<TrackingIds>.*<TrackingNumber>([^<]+)</', $body, $matches);
 
-            preg_match('/<Label>.*<Image>(.+)<\/Image>.*<\/Label>/', $body, $matches);
+        $trackingNumber = $matches[1];
 
-            $image = base64_decode($matches[1]);
+        preg_match('/<Label>.*<Image>([^<]+)</', $body, $matches);
 
-            return new Shipment($trackingNumber, 'FedEx', $image, $body);
-        });
+        $image = base64_decode($matches[1]);
+
+        return new Shipment($trackingNumber, 'FedEx', $image, $body);
     }
 
     /**
@@ -610,6 +672,15 @@ EOD;
                 return $service['Service'];
             })->value();
         });
+    }
+
+    /**
+     * @param string $body
+     * @return bool
+     */
+    protected function isErrorResponse(string $body): bool
+    {
+        return preg_match('/<HighestSeverity>(FAILURE|ERROR)<\/HighestSeverity>/', $body) === 1;
     }
 
 }
