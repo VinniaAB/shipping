@@ -73,9 +73,9 @@ class Service implements ServiceInterface
     private function addressToArray(Address $address): array
     {
         return [
-            'StreetLines' => array_filter($address->lines),
-            'City' => $address->city,
-            'StateOrProvinceCode' => $address->state,
+            'StreetLines' => array_map([Xml::class, 'cdata'], array_filter($address->lines)),
+            'City' => Xml::cdata($address->city),
+            'StateOrProvinceCode' => Xml::cdata($address->state),
             'PostalCode' => $address->zip,
             'CountryCode' => $address->countryCode,
         ];
@@ -381,17 +381,17 @@ EOD;
                     'PackagingType' => 'YOUR_PACKAGING',
                     'Shipper' => [
                         'Contact' => [
-                            'PersonName' => $request->sender->contactName,
-                            'CompanyName' => $request->sender->name,
-                            'PhoneNumber' => $request->sender->contactPhone,
+                            'PersonName' => Xml::cdata($request->sender->contactName),
+                            'CompanyName' => Xml::cdata($request->sender->name),
+                            'PhoneNumber' => Xml::cdata($request->sender->contactPhone),
                         ],
                         'Address' => $this->addressToArray($request->sender),
                     ],
                     'Recipient' => [
                         'Contact' => [
-                            'PersonName' => $request->recipient->contactName,
-                            'CompanyName' => $request->recipient->name,
-                            'PhoneNumber' => $request->recipient->contactPhone,
+                            'PersonName' => Xml::cdata($request->recipient->contactName),
+                            'CompanyName' => Xml::cdata($request->recipient->name),
+                            'PhoneNumber' => Xml::cdata($request->recipient->contactPhone),
                         ],
                         'Address' => $this->addressToArray($request->recipient),
                     ],
@@ -421,7 +421,7 @@ EOD;
                         'Commodities' => array_map(function (ExportDeclaration $decl) use ($request) {
                             return [
                                 'NumberOfPieces' => $decl->quantity,
-                                'Description' => $decl->description,
+                                'Description' => Xml::cdata($decl->description),
                                 'CountryOfManufacture' => $decl->originCountryCode,
                                 'Weight' => [
                                     'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
