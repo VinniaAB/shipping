@@ -29,7 +29,7 @@ interface ServiceInterface
 
     /**
      * @param ShipmentRequest $request
-     * @return PromiseInterface
+     * @return PromiseInterface resolved with an array of \Vinnia\Shipping\Shipment
      */
     public function createShipment(ShipmentRequest $request): PromiseInterface;
 

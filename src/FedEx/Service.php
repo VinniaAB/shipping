@@ -374,7 +374,7 @@ EOD;
             }
         }
 
-        return promise_for($shipments[0]);
+        return promise_for($shipments);
     }
 
     protected function buildShipmentRequestBody(

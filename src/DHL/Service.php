@@ -491,7 +491,7 @@ EOD;
 
             $data = base64_decode($matches[1]);
 
-            return new Shipment($number, 'DHL', $data, $body);
+            return [new Shipment($number, 'DHL', $data, $body)];
         });
     }
 
