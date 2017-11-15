@@ -98,17 +98,16 @@ class FedExTest extends AbstractServiceTest
         ];
         $req->currency = 'USD';
         $req->units = ShipmentRequest::UNITS_IMPERIAL;
+        $req->signatureRequired = true;
 
         $promise = $this->service->createShipment($req);
 
-        /* @var \Vinnia\Shipping\Shipment $shipment */
-        $shipment = $promise->wait();
+        /* @var \Vinnia\Shipping\Shipment[] $shipments */
+        $shipments = $promise->wait();
 
-        $this->assertInstanceOf(Shipment::class, $shipment);
+        $this->assertNotEmpty($shipments[0]->labelData);
 
-        $this->assertNotEmpty($shipment->labelData);
-
-        $this->service->cancelShipment($shipment->id, ['type' => 'FEDEX'])
+        $this->service->cancelShipment($shipments[0]->id, ['type' => 'FEDEX'])
             ->wait();
     }
 
@@ -156,14 +155,12 @@ class FedExTest extends AbstractServiceTest
 
         $promise = $this->service->createShipment($req);
 
-        /* @var \Vinnia\Shipping\Shipment $shipment */
-        $shipment = $promise->wait();
+        /* @var \Vinnia\Shipping\Shipment[] $shipments */
+        $shipments = $promise->wait();
 
-        $this->assertInstanceOf(Shipment::class, $shipment);
+        $this->assertCount(2, $shipments);
 
-        $this->assertNotEmpty($shipment->labelData);
-
-        $this->service->cancelShipment($shipment->id, ['type' => 'FEDEX'])
+        $this->service->cancelShipment($shipments[0]->id, ['type' => 'FEDEX'])
             ->wait();
     }
 

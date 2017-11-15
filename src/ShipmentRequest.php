@@ -32,6 +32,11 @@ class ShipmentRequest extends QuoteRequest
     public $labelSize;
 
     /**
+     * @var bool
+     */
+    public $signatureRequired = false;
+
+    /**
      * ShipmentRequest constructor.
      * @param string $service
      * @param Address $sender

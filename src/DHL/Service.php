@@ -340,6 +340,22 @@ EOD;
             ];
         }, $parcels, array_keys($parcels));
 
+
+        // TODO: the signature service may or may not be broken
+        // on the test endpoint. currently requests with signature
+        // required enabled fails with the following error:
+        //
+        // <Condition>
+        //    <ConditionCode>154</ConditionCode>
+        //    <ConditionData>null field value is invalid</ConditionData>
+        // </Condition>
+        //
+        // we're not sending any null values so it's difficult
+        // to debug this.
+        if ($request->signatureRequired && !in_array('SA', $request->specialServices)) {
+            $request->specialServices[] = 'SA';
+        }
+
         $lengthUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'I' : 'C';
         $weightUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'L' : 'K';
 

@@ -503,6 +503,14 @@ EOD;
                                 'CustomerReferenceType' => 'CUSTOMER_REFERENCE',
                                 'Value' => $request->reference,
                             ],
+                            'SpecialServicesRequested' => [
+                                'SpecialServiceTypes' => [
+                                    $request->signatureRequired ? 'SIGNATURE_OPTION' : null,
+                                ],
+                                'SignatureOptionDetail' => $request->signatureRequired ? [
+                                    'OptionType' => 'DIRECT',
+                                ] : null,
+                            ],
                         ],
                     ],
                 ],

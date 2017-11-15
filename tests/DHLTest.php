@@ -106,10 +106,10 @@ class DHLTest extends AbstractServiceTest
 
         $promise = $this->service->createShipment($req);
 
-        /* @var Shipment $res */
+        /* @var Shipment[] $res */
         $res = $promise->wait();
 
-        $this->assertInstanceOf(Shipment::class, $res);
+        $this->assertCount(1, $res);
     }
 
     public function testQuoteError()
