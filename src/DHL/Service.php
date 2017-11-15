@@ -340,6 +340,7 @@ EOD;
             ];
         }, $parcels, array_keys($parcels));
 
+        $specialServices = $request->specialServices;
 
         // TODO: the signature service may or may not be broken
         // on the test endpoint. currently requests with signature
@@ -353,7 +354,11 @@ EOD;
         // we're not sending any null values so it's difficult
         // to debug this.
         if ($request->signatureRequired && !in_array('SA', $request->specialServices)) {
-            $request->specialServices[] = 'SA';
+            $specialServices[] = 'SA';
+        }
+
+        if ($request->insuredValue > 0) {
+            $specialServices[] = 'II';
         }
 
         $lengthUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'I' : 'C';
@@ -435,6 +440,7 @@ EOD;
                 'Contents' => $request->contents,
                 //'DoorTo' => 'DD',
                 'DimensionUnit' => $lengthUnitName,
+                'InsuredAmount' => number_format($request->insuredValue, 2, '.', ''),
                 'IsDutiable' => $request->isDutiable ? 'Y' : 'N',
                 'CurrencyCode' => $request->currency,
             ],
@@ -455,7 +461,7 @@ EOD;
                 return [
                     'SpecialServiceType' => $service,
                 ];
-            }, $request->specialServices),
+            }, $specialServices),
             'LabelImageFormat' => $request->labelFormat ?? 'PDF',
             'Label' => [
                 'LabelTemplate' => $request->labelSize ?? '8X4_A4_PDF',

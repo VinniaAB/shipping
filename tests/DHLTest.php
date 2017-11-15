@@ -73,13 +73,14 @@ class DHLTest extends AbstractServiceTest
         $req->exportDeclarations = [
             new ExportDeclaration('Samples', 'SE', 1, 10.0, 'SEK', new Amount(1, Unit::KILOGRAM)),
         ];
+        $req->insuredValue = 10.0;
 
         $promise = $this->service->createShipment($req);
 
-        /* @var Shipment $res */
+        /* @var Shipment[] $res */
         $res = $promise->wait();
 
-        $this->assertInstanceOf(Shipment::class, $res);
+        $this->assertCount(1, $res);
     }
 
     public function testCreateLabelWithImperialUnits()
