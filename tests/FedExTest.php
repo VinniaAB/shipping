@@ -101,6 +101,7 @@ class FedExTest extends AbstractServiceTest
         $req->signatureRequired = true;
         $req->insuredValue = 10;
         $req->value = 10;
+        $req->incoterm = 'DDP';
 
         $promise = $this->service->createShipment($req);
 

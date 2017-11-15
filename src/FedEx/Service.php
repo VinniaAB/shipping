@@ -458,6 +458,9 @@ EOD;
                             'Currency' => $request->currency,
                             'Amount' => number_format($request->value, 2, '.', ''),
                         ],
+                        'CommercialInvoice' => [
+                            'TermsOfSale' => $request->incoterm,
+                        ],
                         'Commodities' => array_map(function (ExportDeclaration $decl) use ($request) {
                             return [
                                 'NumberOfPieces' => $decl->quantity,
