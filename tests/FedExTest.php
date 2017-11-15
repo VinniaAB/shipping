@@ -99,6 +99,8 @@ class FedExTest extends AbstractServiceTest
         $req->currency = 'USD';
         $req->units = ShipmentRequest::UNITS_IMPERIAL;
         $req->signatureRequired = true;
+        $req->insuredValue = 10;
+        $req->value = 10;
 
         $promise = $this->service->createShipment($req);
 

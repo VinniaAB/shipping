@@ -415,6 +415,10 @@ EOD;
                         'Units' => $totalWeight->getUnit() === Unit::POUND ? 'LB' : 'KG',
                         'Value' => $totalWeight->format(2),
                     ] : null,
+                    'TotalInsuredValue' => [
+                        'Currency' => $request->currency,
+                        'Amount' => number_format($request->insuredValue, 2, '.', ''),
+                    ],
                     'Shipper' => [
                         'Contact' => [
                             'PersonName' => Xml::cdata($request->sender->contactName),
