@@ -81,6 +81,7 @@ class Service implements ServiceInterface
             'StateOrProvinceCode' => Xml::cdata($address->state),
             'PostalCode' => $address->zip,
             'CountryCode' => $address->countryCode,
+            'Residential' => null,
         ];
     }
 

@@ -70,8 +70,11 @@ class FedExTest extends AbstractServiceTest
 
         $promise = $this->service->createShipment($req);
 
-        /* @var \Vinnia\Shipping\Shipment $shipment */
-        $shipment = $promise->wait();
+        /* @var \Vinnia\Shipping\Shipment[] $shipment */
+        $shipments = $promise->wait();
+        $shipment = $shipments[0];
+
+        $this->assertCount(1, $shipments);
 
         $this->assertInstanceOf(Shipment::class, $shipment);
 
