@@ -123,9 +123,12 @@ class Xml
         $func = function (array $slice, array &$out) use (&$func) {
             foreach ($slice as $key => $element) {
                 $res = $element;
-                if ($element instanceof SimpleXMLElement || is_array($element)) {
+                if (($element instanceof SimpleXMLElement && count($element) > 0) || is_array($element)) {
                     $res = [];
                     $func((array) $element, $res);
+                }
+                else {
+                    $res = (string) $res;
                 }
                 $out[$key] = $res;
             }

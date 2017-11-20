@@ -75,4 +75,40 @@ EOD;
         ], $arrayed);
     }
 
+    public function testToArraySerializesSingleEmptyElementToString()
+    {
+        $xml = <<<EOD
+<root>
+    <name />
+</root>
+EOD;
+
+        $el = new \SimpleXMLElement($xml);
+        $arrayed = Xml::toArray($el);
+
+        $this->assertEquals([
+            'name' => '',
+        ], $arrayed);
+    }
+
+    public function testToArraySerializesEmptyElementInArrayToString()
+    {
+        $xml = <<<EOD
+<root>
+    <name />
+    <name>Hello</name>
+</root>
+EOD;
+
+        $el = new \SimpleXMLElement($xml);
+        $arrayed = Xml::toArray($el);
+
+        $this->assertEquals([
+            'name' => [
+                '',
+                'Hello',
+            ],
+        ], $arrayed);
+    }
+
 }
