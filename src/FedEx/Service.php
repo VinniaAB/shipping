@@ -75,8 +75,15 @@ class Service implements ServiceInterface
      */
     private function addressToArray(Address $address): array
     {
+        // fedex only supports 2 street lines so
+        // let's put everything that overflows
+        // into the 2nd line.
+        $lines = [
+            $address->lines[0] ?? '',
+            implode(', ', array_slice($address->lines, 1)),
+        ];
         return [
-            'StreetLines' => array_map([Xml::class, 'cdata'], array_filter($address->lines)),
+            'StreetLines' => array_map([Xml::class, 'cdata'], array_filter($lines)),
             'City' => Xml::cdata($address->city),
             'StateOrProvinceCode' => Xml::cdata($address->state),
             'PostalCode' => $address->zip,
