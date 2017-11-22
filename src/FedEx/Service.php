@@ -141,7 +141,7 @@ class Service implements ServiceInterface
         $sender = $request->sender;
         $recipient = $request->recipient;
 
-        $rateRequest = Xml::fromArray([
+        $rateRequest = [
             'RateRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
@@ -183,11 +183,14 @@ class Service implements ServiceInterface
                     'RequestedPackageLineItems' => $parcels,
                 ],
             ],
-        ]);
+        ];
+
+        $rateRequest = Xml::removeKeysWithEmptyValues($rateRequest);
+        $xml = Xml::fromArray($rateRequest);
 
         $body = <<<EOD
 <p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/rate/v22">
-   <p:Body>{$rateRequest}</p:Body>
+   <p:Body>{$xml}</p:Body>
 </p:Envelope>
 EOD;
 
