@@ -25,6 +25,7 @@ use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Shipping\TrackingResult;
 use Vinnia\Shipping\Xml;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
@@ -264,7 +265,7 @@ class Service implements ServiceInterface
             $body = json_decode((string) $response->getBody(), true);
 
             if (!$this->arrayHasKeys($body, ['TrackResponse.Shipment'])) {
-                return new RejectedPromise($body);
+                return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
             $activities = $body['TrackResponse']['Shipment']['Package']['Activity'];
@@ -291,7 +292,9 @@ class Service implements ServiceInterface
                 return new TrackingActivity($status, $description, $date, $address);
             })->value();
 
-            return new Tracking('UPS', $body['TrackResponse']['Shipment']['Service']['Description'], $activities);
+            $tracking = new Tracking('UPS', $body['TrackResponse']['Shipment']['Service']['Description'], $activities);
+
+            return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
         });
     }
 

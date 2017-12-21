@@ -19,6 +19,7 @@ use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Shipping\TrackingResult;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 
@@ -122,8 +123,12 @@ abstract class AbstractServiceTest extends TestCase
     {
         $promise = $this->service->getTrackingStatus($trackingNumber);
 
-        /* @var Tracking|null $tracking */
-        $tracking = $promise->wait();
+        /* @var TrackingResult|null $result */
+        $result = $promise->wait();
+
+        $this->assertEquals(TrackingResult::STATUS_SUCCESS, $result->status);
+
+        $tracking = $result->tracking;
 
         $this->assertInstanceOf(Tracking::class, $tracking);
 

@@ -32,6 +32,7 @@ use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Shipping\TrackingResult;
 use Vinnia\Shipping\Xml;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
@@ -256,7 +257,7 @@ EOD;
             $info = $xml->xpath('/req:TrackingResponse/AWBInfo/ShipmentInfo[GlobalProductCode]');
 
             if (!$info) {
-                $this->throwError($body);
+                return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
             $activities = (new Collection($info[0]->xpath('ShipmentEvent')))->map(function (SimpleXMLElement $element) {
@@ -276,7 +277,9 @@ EOD;
                 return new TrackingActivity($status, $description, $dt, $address);
             })->reverse()->value(); // DHL orders the events in ascending order, we want the most recent first.
 
-            return new Tracking('DHL', (string) $info[0]->{'GlobalProductCode'}, $activities);
+            $tracking = new Tracking('DHL', (string) $info[0]->{'GlobalProductCode'}, $activities);
+
+            return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
         });
     }
 

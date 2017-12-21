@@ -23,7 +23,7 @@ interface ServiceInterface
     /**
      * @param string $trackingNumber
      * @param array $options vendor specific options
-     * @return PromiseInterface
+     * @return PromiseInterface resolved with a \Vinnia\Shipping\TrackingResult
      */
     public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface;
 

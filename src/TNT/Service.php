@@ -25,6 +25,7 @@ use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Shipping\TrackingResult;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 use DateTimeImmutable;
@@ -187,7 +188,7 @@ EOD;
             $activities = $xml->xpath('/TrackResponse/Consignment/StatusData');
 
             if (!$activities) {
-                return new RejectedPromise($body);
+                return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
             $activities = (new Collection($activities))->map(function (SimpleXMLElement $e): TrackingActivity {
@@ -203,7 +204,9 @@ EOD;
 
             $service = (string) $xml->Consignment->ShipmentSummary->Service;
 
-            return new Tracking('TNT', $service, $activities);
+            $tracking = new Tracking('TNT', $service, $activities);
+
+            return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
         });
     }
 

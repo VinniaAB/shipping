@@ -34,6 +34,7 @@ use SimpleXMLElement;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
+use Vinnia\Shipping\TrackingResult;
 use Vinnia\Shipping\Xml;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
@@ -273,7 +274,7 @@ EOD;
             $bag = $validator->validate($arrayed);
 
             if (count($bag) !== 0) {
-                return new RejectedPromise($body);
+                return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
             $service = (string) Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type');
@@ -299,7 +300,9 @@ EOD;
                 return new TrackingActivity($status, $description, $dt, $address);
             })->value();
 
-            return new Tracking('FedEx', $service, $activities);
+            $tracking = new Tracking('FedEx', $service, $activities);
+
+            return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
         });
     }
 
