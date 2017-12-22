@@ -262,13 +262,14 @@ class Service implements ServiceInterface
             ],
             'json' => $body,
         ])->then(function (ResponseInterface $response) {
-            $body = json_decode((string) $response->getBody(), true);
+            $body = (string) $response->getBody();
+            $json = json_decode($body, true);
 
-            if (!$this->arrayHasKeys($body, ['TrackResponse.Shipment'])) {
+            if (!$this->arrayHasKeys($json, ['TrackResponse.Shipment'])) {
                 return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
-            $activities = $body['TrackResponse']['Shipment']['Package']['Activity'];
+            $activities = $json['TrackResponse']['Shipment']['Package']['Activity'];
 
             // if there is only one activity UPS decides to not return
             // an array of activities and instead they only list one.
@@ -292,7 +293,7 @@ class Service implements ServiceInterface
                 return new TrackingActivity($status, $description, $date, $address);
             })->value();
 
-            $tracking = new Tracking('UPS', $body['TrackResponse']['Shipment']['Service']['Description'], $activities);
+            $tracking = new Tracking('UPS', $json['TrackResponse']['Shipment']['Service']['Description'], $activities);
 
             return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
         });
