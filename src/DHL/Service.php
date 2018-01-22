@@ -202,7 +202,7 @@ EOD;
                 // the amount is a decimal string, deal with that
                 $amount = (int) round(((float)$amountString) * pow(10, 2));
 
-                $product = (string) $element->{'ProductShortName'};
+                $product = (string) $element->{'GlobalProductCode'};
 
                 return new Quote('DHL', $product, new Money($amount, new Currency((string) $element->{'CurrencyCode'})));
             })->value();

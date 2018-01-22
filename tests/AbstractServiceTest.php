@@ -77,7 +77,7 @@ abstract class AbstractServiceTest extends TestCase
         $package = new Parcel($size, $size, $size, new Amount(5, Unit::KILOGRAM));
         $request = new QuoteRequest($sender, $recipient, [$package]);
         $request->currency = 'SEK';
-        $request->isDutiable = true;
+        $request->isDutiable = false;
         $promise = $this->service->getQuotes($request);
 
         try {
