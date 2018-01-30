@@ -177,6 +177,13 @@ class Service implements ServiceInterface
                 return new RejectedPromise($body);
             }
 
+            $shipments = $body['RateResponse']['RatedShipment'];
+
+            // sometimes UPS likes to return a single rate response.
+            // this causes the json to appear as an object instead
+            // of an array.
+            $shipments = Xml::isNumericKeyArray($shipments) ? $shipments : [$shipments];
+
             return array_map(function (array $shipment): Quote {
                 $charges = $shipment['TotalCharges'];
                 $amount = (int) round(((float) $charges['MonetaryValue']) * pow(10, 2));
@@ -186,7 +193,7 @@ class Service implements ServiceInterface
                     (string) Arrays::get($shipment, 'Service.Code'),
                     new Money($amount, new Currency($charges['CurrencyCode']))
                 );
-            }, $body['RateResponse']['RatedShipment']);
+            }, $shipments);
         });
     }
 
