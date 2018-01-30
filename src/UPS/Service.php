@@ -27,6 +27,7 @@ use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
 use Vinnia\Shipping\Xml;
+use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 
@@ -35,23 +36,6 @@ class Service implements ServiceInterface
 
     const URL_TEST = 'https://wwwcie.ups.com/rest';
     const URL_PRODUCTION = 'https://onlinetools.ups.com/rest';
-
-    // UPS only provides a service code in the response so we might need these
-    const SERVICE_CODES = [
-        '11' => 'Standard',
-        '03' => 'Ground',
-        '12' => '3 Day Select',
-        '02' => '2nd Day Air',
-        '59' => '2nd Day Air AM',
-        '13' => 'Next Day Air Saver',
-        '01' => 'Next Day Air',
-        '14' => 'Next Day Air Early A.M.',
-        '07' => 'Worldwide Express',
-        '54' => 'Worldwide Express Plus',
-        '08' => 'Worldwide Expedited',
-        '65' => 'World Wide Saver',
-    ];
-
     const NON_SI_COUNTRIES = ['US'];
 
     /**
@@ -90,23 +74,18 @@ class Service implements ServiceInterface
     {
         $sender = $request->sender;
         $recipient = $request->recipient;
-        $package = $request->package;
 
         // UPS doesn't allow us to use SI units inside some countries
         $nonSi = in_array(mb_strtoupper($sender->countryCode, 'utf-8'), self::NON_SI_COUNTRIES);
         $lengthUnit = $nonSi ? 'IN' : 'CM';
         $weightUnit = $nonSi ? 'LBS' : 'KGS';
 
-        $package = $package->convertTo(
-            $nonSi ? Unit::INCH : Unit::CENTIMETER,
-            $nonSi ? Unit::POUND : Unit::KILOGRAM
-        );
-
-        // after value conversions we might get lots of decimals. deal with that
-        $length = number_format($package->length->getValue(), 2, '.', '');
-        $width = number_format($package->width->getValue(), 2, '.', '');
-        $height = number_format($package->height->getValue(), 2, '.', '');
-        $weight = number_format($package->weight->getValue(), 2, '.', '');
+        $parcels = array_map(function (Parcel $parcel) use ($nonSi): Parcel {
+            return $parcel->convertTo(
+                $nonSi ? Unit::INCH : Unit::CENTIMETER,
+                $nonSi ? Unit::POUND : Unit::KILOGRAM
+            );
+        }, $request->parcels);
 
         $body = [
             'UPSSecurity' => [
@@ -142,7 +121,7 @@ class Service implements ServiceInterface
                         'Address' => [
                             'AddressLine' => array_filter($recipient->lines),
                             'City' => $recipient->city,
-                            'StateProvinceCode' => '',
+                            'StateProvinceCode' => $recipient->state,
                             'PostalCode' => $recipient->zip,
                             'CountryCode' => $recipient->countryCode,
                         ],
@@ -152,30 +131,32 @@ class Service implements ServiceInterface
                         'Address' => [
                             'AddressLine' => array_filter($sender->lines),
                             'City' => $sender->city,
-                            'StateProvinceCode' => '',
+                            'StateProvinceCode' => $sender->state,
                             'PostalCode' => $sender->zip,
                             'CountryCode' => $sender->countryCode,
                         ],
                     ],
-                    'Package' => [
-                        'PackagingType' => [
-                            'Code' => '02',
-                        ],
-                        'Dimensions' => [
-                            'UnitOfMeasurement' => [
-                                'Code' => $lengthUnit,
+                    'Package' => array_map(function (Parcel $parcel) use ($lengthUnit, $weightUnit): array {
+                        return [
+                            'PackagingType' => [
+                                'Code' => '02',
                             ],
-                            'Length' => $length,
-                            'Width' => $width,
-                            'Height' => $height,
-                        ],
-                        'PackageWeight' => [
-                            'UnitOfMeasurement' => [
-                                'Code' => $weightUnit,
+                            'Dimensions' => [
+                                'UnitOfMeasurement' => [
+                                    'Code' => $lengthUnit,
+                                ],
+                                'Length' => $parcel->length->format(2, '.', ''),
+                                'Width' => $parcel->width->format(2, '.', ''),
+                                'Height' => $parcel->height->format(2, '.', ''),
                             ],
-                            'Weight' => $weight,
-                        ],
-                    ],
+                            'PackageWeight' => [
+                                'UnitOfMeasurement' => [
+                                    'Code' => $weightUnit,
+                                ],
+                                'Weight' => $parcel->weight->format(2, '.', ''),
+                            ],
+                        ];
+                    }, $parcels),
                     //'ShipmentRatingOptions' => [
                     //    'NegotiatedRatesIndicator' => '',
                     //],
@@ -192,42 +173,21 @@ class Service implements ServiceInterface
         ])->then(function (ResponseInterface $response) {
             $body = json_decode((string) $response->getBody(), true);
 
-            if (!$this->arrayHasKeys($body, ['RateResponse.RatedShipment'])) {
+            if (Arrays::get($body, 'RateResponse.RatedShipment') === null) {
                 return new RejectedPromise($body);
             }
 
             return array_map(function (array $shipment): Quote {
                 $charges = $shipment['TotalCharges'];
                 $amount = (int) round(((float) $charges['MonetaryValue']) * pow(10, 2));
-                $product = self::SERVICE_CODES[(string) $shipment['Service']['Code']] ?? 'Unknown';
 
                 return new Quote(
                     'UPS',
-                    $product,
+                    (string) Arrays::get($shipment, 'Service.Code'),
                     new Money($amount, new Currency($charges['CurrencyCode']))
                 );
             }, $body['RateResponse']['RatedShipment']);
         });
-    }
-
-    /**
-     * @param array $value
-     * @param string[] $keys multi-dimensional keys may be described with dot syntax, eg "car.make"
-     * @return bool
-     */
-    private function arrayHasKeys(array $value, array $keys): bool
-    {
-        foreach ($keys as $key) {
-            $parts = explode('.', $key);
-            $slice = $value;
-            foreach ($parts as $part) {
-                if (!isset($slice[$part])) {
-                    return false;
-                }
-                $slice = $slice[$part];
-            }
-        }
-        return true;
     }
 
     /**
@@ -265,7 +225,7 @@ class Service implements ServiceInterface
             $body = (string) $response->getBody();
             $json = json_decode($body, true);
 
-            if (!$this->arrayHasKeys($json, ['TrackResponse.Shipment'])) {
+            if (Arrays::get($json, 'TrackResponse.Shipment') === null) {
                 return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
