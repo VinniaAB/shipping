@@ -115,12 +115,7 @@ class Service implements ServiceInterface
                     'Pieces' => [
                         'Piece' => $parcels,
                     ],
-                    // we insert a null PaymentAccountNumber here so we can set
-                    // a correct value when needed. keys in PHP arrays keep the
-                    // position in which they are inserted and therefore we cannot
-                    // insert this key later - that would cause DHL validation
-                    // to fail.
-                    'PaymentAccountNumber' => null,
+                    'PaymentAccountNumber' => $this->credentials->getAccountNumber(),
                     'IsDutiable' => $request->isDutiable ? 'Y' : 'N',
                     // same as above
                     'QtdShp' => [],
