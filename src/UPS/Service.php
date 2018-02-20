@@ -216,6 +216,7 @@ class Service implements ServiceInterface
             ],
             'TrackRequest' => [
                 'Request' => [
+                    // All activities
                     'RequestOption' => '1',
                 ],
                 'InquiryNumber' => $trackingNumber,
@@ -236,14 +237,18 @@ class Service implements ServiceInterface
                 return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
-            $activities = $json['TrackResponse']['Shipment']['Package']['Activity'];
+            // if we're tracking a multi-piece shipment
+            // we assume that the first package is the
+            // master package.
+            $packages = $json['TrackResponse']['Shipment']['Package'];
+            $package = Xml::isNumericKeyArray($packages) ? $packages[0] : $packages;
+
+            $activities = $package['Activity'];
 
             // if there is only one activity UPS decides to not return
             // an array of activities and instead they only list one.
             // probably because they're converting from XML.
-            if (!Xml::isNumericKeyArray($activities)) {
-                $activities = [$activities];
-            }
+            $activities = Xml::isNumericKeyArray($activities) ? $activities : [$activities];
 
             $activities = (new Collection($activities))->map(function (array $row): TrackingActivity {
                 $address = new Address(
