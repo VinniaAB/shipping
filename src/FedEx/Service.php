@@ -10,6 +10,8 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping\FedEx;
 
 use Closure;
+use DateTime;
+use DateTimeImmutable;
 use Exception;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
@@ -29,7 +31,6 @@ use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
-use DateTimeImmutable;
 use SimpleXMLElement;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tracking;
@@ -278,6 +279,16 @@ EOD;
             }
 
             $service = (string) Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type');
+
+            $datesOrTimes = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.DatesOrTimes');
+            $estimatedDelivery = null;
+            foreach ($datesOrTimes as $shipmentDate) {
+                /** If shipment delivered, this is replaced by ACTUAL_DELIVERY */
+                if ('ESTIMATED_DELIVERY' == $shipmentDate['Type']) {
+                    $estimatedDelivery = new DateTimeImmutable($shipmentDate['DateOrTimestamp']);
+                }
+            }
+
             $events = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Events');
 
             if (!Xml::isNumericKeyArray($events)) {
@@ -301,6 +312,8 @@ EOD;
             })->value();
 
             $tracking = new Tracking('FedEx', $service, $activities);
+
+            $tracking->estimatedDeliveryDate = $estimatedDelivery;
 
             return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
         });

@@ -9,6 +9,7 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
+use DateTimeInterface;
 use JsonSerializable;
 
 class Tracking implements JsonSerializable
@@ -28,6 +29,11 @@ class Tracking implements JsonSerializable
      * @var TrackingActivity[]
      */
     public $activities;
+
+    /**
+     * @var DateTimeInterface|null
+     */
+    public $estimatedDeliveryDate;
 
     /**
      * Tracking constructor.

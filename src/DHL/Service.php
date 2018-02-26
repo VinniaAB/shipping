@@ -255,6 +255,9 @@ EOD;
                 return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
+            $estimatedDelivery = \DateTime::createFromFormat('Y-m-d H:i:s', (string) $info[0]->{'EstDlvyDateUTC'}, new DateTimeZone('UTC'));
+
+
             $activities = (new Collection($info[0]->xpath('ShipmentEvent')))->map(function (SimpleXMLElement $element) {
                 $dtString = ((string) $element->{'Date'}) . ' ' . ((string) $element->{'Time'});
                 $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
@@ -273,6 +276,8 @@ EOD;
             })->reverse()->value(); // DHL orders the events in ascending order, we want the most recent first.
 
             $tracking = new Tracking('DHL', (string) $info[0]->{'GlobalProductCode'}, $activities);
+
+            $tracking->estimatedDeliveryDate = $estimatedDelivery;
 
             return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
         });

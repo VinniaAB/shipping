@@ -237,6 +237,13 @@ class Service implements ServiceInterface
                 return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
+            $estimatedDelivery = null;
+            $deliveryDetail = $json['TrackResponse']['Shipment']['DeliveryDetail'] ?? [];
+            if (!empty($deliveryDetail) && 'Scheduled Delivery' === $deliveryDetail['Type']['Description']) {
+                //They only supply the date so let's set time to 12 to cover most of the world
+                $estimatedDelivery = \DateTime::createFromFormat('Ymd H:i:s', $deliveryDetail['Date'].' 12:00:00', new \DateTimeZone('UTC'));
+            }
+
             // if we're tracking a multi-piece shipment
             // we assume that the first package is the
             // master package.
@@ -266,6 +273,8 @@ class Service implements ServiceInterface
             })->value();
 
             $tracking = new Tracking('UPS', $json['TrackResponse']['Shipment']['Service']['Description'], $activities);
+
+            $tracking->estimatedDeliveryDate = $estimatedDelivery;
 
             return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
         });

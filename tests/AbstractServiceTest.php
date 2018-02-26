@@ -131,19 +131,20 @@ abstract class AbstractServiceTest extends TestCase
         $tracking = $result->tracking;
 
         $this->assertInstanceOf(Tracking::class, $tracking);
+        $this->assertTrue($tracking->estimatedDeliveryDate instanceof \DateTimeInterface || $tracking->estimatedDeliveryDate === null);
 
-        echo sprintf('%s %s' . PHP_EOL, $tracking->vendor, $tracking->service);
+        //echo sprintf('%s %s' . PHP_EOL, $tracking->vendor, $tracking->service);
 
         foreach ($tracking->activities as $activity) {
             $this->assertInstanceOf(TrackingActivity::class, $activity);
 
-            echo sprintf(
+            /*echo sprintf(
                 '%s: %d %s %s' . PHP_EOL,
                 $activity->date->format('c'),
                 $activity->status,
                 $activity->description,
                 $activity->address->city
-            );
+            );*/
         }
 
         $prev = PHP_INT_MAX;
