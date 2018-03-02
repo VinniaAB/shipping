@@ -280,7 +280,7 @@ EOD;
 
             $service = (string) Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type');
 
-            $datesOrTimes = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.DatesOrTimes');
+            $datesOrTimes = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.DatesOrTimes') ?? [];
             $estimatedDelivery = null;
             foreach ($datesOrTimes as $shipmentDate) {
                 /** If shipment delivered, this is replaced by ACTUAL_DELIVERY */
