@@ -284,7 +284,8 @@ EOD;
             $estimatedDelivery = null;
             foreach ($datesOrTimes as $shipmentDate) {
                 /** If shipment delivered, this is replaced by ACTUAL_DELIVERY */
-                if ('ESTIMATED_DELIVERY' == $shipmentDate['Type']) {
+               $dateType = $shipmentDate['Type'] ?? '';
+                if ('ESTIMATED_DELIVERY' == $dateType) {
                     $estimatedDelivery = new DateTimeImmutable($shipmentDate['DateOrTimestamp']);
                 }
             }
