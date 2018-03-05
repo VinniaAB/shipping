@@ -239,7 +239,7 @@ class Service implements ServiceInterface
 
             $estimatedDelivery = null;
             $deliveryDetail = $json['TrackResponse']['Shipment']['DeliveryDetail'] ?? [];
-            if (!empty($deliveryDetail) && 'Scheduled Delivery' === $deliveryDetail['Type']['Description']) {
+            if (!empty($deliveryDetail['Type']) && 'Scheduled Delivery' === $deliveryDetail['Type']['Description']) {
                 //They only supply the date so let's set time to 12 to cover most of the world
                 $estimatedDelivery = \DateTime::createFromFormat('Ymd H:i:s', $deliveryDetail['Date'].' 12:00:00', new \DateTimeZone('UTC'));
             }
