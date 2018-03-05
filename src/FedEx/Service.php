@@ -290,7 +290,7 @@ EOD;
                 }
             }
 
-            $events = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Events');
+            $events = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Events') ?? [];
 
             if (!Xml::isNumericKeyArray($events)) {
                 $events = [$events];
