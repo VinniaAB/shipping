@@ -247,10 +247,10 @@ class Service implements ServiceInterface
             // if we're tracking a multi-piece shipment
             // we assume that the first package is the
             // master package.
-            $packages = $json['TrackResponse']['Shipment']['Package'];
+            $packages = $json['TrackResponse']['Shipment']['Package'] ?? [];
             $package = Xml::isNumericKeyArray($packages) ? $packages[0] : $packages;
 
-            $activities = $package['Activity'];
+            $activities = $package['Activity'] ?? [];
 
             // if there is only one activity UPS decides to not return
             // an array of activities and instead they only list one.
