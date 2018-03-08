@@ -248,29 +248,32 @@ class Service implements ServiceInterface
             // we assume that the first package is the
             // master package.
             $packages = $json['TrackResponse']['Shipment']['Package'] ?? [];
-            $package = Xml::isNumericKeyArray($packages) ? $packages[0] : $packages;
+            $activities = [];
+            if (!empty($packages)) {
+                $package = Xml::isNumericKeyArray($packages) ? $packages[0] : $packages;
 
-            $activities = $package['Activity'] ?? [];
+                $activities = $package['Activity'] ?? [];
 
-            // if there is only one activity UPS decides to not return
-            // an array of activities and instead they only list one.
-            // probably because they're converting from XML.
-            $activities = Xml::isNumericKeyArray($activities) ? $activities : [$activities];
+                // if there is only one activity UPS decides to not return
+                // an array of activities and instead they only list one.
+                // probably because they're converting from XML.
+                $activities = Xml::isNumericKeyArray($activities) ? $activities : [$activities];
 
-            $activities = (new Collection($activities))->map(function (array $row): TrackingActivity {
-                $address = new Address(
-                    '',
-                    [],
-                    $row['ActivityLocation']['Address']['PostalCode'] ?? '',
-                    $row['ActivityLocation']['Address']['City'] ?? '',
-                    '',
-                    $row['ActivityLocation']['Address']['CountryCode'] ?? ''
-                );
-                $date = \DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
-                $status = $this->getStatusFromType($row['Status']['Type']);
-                $description = $row['Status']['Description'];
-                return new TrackingActivity($status, $description, $date, $address);
-            })->value();
+                $activities = (new Collection($activities))->map(function (array $row): TrackingActivity {
+                    $address = new Address(
+                        '',
+                        [],
+                        $row['ActivityLocation']['Address']['PostalCode'] ?? '',
+                        $row['ActivityLocation']['Address']['City'] ?? '',
+                        '',
+                        $row['ActivityLocation']['Address']['CountryCode'] ?? ''
+                    );
+                    $date = \DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
+                    $status = $this->getStatusFromType($row['Status']['Type']);
+                    $description = $row['Status']['Description'];
+                    return new TrackingActivity($status, $description, $date, $address);
+                })->value();
+            }
 
             $tracking = new Tracking('UPS', $json['TrackResponse']['Shipment']['Service']['Description'], $activities);
 
