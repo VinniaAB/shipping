@@ -270,7 +270,7 @@ class Service implements ServiceInterface
                     );
                     $date = \DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
                     $status = $this->getStatusFromType($row['Status']['Type']);
-                    $description = $row['Status']['Description'];
+                    $description = $row['Status']['Description'] ?? '';
                     return new TrackingActivity($status, $description, $date, $address);
                 })->value();
             }
