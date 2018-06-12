@@ -46,4 +46,10 @@ interface ServiceInterface
      */
     public function getAvailableServices(QuoteRequest $request): PromiseInterface;
 
+    /**
+     * @param string $trackingNumber
+     * @return PromiseInterface
+     */
+    public function getProofOfDelivery(string $trackingNumber): PromiseInterface;
+
 }

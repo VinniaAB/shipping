@@ -593,4 +593,14 @@ EOD;
             })->value();
         });
     }
+
+    /**
+     * @param string $trackingNumber
+     * @return PromiseInterface
+     * @throws ServiceException
+     */
+    public function getProofOfDelivery(string $trackingNumber): PromiseInterface
+    {
+        $this->throwError('Not implemented');
+    }
 }

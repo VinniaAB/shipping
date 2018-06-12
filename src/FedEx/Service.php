@@ -25,6 +25,7 @@ use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\ExportDeclaration;
+use Vinnia\Shipping\ProofOfDeliveryResult;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
@@ -726,4 +727,85 @@ EOD;
         return preg_match('/<HighestSeverity>(FAILURE|ERROR)<\/HighestSeverity>/', $body) === 1;
     }
 
+    /**
+     * @param string $trackingNumber
+     * @return PromiseInterface
+     *
+     */
+    public function getProofOfDelivery(string $trackingNumber): PromiseInterface
+    {
+        $trackRequest = Xml::fromArray([
+            'GetTrackingDocumentsRequest' => [
+                'WebAuthenticationDetail' => [
+                    'UserCredential' => [
+                        'Key' => $this->credentials->getCredentialKey(),
+                        'Password' => $this->credentials->getCredentialPassword(),
+                    ],
+                ],
+                'ClientDetail' => [
+                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                ],
+                'Version' => [
+                    'ServiceId' => 'trck',
+                    'Major' => 14,
+                    'Intermediate' => 0,
+                    'Minor' => 0,
+                ],
+                'SelectionDetails' => [
+                    'PackageIdentifier' => [
+                        'Type' => 'TRACKING_NUMBER_OR_DOORTAG',
+                        'Value' => $trackingNumber,
+                    ],
+                    'SecureSpodAccount' => $this->credentials->getAccountNumber()
+                ],
+                'TrackingDocumentSpecification' => [
+                    'DocumentTypes' => 'SIGNATURE_PROOF_OF_DELIVERY',
+                    'SignatureProofOfDeliveryDetail' => [
+                        'DocumentFormat' => [
+                            'Dispositions' => [
+                                'DispositionType' => 'RETURN'
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+
+        $body = <<<EOD
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/track/v14">
+   <soapenv:Header />
+   <soapenv:Body>{$trackRequest}</soapenv:Body>
+</soapenv:Envelope>
+EOD;
+
+        return $this->send('/track', $body, function (ResponseInterface $response) {
+            $body = (string)$response->getBody();
+
+            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
+            $arrayed = Xml::toArray($xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body')[0]);
+
+            $validator = new Validator([
+                'GetTrackingDocumentsReply.Notifications.Severity' => 'required|ne:ERROR',
+                'GetTrackingDocumentsReply.Documents' => 'array',
+                'GetTrackingDocumentsReply.Documents.Parts' => 'array',
+                'GetTrackingDocumentsReply.Documents.Parts.Content' => 'required|string',
+            ]);
+
+            $bag = $validator->validate($arrayed);
+
+            if (count($bag) !== 0) {
+                return new ProofOfDeliveryResult(ProofOfDeliveryResult::STATUS_ERROR, $body);
+            }
+
+            $document = base64_decode($arrayed['GetTrackingDocumentsReply']['Documents']['Parts']['Content']);
+
+            if (!$document) {
+                return new ProofOfDeliveryResult(ProofOfDeliveryResult::STATUS_ERROR, $body);
+            }
+
+            return new ProofOfDeliveryResult(ProofOfDeliveryResult::STATUS_SUCCESS, $body, $document);
+        });
+    }
 }

@@ -331,4 +331,14 @@ class Service implements ServiceInterface
         return promise_for([]);
     }
 
+    /**
+     * @param string $trackingNumber
+     * @return PromiseInterface
+     * @throws \Exception
+     */
+    public function getProofOfDelivery(string $trackingNumber): PromiseInterface
+    {
+        throw new \Exception('Not implemented');
+    }
+
 }

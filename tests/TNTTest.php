@@ -45,4 +45,9 @@ class TNTTest extends AbstractServiceTest
         }, $data['tnt']['tracking_numbers']);
     }
 
+    public function testGetProofOfDeliveryThrowsError()
+    {
+        $this->expectException(\Exception::class);
+        $this->service->getProofOfDelivery('123');
+    }
 }

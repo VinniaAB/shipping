@@ -5,7 +5,7 @@
  * Date: 2017-03-02
  * Time: 17:17
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Vinnia\Shipping\Tests;
 
@@ -162,6 +162,12 @@ class DHLTest extends AbstractServiceTest
             ->wait();
 
         $this->assertNotEmpty($services);
+    }
+
+    public function testGetProofOfDeliveryThrowsError()
+    {
+        $this->expectException(\Exception::class);
+        $this->service->getProofOfDelivery('123');
     }
 
 }
