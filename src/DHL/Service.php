@@ -299,14 +299,24 @@ EOD;
                 'CC', 'BR', 'TP', 'DD', 'OK', 'DL', 'DM',
             ],
             TrackingActivity::STATUS_EXCEPTION => [
-                'BL', 'HI', 'HO', 'AD', 'SP', 'IA', 'SI', 'ST', 'NA',
+                'BL', 'HI', 'HO',
+                //'AD', //"Scheduled for delivery as agreed"
+                'SP', 'IA', 'SI', 'ST', 'NA',
                 'CI', 'CU', 'LX', 'DI', 'SF', 'LV', 'UV', 'HN', 'DP',
-                'PY', 'PM', 'BA', 'CD', 'UD', 'HX', 'TD', 'CA', 'NH',
-                'MX', 'SS', 'CS', 'CM', 'RD', 'RR', 'MS', 'MC', 'OH',
+                'PY', 'PM', 'BA',
+                'CD', //Clearance delay
+                'UD', //Uncontrollable Clearance Delay
+                'HX', 'TD', 'CA',
+                'NH', //recipient not home
+                'MX', 'SS',
+                'CS', //Please contact DHL
+                'CM', 'RD', 'MS', 'MC',
+                'OH', //shipment on hold
                 'SC', 'WX',
 
                 // returned to shipper
                 'RT',
+                //'RR', - Used to have RR as exception but that might just be "Customs status updated"
             ],
         ];
 
