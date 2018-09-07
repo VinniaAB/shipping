@@ -16,6 +16,8 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Service as DHL;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
 use Vinnia\Shipping\ExportDeclaration;
+use Vinnia\Shipping\Pickup;
+use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
@@ -168,6 +170,42 @@ class DHLTest extends AbstractServiceTest
     {
         $this->expectException(\Exception::class);
         $this->service->getProofOfDelivery('123');
+    }
+
+    public function testCreateDhlPickup()
+    {
+
+        $pickupAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+        $requestoAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+
+        $from = new \DateTimeImmutable();
+        $to = $from->add(new \DateInterval("PT3H"));
+
+        $parcels = [
+            new Parcel(
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(2, Unit::KILOGRAM)
+            )
+        ];
+
+        $request = new PickupRequest(
+            'P',
+            $pickupAddress,
+            $requestoAddress,
+            $from,
+            $to,
+            $parcels
+        );
+
+        $promise = $this->service->createPickup($request);
+
+        $result = $promise->wait();
+
+        $this->assertInstanceOf(Pickup::class, $result);
+        $this->assertEquals('DHL', $result->vendor);
+        $this->assertNotEmpty($result->raw);
     }
 
 }

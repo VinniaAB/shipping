@@ -19,6 +19,7 @@ use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Parcel;
+use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceInterface;
@@ -262,5 +263,13 @@ EOD;
     public function getProofOfDelivery(string $trackingNumber): PromiseInterface
     {
         throw new \Exception('Not implemented');
+    }
+
+    /**
+     * @return PromiseInterface
+     */
+    public function createPickup(PickupRequest $request): PromiseInterface
+    {
+        // TODO: Implement createPickup() method.
     }
 }
