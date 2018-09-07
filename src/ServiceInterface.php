@@ -52,4 +52,9 @@ interface ServiceInterface
      */
     public function getProofOfDelivery(string $trackingNumber): PromiseInterface;
 
+    /**
+     * @return PromiseInterface
+     */
+    public function createPickup(PickupRequest $request): PromiseInterface;
+
 }

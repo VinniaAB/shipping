@@ -19,6 +19,8 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\FedEx\Credentials;
 use Vinnia\Shipping\FedEx\Service as FedEx;
+use Vinnia\Shipping\Pickup;
+use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\ProofOfDeliveryResult;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\Shipment;
@@ -248,5 +250,42 @@ EOD;
         $this->assertInstanceOf(ProofOfDeliveryResult::class, $result);
         $this->assertEquals(ProofOfDeliveryResult::STATUS_ERROR, $result->status);
         $this->assertNull($result->document);
+    }
+
+    public function testCreateFedexPickup()
+    {
+        $pickupAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+        $requestoAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+
+        $from = new \DateTimeImmutable();
+        $to = $from->add(new \DateInterval("PT3H"));
+
+        $parcels = [
+            new Parcel(
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(30, Unit::CENTIMETER),
+                new Amount(2, Unit::KILOGRAM)
+            )
+        ];
+
+        $request = new PickupRequest(
+            'FDXE',
+            $pickupAddress,
+            $requestoAddress,
+            $from,
+            $to,
+            $parcels
+        );
+        $request->units = PickupRequest::UNITS_IMPERIAL;
+
+        $promise = $this->service->createPickup($request);
+
+        $result = $promise->wait();
+
+        $this->assertInstanceOf(Pickup::class, $result);
+        $this->assertTrue(ctype_digit($result->id));
+        $this->assertEquals('FedEx', $result->vendor);
+        $this->assertNotEmpty($result->raw);
     }
 }

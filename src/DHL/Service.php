@@ -23,6 +23,8 @@ use Psr\Http\Message\ResponseInterface;
 use SimpleXMLElement;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\ExportDeclaration;
+use Vinnia\Shipping\Pickup;
+use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
@@ -602,5 +604,185 @@ EOD;
     public function getProofOfDelivery(string $trackingNumber): PromiseInterface
     {
         $this->throwError('Not implemented');
+    }
+
+    public function createPickup(PickupRequest $request): PromiseInterface
+    {
+        $now = new \DateTimeImmutable('now');
+
+        /* @var Amount $totalWeight */
+        $totalWeight = array_reduce($request->parcels, function (Amount $carry, Parcel $current) use ($request): Amount {
+            $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
+                $current->convertTo(Unit::INCH, Unit::POUND) :
+                $current->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+            return new Amount($carry->getValue() + $parcel->weight->getValue(), $parcel->weight->getUnit());
+        }, new Amount(0, ''));
+
+        $parcels = array_map(function (Parcel $parcel) use ($request): Parcel {
+            return $request->units == ShipmentRequest::UNITS_IMPERIAL ?
+                $parcel->convertTo(Unit::INCH, Unit::POUND) :
+                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        }, $request->parcels);
+
+        $parcelsData = array_map(function (Parcel $parcel, int $idx): array {
+            return [
+                'Weight' => $parcel->weight->format(2),
+                'Width' => $parcel->width->format(0),
+                'Height' => $parcel->height->format(0),
+                'Depth' => $parcel->length->format(0),
+            ];
+        }, $parcels, array_keys($parcels));
+
+        $data = [
+            'Request' => [
+                'ServiceHeader' => [
+                    'MessageTime' => $now->format('c'),
+                    'MessageReference' => '123456789012345678901234567890',
+                    'SiteID' => $this->credentials->getSiteID(),
+                    'Password' => $this->credentials->getPassword(),
+                ],
+                'MetaData' => [
+                    'SoftwareName' => 'XMLPI',
+                    'SoftwareVersion' => '1.0'
+                ],
+            ],
+            'RegionCode' => 'AM',
+            'Requestor' => [
+                'AccountType' => 'D',
+                'AccountNumber' => $this->credentials->getAccountNumber(),
+                'RequestorContact' => [
+                    'PersonName' => Xml::cdata($request->requestorAddress->contactName),
+                    'Phone' => $request->requestorAddress->contactPhone,
+                ],
+                'CompanyName' => Xml::cdata($request->requestorAddress->name),
+                'Address1' => array_map([Xml::class, 'cdata'], array_filter($request->requestorAddress->lines)),
+                'City' => Xml::cdata($request->requestorAddress->city),
+                'CountryCode' => $request->requestorAddress->countryCode,
+                'PostalCode' => htmlentities($request->requestorAddress->zip),
+            ],
+            'Place' => [
+                'LocationType' => $this->formatLocationType($request->locationType), // B - Business, R - Residence, C- (Business/Residence)
+                'CompanyName' => htmlentities($request->pickupAddress->name),
+                'Address1' => array_map('htmlentities', array_filter($request->pickupAddress->lines)),
+                'PackageLocation' => '',
+                'City' => Xml::cdata($request->pickupAddress->city),
+                'CountryCode' => $request->pickupAddress->countryCode,
+                'PostalCode' => htmlentities($request->pickupAddress->zip),
+            ],
+            'Pickup' => [
+                'PickupDate' => $request->earliestPickup->format('Y-m-d'),
+                // S - Same day pickup, A - Advanced pickup
+                'PickupTypeCode' => $request->earliestPickup->format('Y-m-d') === $now->format('Y-m-d') ?
+                    'S' :
+                    'A',
+                'ReadyByTime' => $request->earliestPickup->format('H:i'),
+                'CloseTime' => $request->latestPickup->format('H:i'),
+                'Pieces' => count($request->parcels),
+                'weight' => [
+                    'Weight' => $totalWeight->format(2),
+                    'WeightUnit' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'L' : 'K',
+                ],
+            ],
+            'PickupContact' => [
+                'PersonName' => Xml::cdata($request->pickupAddress->contactName),
+                'Phone' => $request->pickupAddress->contactPhone,
+            ],
+            'ShipmentDetails' => [
+                'AccountType' => 'D',
+                'AccountNumber' => $this->credentials->getAccountNumber(),
+                'NumberOfPieces' => count($request->parcels),
+                'Weight' => $totalWeight->format(2),
+                'WeightUnit' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'L' : 'K',
+                /*
+                    D : US Overnight  (>0.5 lb) and Worldwide Express Non-dutiable  (>0.5 lb)
+                    X : USA Express Envelope   (less than or  = 0.5 lb) and Worldwide Express-International Express Envelope  (less than or = 0.5 lb)
+                    W : Worldwide Express-Dutiable
+                    Y : DHL Second Day Express . Must be Express Envelop with weight lessthan or = 0.5 lb
+                    G : DHL Second Day . Weight > 0.5 lb or not an express envelop
+                    T : DHL Ground Shipments',
+                */
+                'GlobalProductCode' => $request->service,
+                'DoorTo' => $this->formatDeliveryServiceType($request->deliveryServiceType),
+                'DimensionUnit' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'I' : 'C',
+                'InsuredAmount' => number_format($request->insuredValue, 2, '.', ''),
+                'InsuredCurrencyCode' => $request->currency,
+                'Pieces' => [
+                    'Piece' => $parcelsData
+                ],
+            ]
+        ];
+        $data = Xml::removeKeysWithEmptyValues($data);
+        $shipmentRequest = Xml::fromArray($data);
+        $body = <<<EOD
+<?xml version="1.0" encoding="UTF-8"?>
+<req:BookPURequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com pickup-global-req.xsd" schemaVersion="3.0">
+{$shipmentRequest}
+</req:BookPURequest>
+EOD;
+
+        return $this->guzzle->requestAsync('POST', $this->baseUrl, [
+            'query' => [
+                'isUTF8Support' => true,
+            ],
+            'headers' => [
+                'Accept' => 'text/xml',
+                'Content-Type' => 'text/xml',
+            ],
+            'body' => $body,
+        ])->then(function (ResponseInterface $response) {
+            $body = (string)$response->getBody();
+
+            // yes, it is ridiculous to parse xml with a regex.
+            // we're doing it here because SimpleXML seems to have
+            // issues with non-latin characters in the DHL response
+            // eg. ÅÄÖ.
+            // Also, http://stackoverflow.com/a/1732454 :)
+            if (preg_match('/<ConfirmationNumber>(.+)<\/ConfirmationNumber>/', $body, $matches) === 0) {
+                $this->throwError($body);
+            }
+
+            $number = $matches[1];
+
+            return new Pickup($number, 'DHL', $body);
+        });
+
+
+    }
+
+    /**
+     * @param string $locationType
+     * @return string
+     */
+    private function formatLocationType(string $locationType): string
+    {
+        switch ($locationType) {
+            case PickupRequest::LOCATION_TYPE_BUSINESS:
+                return 'B';
+            case PickupRequest::LOCATION_TYPE_RESIDENTIAL:
+                return 'R';
+            case PickupRequest::LOCATION_TYPE_BUSINESS_RESIDENTIAL:
+                return 'C';
+            default:
+                throw new \InvalidArgumentException('Invalid pickup location type');
+        }
+    }
+
+    /**
+     * @param string $deliveryService
+     * @return string
+     */
+    private function formatDeliveryServiceType(string $deliveryService): string
+    {
+        switch ($deliveryService) {
+            case PickupRequest::DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR:
+                return 'DD';
+            case PickupRequest::DELIVERY_SERVICE_TYPE_DOOR_TO_AIRPORT:
+                return 'DA';
+            case PickupRequest::DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR_NON_COMPLIANT:
+                return 'DC';
+            default:
+                throw new \InvalidArgumentException('Invalid pickup delivery service type');
+        }
     }
 }

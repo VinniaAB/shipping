@@ -10,21 +10,20 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping\FedEx;
 
 use Closure;
-use DateTime;
 use DateTimeImmutable;
 use Exception;
+use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ServerException;
-use GuzzleHttp\Promise\Promise;
 use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Promise\RejectedPromise;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\ExportDeclaration;
+use Vinnia\Shipping\Pickup;
+use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\ProofOfDeliveryResult;
 use Vinnia\Shipping\QuoteRequest;
 use Vinnia\Shipping\ServiceException;
@@ -43,6 +42,9 @@ use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Validation\Validator;
+
+define('ENCODING_CDATA', 1);
+define('ENCODING_HTML', 2);
 
 class Service implements ServiceInterface
 {
@@ -76,7 +78,7 @@ class Service implements ServiceInterface
      * @param Address $address
      * @return array
      */
-    private function addressToArray(Address $address): array
+    private function addressToArray(Address $address, $encodingMode = ENCODING_CDATA|ENCODING_HTML): array
     {
         // fedex only supports 2 street lines so
         // let's put everything that overflows
@@ -88,11 +90,27 @@ class Service implements ServiceInterface
         return [
             'StreetLines' => array_map([Xml::class, 'cdata'], array_filter($lines)),
             'City' => Xml::cdata($address->city),
-            'StateOrProvinceCode' => Xml::cdata($address->state),
+            'StateOrProvinceCode' => $this->encodeValue($address->state, $encodingMode),
             'PostalCode' => $address->zip,
             'CountryCode' => $address->countryCode,
-            'Residential' => null,
+//            'Residential' => null,
         ];
+    }
+
+    /**
+     * @param $value
+     * @param $encodingMode
+     * @return string
+     */
+    private function encodeValue($value, $encodingMode)
+    {
+        return $encodingMode === (ENCODING_CDATA | ENCODING_HTML) ?
+            Xml::cdata(htmlentities($value)) :
+            (
+            $encodingMode === ENCODING_CDATA ?
+                Xml::cdata($value) :
+                htmlentities($value)
+            );
     }
 
     /**
@@ -577,7 +595,7 @@ EOD;
         $body = str_replace('SOAP-ENV:', '', $body);
 
         if ($this->isErrorResponse($body)) {
-            $this->throwError($body);
+            $this->throwError($body, 'Body.ProcessShipmentReply.Notifications');
         }
 
         preg_match('/<TrackingIds>.*<TrackingNumber>([^<]+)</', $body, $matches);
@@ -637,11 +655,11 @@ EOD;
         });
     }
 
-    protected function throwError(string $body)
+    protected function throwError(string $body, string $notificationKey)
     {
         $xml = new SimpleXMLElement($body);
         $arrayed = Xml::toArray($xml);
-        $notifications = Arrays::get($arrayed, 'Body.ProcessShipmentReply.Notifications');
+        $notifications = Arrays::get($arrayed, $notificationKey);
 
         // when we convert XML-formatted data to an
         // array we can't really be sure which elements
@@ -807,5 +825,102 @@ EOD;
 
             return new ProofOfDeliveryResult(ProofOfDeliveryResult::STATUS_SUCCESS, $body, $document);
         });
+    }
+
+    /**
+     * @param PickupRequest $request
+     * @return PromiseInterface
+     */
+    public function createPickup(PickupRequest $request): PromiseInterface
+    {
+        /* @var Amount $totalWeight */
+        $totalWeight = array_reduce($request->parcels, function (Amount $carry, Parcel $current) use ($request): Amount {
+            $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
+                $current->convertTo(Unit::INCH, Unit::POUND) :
+                $current->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+
+            return new Amount($carry->getValue() + $parcel->weight->getValue(), $parcel->weight->getUnit());
+        }, new Amount(0, ''));
+
+        $trackRequest = Xml::fromArray([
+            'CreatePickupRequest' => [
+                'WebAuthenticationDetail' => [
+                    'UserCredential' => [
+                        'Key' => $this->credentials->getCredentialKey(),
+                        'Password' => $this->credentials->getCredentialPassword(),
+                    ],
+                ],
+                'ClientDetail' => [
+                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                ],
+                'Version' => [
+                    'ServiceId' => 'disp',
+                    'Major' => 17,
+                    'Intermediate' => 0,
+                    'Minor' => 0,
+                ],
+                'OriginDetail' => [
+                    'PickupLocation' => [
+                        'Contact' => [
+                            'PersonName' => Xml::cdata($request->pickupAddress->contactName),
+                            'CompanyName' => Xml::cdata($request->pickupAddress->name),
+                            'PhoneNumber' => Xml::cdata($request->pickupAddress->contactPhone),
+                        ],
+                        'Address' => $this->addressToArray($request->pickupAddress, ENCODING_HTML),
+                    ],
+                    /**
+                     * The time is local to the pickup postal code.
+                        Do not include a TZD (time zone designator) as it will be ignored.
+                     */
+                    'ReadyTimestamp' => $request->earliestPickup->format('c'),
+                    'CompanyCloseTime' => $request->latestPickup->format('H:i:s'),
+                ],
+                'PackageCount' => count($request->parcels),
+                'TotalWeight' => [
+                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
+                    'Value' => $totalWeight->format(2)
+                ],
+                'CarrierCode' => $request->service,
+                'Remarks' => $request->notes,
+            ]
+        ]);
+
+        $body = <<<EOD
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/pickup/v17">
+   <soapenv:Header />
+   <soapenv:Body>{$trackRequest}</soapenv:Body>
+</soapenv:Envelope>
+EOD;
+
+        return $this->send('/pickup', $body, function ($response) {
+            return $this->parseParcelRequestResponse($response);
+        }, function (ServerException $exception) {
+            throw $exception;
+        });
+    }
+
+    /**
+     * @param ResponseInterface $response
+     * @return Pickup
+     * @throws ServiceException
+     */
+    protected function parseParcelRequestResponse(ResponseInterface $response): Pickup
+    {
+        $body = (string) $response->getBody();
+
+        // remove namespace prefixes to ease parsing
+        $body = str_replace('SOAP-ENV:', '', $body);
+
+        if ($this->isErrorResponse($body)) {
+            $this->throwError($body, 'Body.CreatePickupReply.Notifications');
+        }
+
+        preg_match('/<PickupConfirmationNumber>(.*)<\/PickupConfirmationNumber>/', $body, $matches);
+
+        $id = $matches[1];
+
+        return new Pickup($id, 'FedEx', $body);
     }
 }
