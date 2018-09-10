@@ -2,23 +2,21 @@
 /**
  * Created by PhpStorm.
  * User: Bro
- * Date: 04.09.2018
- * Time: 13:56
+ * Date: 10.09.2018
+ * Time: 10:12
  */
 
 namespace Vinnia\Shipping;
 
 
-class Pickup
+/**
+ * Class CancelPickupRequest
+ * @package Vinnia\Shipping
+ */
+class CancelPickupRequest
 {
-
     /**
      * @var string
-     */
-    public $vendor;
-
-    /**
-     * @var int|string
      */
     public $id;
 
@@ -26,6 +24,16 @@ class Pickup
      * @var string
      */
     public $service;
+
+    /**
+     * @var Address
+     */
+    public $requestorAddress;
+
+    /**
+     * @var Address
+     */
+    public $pickupAddress;
 
     /**
      * @var \DateTimeImmutable
@@ -37,36 +45,30 @@ class Pickup
      */
     public $locationCode;
 
-    /**
-     * Raw data that was used to create this object
-     * @var mixed
-     */
-    public $raw;
 
     /**
-     * Pickup constructor.
-     * @param string $vendor
+     * CancelPickupRequest constructor.
      * @param string $id
      * @param string $service
+     * @param Address $requestorAddress
+     * @param Address $pickupAddress
      * @param \DateTimeImmutable $date
      * @param string $locationCode
-     * @param null $raw
      */
-    function __construct(
-        string $vendor,
+    public function __construct(
         string $id,
         string $service,
+        Address $requestorAddress,
+        Address $pickupAddress,
         \DateTimeImmutable $date,
-        string $locationCode = '',
-        $raw = null
+        string $locationCode = ''
     )
     {
-        $this->vendor = $vendor;
         $this->id = $id;
         $this->service = $service;
+        $this->requestorAddress = $requestorAddress;
+        $this->pickupAddress = $pickupAddress;
         $this->date = $date;
         $this->locationCode = $locationCode;
-        $this->raw = $raw;
     }
-
 }

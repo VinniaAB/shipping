@@ -5,7 +5,7 @@
  * Date: 2017-03-04
  * Time: 14:03
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Vinnia\Shipping\Tests;
 
@@ -16,6 +16,7 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\CancelPickupRequest;
 use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\FedEx\Credentials;
 use Vinnia\Shipping\FedEx\Service as FedEx;
@@ -254,8 +255,52 @@ EOD;
 
     public function testCreateFedexPickup()
     {
-        $pickupAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
-        $requestoAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+        $request = $this->createMockPickupRequest();
+
+        $request->units = PickupRequest::UNITS_IMPERIAL;
+
+        $promise = $this->service->createPickup($request);
+
+        /** @var Pickup $result */
+        $result = $promise->wait();
+
+        $this->assertInstanceOf(Pickup::class, $result);
+        $this->assertTrue(ctype_digit($result->id));
+        $this->assertEquals($request->service, $result->service);
+        $this->assertEquals($request->earliestPickup->format('c'), $result->date->format('c'));
+        $this->assertEquals('OMAA', $result->locationCode);
+        $this->assertEquals('FedEx', $result->vendor);
+        $this->assertNotEmpty($result->raw);
+    }
+
+    public function testCancelFedexPickup()
+    {
+
+        $request = $this->createMockPickupRequest();
+
+        $request->units = PickupRequest::UNITS_IMPERIAL;
+
+        /** @var Pickup $pickup */
+        $pickup = $this->service->createPickup($request)->wait();
+
+        $promise = $this->service->cancelPickup(new CancelPickupRequest(
+            $pickup->id,
+            $pickup->service,
+            $request->requestorAddress,
+            $request->pickupAddress,
+            $pickup->date,
+            $pickup->locationCode
+        ));
+
+        $result = $promise->wait();
+
+        $this->assertTrue($result);
+    }
+
+    private function createMockPickupRequest(): PickupRequest
+    {
+        $requestorAddress = new Address('Helmut Inc.', ['Road 12'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+        $pickupAddress = new Address('Helmut Inc.', ['Road 12'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
 
         $from = new \DateTimeImmutable();
         $to = $from->add(new \DateInterval("PT3H"));
@@ -269,23 +314,14 @@ EOD;
             )
         ];
 
-        $request = new PickupRequest(
+        return new PickupRequest(
             'FDXE',
+            $requestorAddress,
             $pickupAddress,
-            $requestoAddress,
             $from,
             $to,
             $parcels
         );
-        $request->units = PickupRequest::UNITS_IMPERIAL;
-
-        $promise = $this->service->createPickup($request);
-
-        $result = $promise->wait();
-
-        $this->assertInstanceOf(Pickup::class, $result);
-        $this->assertTrue(ctype_digit($result->id));
-        $this->assertEquals('FedEx', $result->vendor);
-        $this->assertNotEmpty($result->raw);
     }
+
 }

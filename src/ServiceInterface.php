@@ -57,4 +57,10 @@ interface ServiceInterface
      */
     public function createPickup(PickupRequest $request): PromiseInterface;
 
+    /**
+     * @param CancelPickupRequest $request
+     * @return PromiseInterface
+     */
+    public function cancelPickup(CancelPickupRequest $request): PromiseInterface;
+
 }

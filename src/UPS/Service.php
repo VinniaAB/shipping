@@ -18,6 +18,7 @@ use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\CancelPickupRequest;
 use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\Quote;
@@ -343,10 +344,22 @@ class Service implements ServiceInterface
     }
 
     /**
+     * @param PickupRequest $request
      * @return PromiseInterface
+     * @throws \Exception
      */
     public function createPickup(PickupRequest $request): PromiseInterface
     {
-        // TODO: Implement createPickup() method.
+        throw new \Exception('Not implemented');
+    }
+
+    /**
+     * @param CancelPickupRequest $request
+     * @return PromiseInterface
+     * @throws \Exception
+     */
+    public function cancelPickup(CancelPickupRequest $request): PromiseInterface
+    {
+        throw new \Exception('Not implemented');
     }
 }
