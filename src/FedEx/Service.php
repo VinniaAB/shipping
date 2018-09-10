@@ -5,7 +5,7 @@
  * Date: 2017-03-03
  * Time: 19:24
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Vinnia\Shipping\FedEx;
 
@@ -21,6 +21,7 @@ use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\CancelPickupRequest;
 use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\Pickup;
 use Vinnia\Shipping\PickupRequest;
@@ -78,7 +79,7 @@ class Service implements ServiceInterface
      * @param Address $address
      * @return array
      */
-    private function addressToArray(Address $address, $encodingMode = ENCODING_CDATA|ENCODING_HTML): array
+    private function addressToArray(Address $address, $encodingMode = ENCODING_CDATA | ENCODING_HTML): array
     {
         // fedex only supports 2 street lines so
         // let's put everything that overflows
@@ -216,23 +217,23 @@ class Service implements ServiceInterface
 EOD;
 
         return $this->send('/rate', $body, function (ResponseInterface $response) {
-            $body = (string) $response->getBody();
+            $body = (string)$response->getBody();
 
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
             $details = $xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body/*[local-name()=\'RateReply\']/*[local-name()=\'RateReplyDetails\']');
 
             return array_map(function (SimpleXMLElement $element): Quote {
-                $product = (string) $element->{'ServiceType'};
+                $product = (string)$element->{'ServiceType'};
 
                 $total = $element
                     ->{'RatedShipmentDetails'}
                     ->{'ShipmentRateDetail'}
                     ->{'TotalNetChargeWithDutiesAndTaxes'};
 
-                $amountString = (string) $total->{'Amount'};
-                $amount = (int) round(((float) $amountString) * pow(10, 2));
+                $amountString = (string)$total->{'Amount'};
+                $amount = (int)round(((float)$amountString) * pow(10, 2));
 
-                return new Quote('FedEx', $product, new Money($amount, new Currency((string) $total->{'Currency'})));
+                return new Quote('FedEx', $product, new Money($amount, new Currency((string)$total->{'Currency'})));
             }, $details);
         });
     }
@@ -281,7 +282,7 @@ EOD;
 EOD;
 
         return $this->send('/track', $body, function (ResponseInterface $response) {
-            $body = (string) $response->getBody();
+            $body = (string)$response->getBody();
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
             $arrayed = Xml::toArray($xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body')[0]);
 
@@ -297,13 +298,13 @@ EOD;
                 return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
-            $service = (string) Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type');
+            $service = (string)Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type');
 
             $datesOrTimes = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.DatesOrTimes') ?? [];
             $estimatedDelivery = null;
             foreach ($datesOrTimes as $shipmentDate) {
                 /** If shipment delivered, this is replaced by ACTUAL_DELIVERY */
-               $dateType = $shipmentDate['Type'] ?? '';
+                $dateType = $shipmentDate['Type'] ?? '';
                 if ('ESTIMATED_DELIVERY' == $dateType) {
                     $estimatedDelivery = new DateTimeImmutable($shipmentDate['DateOrTimestamp']);
                 }
@@ -316,7 +317,7 @@ EOD;
             }
 
             $activities = (new Collection($events))->map(function (array $element) {
-                $status = $this->getStatusFromEventType((string) $element['EventType']);
+                $status = $this->getStatusFromEventType((string)$element['EventType']);
                 $description = $element['EventDescription'];
                 $dt = new DateTimeImmutable($element['Timestamp']);
                 $address = new Address(
@@ -589,7 +590,7 @@ EOD;
 
     protected function parseShipmentRequestResponse(ResponseInterface $response): Shipment
     {
-        $body = (string) $response->getBody();
+        $body = (string)$response->getBody();
 
         // remove namespace prefixes to ease parsing
         $body = str_replace('SOAP-ENV:', '', $body);
@@ -649,7 +650,7 @@ EOD;
 EOD;
 
         return $this->send('/ship', $body, function (ResponseInterface $response) {
-            $body = (string) $response->getBody();
+            $body = (string)$response->getBody();
 
             return $body;
         });
@@ -720,7 +721,7 @@ EOD;
 EOD;
 
         return $this->send('/vacs', $body, function (ResponseInterface $response) {
-            $body = (string) $response->getBody();
+            $body = (string)$response->getBody();
             $body = str_replace('SOAP-ENV:', '', $body);
             $xml = new SimpleXMLElement($body);
             $arrayed = Xml::toArray($xml);
@@ -871,7 +872,7 @@ EOD;
                     ],
                     /**
                      * The time is local to the pickup postal code.
-                        Do not include a TZD (time zone designator) as it will be ignored.
+                     * Do not include a TZD (time zone designator) as it will be ignored.
                      */
                     'ReadyTimestamp' => $request->earliestPickup->format('c'),
                     'CompanyCloseTime' => $request->latestPickup->format('H:i:s'),
@@ -894,8 +895,12 @@ EOD;
 </soapenv:Envelope>
 EOD;
 
-        return $this->send('/pickup', $body, function ($response) {
-            return $this->parseParcelRequestResponse($response);
+        return $this->send('/pickup', $body, function ($response) use ($request) {
+            return $this->parsePickupRequestResponse(
+                $response,
+                $request->service,
+                $request->earliestPickup
+            );
         }, function (ServerException $exception) {
             throw $exception;
         });
@@ -906,9 +911,13 @@ EOD;
      * @return Pickup
      * @throws ServiceException
      */
-    protected function parseParcelRequestResponse(ResponseInterface $response): Pickup
+    protected function parsePickupRequestResponse(
+        ResponseInterface $response,
+        string $service,
+        DateTimeImmutable $date
+    ): Pickup
     {
-        $body = (string) $response->getBody();
+        $body = (string)$response->getBody();
 
         // remove namespace prefixes to ease parsing
         $body = str_replace('SOAP-ENV:', '', $body);
@@ -921,6 +930,78 @@ EOD;
 
         $id = $matches[1];
 
-        return new Pickup($id, 'FedEx', $body);
+        preg_match('/<Location>(.*)<\/Location>/', $body, $matches);
+
+        $locationCode = $matches[1];
+
+        return new Pickup('FedEx', $id, $service, $date, $locationCode, $body);
+    }
+
+    /**
+     * @param ResponseInterface $response
+     * @return bool
+     * @throws ServiceException
+     */
+    protected function parseCancelPickupRequestResponse(ResponseInterface $response): bool
+    {
+        $body = (string)$response->getBody();
+
+        // remove namespace prefixes to ease parsing
+        $body = str_replace('SOAP-ENV:', '', $body);
+
+        if ($this->isErrorResponse($body)) {
+            $this->throwError($body, 'Body.CancelPickupReply.Notifications');
+        }
+
+        return true;
+    }
+
+    /**
+     * @param string $id
+     * @param string $location
+     * @param string $service
+     * @param DateTimeImmutable $date
+     * @return PromiseInterface
+     */
+    public function cancelPickup(CancelPickupRequest $request): PromiseInterface
+    {
+        $trackRequest = Xml::fromArray([
+            'CancelPickupRequest' => [
+                'WebAuthenticationDetail' => [
+                    'UserCredential' => [
+                        'Key' => $this->credentials->getCredentialKey(),
+                        'Password' => $this->credentials->getCredentialPassword(),
+                    ],
+                ],
+                'ClientDetail' => [
+                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                ],
+                'Version' => [
+                    'ServiceId' => 'disp',
+                    'Major' => 17,
+                    'Intermediate' => 0,
+                    'Minor' => 0,
+                ],
+                'CarrierCode' => $request->service,
+                'PickupConfirmationNumber' => $request->id,
+                'ScheduledDate' => $request->date->format('Y-m-d'),
+                'Location' => $request->locationCode,
+            ]
+        ]);
+
+        $body = <<<EOD
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/pickup/v17">
+   <soapenv:Header />
+   <soapenv:Body>{$trackRequest}</soapenv:Body>
+</soapenv:Envelope>
+EOD;
+
+        return $this->send('/pickup', $body, function ($response) {
+            return $this->parseCancelPickupRequestResponse($response);
+        }, function (ServerException $exception) {
+            throw $exception;
+        });
     }
 }

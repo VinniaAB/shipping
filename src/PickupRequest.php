@@ -96,8 +96,8 @@ class PickupRequest
      */
     public function __construct(
         string $service,
-        Address $pickupAddress,
         Address $requestorAddress,
+        Address $pickupAddress,
         DateTimeImmutable $earliestPickup,
         DateTimeImmutable $latestPickup,
         array $parcels

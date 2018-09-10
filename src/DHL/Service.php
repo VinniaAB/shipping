@@ -5,7 +5,7 @@
  * Date: 2017-03-02
  * Time: 13:01
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Vinnia\Shipping\DHL;
 
@@ -22,6 +22,7 @@ use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use SimpleXMLElement;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\CancelPickupRequest;
 use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\Pickup;
 use Vinnia\Shipping\PickupRequest;
@@ -186,22 +187,22 @@ EOD;
                 $this->throwError($body);
             }
 
-            $qtdShip =  new Collection($qtdShip);
+            $qtdShip = new Collection($qtdShip);
 
             // somestimes the DHL api responds with a correct response
             // without ShippingCharge values which is strange.
             return $qtdShip->filter(function (SimpleXMLElement $element): bool {
-                $charge = (string) $element->{'ShippingCharge'};
+                $charge = (string)$element->{'ShippingCharge'};
                 return $charge !== '';
             })->map(function (SimpleXMLElement $element): Quote {
-                $amountString = (string) $element->{'ShippingCharge'};
+                $amountString = (string)$element->{'ShippingCharge'};
 
                 // the amount is a decimal string, deal with that
-                $amount = (int) round(((float)$amountString) * pow(10, 2));
+                $amount = (int)round(((float)$amountString) * pow(10, 2));
 
-                $product = (string) $element->{'GlobalProductCode'};
+                $product = (string)$element->{'GlobalProductCode'};
 
-                return new Quote('DHL', $product, new Money($amount, new Currency((string) $element->{'CurrencyCode'})));
+                return new Quote('DHL', $product, new Money($amount, new Currency((string)$element->{'CurrencyCode'})));
             })->value();
         });
     }
@@ -257,27 +258,27 @@ EOD;
                 return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
             }
 
-            $estimatedDelivery = \DateTime::createFromFormat('Y-m-d H:i:s', (string) $info[0]->{'EstDlvyDateUTC'}, new DateTimeZone('UTC'));
+            $estimatedDelivery = \DateTime::createFromFormat('Y-m-d H:i:s', (string)$info[0]->{'EstDlvyDateUTC'}, new DateTimeZone('UTC'));
 
 
             $activities = (new Collection($info[0]->xpath('ShipmentEvent')))->map(function (SimpleXMLElement $element) {
-                $dtString = ((string) $element->{'Date'}) . ' ' . ((string) $element->{'Time'});
+                $dtString = ((string)$element->{'Date'}) . ' ' . ((string)$element->{'Time'});
                 $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
 
                 // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
-                $addressParts = explode(' - ', (string) $element->{'ServiceArea'}->{'Description'});
+                $addressParts = explode(' - ', (string)$element->{'ServiceArea'}->{'Description'});
 
                 $address = new Address('', [], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
 
                 // the description will sometimes include the location too.
-                $description = (string) $element->{'ServiceEvent'}->{'Description'};
+                $description = (string)$element->{'ServiceEvent'}->{'Description'};
 
-                $status = $this->getStatusFromEventCode((string) $element->{'ServiceEvent'}->{'EventCode'});
+                $status = $this->getStatusFromEventCode((string)$element->{'ServiceEvent'}->{'EventCode'});
 
                 return new TrackingActivity($status, $description, $dt, $address);
             })->reverse()->value(); // DHL orders the events in ascending order, we want the most recent first.
 
-            $tracking = new Tracking('DHL', (string) $info[0]->{'GlobalProductCode'}, $activities);
+            $tracking = new Tracking('DHL', (string)$info[0]->{'GlobalProductCode'}, $activities);
 
             $tracking->estimatedDeliveryDate = $estimatedDelivery;
 
@@ -501,7 +502,7 @@ EOD;
             ],
             'body' => $body,
         ])->then(function (ResponseInterface $response) {
-            $body = (string) $response->getBody();
+            $body = (string)$response->getBody();
 
             // yes, it is ridiculous to parse xml with a regex.
             // we're doing it here because SimpleXML seems to have
@@ -578,7 +579,7 @@ EOD;
     public function getAvailableServices(QuoteRequest $request): PromiseInterface
     {
         return $this->getQuoteOrCapability($request, 'GetCapability')->then(function (ResponseInterface $response) {
-            $body = (string) $response->getBody();
+            $body = (string)$response->getBody();
 
             $this->getErrorsAndMaybeThrow($body);
 
@@ -730,7 +731,7 @@ EOD;
                 'Content-Type' => 'text/xml',
             ],
             'body' => $body,
-        ])->then(function (ResponseInterface $response) {
+        ])->then(function (ResponseInterface $response) use ($request) {
             $body = (string)$response->getBody();
 
             // yes, it is ridiculous to parse xml with a regex.
@@ -744,10 +745,21 @@ EOD;
 
             $number = $matches[1];
 
-            return new Pickup($number, 'DHL', $body);
+            if (preg_match('/<OriginSvcArea>(.+)<\/OriginSvcArea>/', $body, $matches) === 0) {
+                $this->throwError($body);
+            }
+
+            $locationCode = $matches[1];
+
+            return new Pickup(
+                'DHL',
+                $number,
+                $request->service,
+                $request->earliestPickup,
+                $locationCode,
+                $body
+            );
         });
-
-
     }
 
     /**
@@ -784,5 +796,64 @@ EOD;
             default:
                 throw new \InvalidArgumentException('Invalid pickup delivery service type');
         }
+    }
+
+    public function cancelPickup(CancelPickupRequest $request): PromiseInterface
+    {
+        $now = new \DateTimeImmutable('now');
+
+        $data = [
+            'Request' => [
+                'ServiceHeader' => [
+                    'MessageTime' => $now->format('c'),
+                    'MessageReference' => '123456789012345678901234567890',
+                    'SiteID' => $this->credentials->getSiteID(),
+                    'Password' => $this->credentials->getPassword(),
+                ],
+                'MetaData' => [
+                    'SoftwareName' => 'XMLPI',
+                    'SoftwareVersion' => '1.0'
+                ],
+            ],
+            'RegionCode' => 'AM',
+            'ConfirmationNumber' => $request->id,
+            'RequestorName' => Xml::cdata($request->requestorAddress->contactName),
+            'CountryCode' => $request->requestorAddress->countryCode,
+            'OriginSvcArea' => $request->locationCode,
+            'PickupDate' => $request->date->format('Y-m-d'),
+            'CancelTime' => $now->format('H:i'),
+        ];
+        $data = Xml::removeKeysWithEmptyValues($data);
+        $shipmentRequest = Xml::fromArray($data);
+        $body = <<<EOD
+<?xml version="1.0" encoding="UTF-8"?>
+<req:CancelPURequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com pickup-global-req.xsd" schemaVersion="3.0">
+{$shipmentRequest}
+</req:CancelPURequest>
+EOD;
+
+        return $this->guzzle->requestAsync('POST', $this->baseUrl, [
+            'query' => [
+                'isUTF8Support' => true,
+            ],
+            'headers' => [
+                'Accept' => 'text/xml',
+                'Content-Type' => 'text/xml',
+            ],
+            'body' => $body,
+        ])->then(function (ResponseInterface $response) {
+            $body = (string)$response->getBody();
+
+            // yes, it is ridiculous to parse xml with a regex.
+            // we're doing it here because SimpleXML seems to have
+            // issues with non-latin characters in the DHL response
+            // eg. ÅÄÖ.
+            // Also, http://stackoverflow.com/a/1732454 :)
+            if (preg_match('/<ConfirmationNumber>(.+)<\/ConfirmationNumber>/', $body, $matches) === 0) {
+                $this->throwError($body);
+            }
+
+            return true;
+        });
     }
 }

@@ -13,6 +13,7 @@ use DateTimeImmutable;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise\RejectionException;
 use Vinnia\Shipping\Address;
+use Vinnia\Shipping\CancelPickupRequest;
 use Vinnia\Shipping\DHL\Service as DHL;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
 use Vinnia\Shipping\ExportDeclaration;
@@ -174,9 +175,45 @@ class DHLTest extends AbstractServiceTest
 
     public function testCreateDhlPickup()
     {
+        $request = $this->createMockPickupRequest();
 
+        $promise = $this->service->createPickup($request);
+
+        /** @var Pickup $pickup */
+        $pickup = $promise->wait();
+
+        $this->assertInstanceOf(Pickup::class, $pickup);
+        $this->assertEquals('DHL', $pickup->vendor);
+        $this->assertNotEmpty($pickup->raw);
+    }
+
+    public function testCancelDhlPickup()
+    {
+        $request = $this->createMockPickupRequest();
+
+        $promise = $this->service->createPickup($request);
+
+        /** @var Pickup $pickup */
+        $pickup = $promise->wait();
+
+        $promise = $this->service->cancelPickup(new CancelPickupRequest(
+            $pickup->id,
+            $pickup->service,
+            $request->requestorAddress,
+            $request->pickupAddress,
+            $pickup->date,
+            $pickup->locationCode
+        ));
+
+        $result = $promise->wait();
+
+        $this->assertTrue($result);
+    }
+
+    private function createMockPickupRequest(): PickupRequest
+    {
+        $requestorAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
         $pickupAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
-        $requestoAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
 
         $from = new \DateTimeImmutable();
         $to = $from->add(new \DateInterval("PT3H"));
@@ -190,22 +227,14 @@ class DHLTest extends AbstractServiceTest
             )
         ];
 
-        $request = new PickupRequest(
+        return new PickupRequest(
             'P',
+            $requestorAddress,
             $pickupAddress,
-            $requestoAddress,
             $from,
             $to,
             $parcels
         );
-
-        $promise = $this->service->createPickup($request);
-
-        $result = $promise->wait();
-
-        $this->assertInstanceOf(Pickup::class, $result);
-        $this->assertEquals('DHL', $result->vendor);
-        $this->assertNotEmpty($result->raw);
     }
 
 }
