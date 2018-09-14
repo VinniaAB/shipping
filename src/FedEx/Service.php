@@ -501,6 +501,11 @@ EOD;
                             'PaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER ?
                                 'SENDER' :
                                 'RECIPIENT',
+                            'Payor' => [
+                                'ResponsibleParty' => [
+                                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                                ],
+                            ],
                         ],
                         'CustomsValue' => [
                             'Currency' => $request->currency,
