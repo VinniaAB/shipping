@@ -21,9 +21,9 @@ class PickupRequest
     const LOCATION_TYPE_RESIDENTIAL = 'residential';
     const LOCATION_TYPE_BUSINESS_RESIDENTIAL = 'business/residential';
 
-    const DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR = 'Door to door';
-    const DELIVERY_SERVICE_TYPE_DOOR_TO_AIRPORT = 'Door to airport';
-    const DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR_NON_COMPLIANT = 'Door to door non compliant';
+    const DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR = 'door_to_door';
+    const DELIVERY_SERVICE_TYPE_DOOR_TO_AIRPORT = 'door_to_airport';
+    const DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR_NON_COMPLIANT = 'door_to_door_non_compliant';
 
 
     /**
