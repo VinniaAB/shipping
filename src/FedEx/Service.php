@@ -775,7 +775,7 @@ EOD;
      */
     protected function isFailedAuthResponse(string $body): bool
     {
-        return strpos($body, 'Authentication Failed') === false;
+        return strpos($body, 'Authentication Failed') !== false;
     }
 
     /**
