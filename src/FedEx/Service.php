@@ -593,12 +593,21 @@ EOD;
         return $body;
     }
 
+    /**
+     * @param ResponseInterface $response
+     * @return Shipment
+     * @throws ServiceException
+     */
     protected function parseShipmentRequestResponse(ResponseInterface $response): Shipment
     {
         $body = (string)$response->getBody();
 
         // remove namespace prefixes to ease parsing
         $body = str_replace('SOAP-ENV:', '', $body);
+
+        if ($this->isFailedAuthResponse($body)) {
+            $this->throwAuthError($body);
+        }
 
         if ($this->isErrorResponse($body)) {
             $this->throwError($body, 'Body.ProcessShipmentReply.Notifications');
@@ -683,6 +692,15 @@ EOD;
     }
 
     /**
+     * @param string $body
+     * @throws ServiceException
+     */
+    protected function throwAuthError(string $body)
+    {
+        throw new ServiceException(['Authentification failed'], $body);
+    }
+
+    /**
      * @param QuoteRequest $request
      * @return PromiseInterface promise resolved with an array of strings
      */
@@ -749,6 +767,15 @@ EOD;
     protected function isErrorResponse(string $body): bool
     {
         return preg_match('/<HighestSeverity>(FAILURE|ERROR)<\/HighestSeverity>/', $body) === 1;
+    }
+
+    /**
+     * @param string $body
+     * @return bool
+     */
+    protected function isFailedAuthResponse(string $body): bool
+    {
+        return strpos($body, 'Authentication Failed') === false;
     }
 
     /**
@@ -927,6 +954,10 @@ EOD;
         // remove namespace prefixes to ease parsing
         $body = str_replace('SOAP-ENV:', '', $body);
 
+        if ($this->isFailedAuthResponse($body)) {
+            $this->throwAuthError($body);
+        }
+
         if ($this->isErrorResponse($body)) {
             $this->throwError($body, 'Body.CreatePickupReply.Notifications');
         }
@@ -953,6 +984,10 @@ EOD;
 
         // remove namespace prefixes to ease parsing
         $body = str_replace('SOAP-ENV:', '', $body);
+
+        if ($this->isFailedAuthResponse($body)) {
+            $this->throwAuthError($body);
+        }
 
         if ($this->isErrorResponse($body)) {
             $this->throwError($body, 'Body.CancelPickupReply.Notifications');
