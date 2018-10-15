@@ -17,6 +17,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\CancelPickupRequest;
+use Vinnia\Shipping\ErrorFormatterInterface;
 use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\FedEx\Credentials;
 use Vinnia\Shipping\FedEx\Service as FedEx;
@@ -24,10 +25,12 @@ use Vinnia\Shipping\Pickup;
 use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\ProofOfDeliveryResult;
 use Vinnia\Shipping\QuoteRequest;
+use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
+use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 
@@ -295,6 +298,50 @@ EOD;
         $result = $promise->wait();
 
         $this->assertTrue($result);
+    }
+
+    public function testFedexErrorFormatter()
+    {
+
+        $c = require __DIR__ . '/../credentials.php';
+        $credentials = new Credentials(
+            $c['fedex']['credential_key'],
+            $c['fedex']['credential_password'],
+            $c['fedex']['account_number'],
+            $c['fedex']['meter_number']
+        );
+
+        $formatter = new class implements ErrorFormatterInterface
+        {
+
+            public function format(string $message): string
+            {
+                switch ($message) {
+                    case 'Package access needed':
+                        return 'Pickup time possibly too narrow';
+                }
+                return $message;
+            }
+        };
+
+        $service = new FedEx(new Client(), $credentials, FedEx::URL_TEST, $formatter);
+
+        $request = $this->createMockPickupRequest();
+
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('America/New_York'));
+
+        $request->earliestPickup = $now; //$now->sub(new \DateInterval("PT3H"));
+        $request->latestPickup = $now->add(new \DateInterval("PT1M"));
+
+        $this->expectException('Vinnia\Shipping\ServiceException');
+
+        try {
+            $service->createPickup($request)->wait();
+        } catch (ServiceException $e) {
+
+            $this->assertEquals('Pickup time possibly too narrow', $e->getMessage());
+            throw $e;
+        }
     }
 
     private function createMockPickupRequest(): PickupRequest

@@ -23,8 +23,10 @@ use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\QuoteRequest;
+use Vinnia\Shipping\ErrorFormatterInterface;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
+use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
@@ -56,16 +58,30 @@ class Service implements ServiceInterface
     private $baseUrl;
 
     /**
+     * @var null|ErrorFormatterInterface
+     */
+    private $errorFormatter;
+
+    /**
      * Service constructor.
      * @param ClientInterface $guzzle
      * @param Credentials $credentials
      * @param string $baseUrl
+     * @param null|ErrorFormatterInterface $responseFormatter
      */
-    function __construct(ClientInterface $guzzle, Credentials $credentials, string $baseUrl = self::URL_PRODUCTION)
+    function __construct(
+        ClientInterface $guzzle,
+        Credentials $credentials,
+        string $baseUrl = self::URL_PRODUCTION,
+        ?ErrorFormatterInterface $responseFormatter = null
+    )
     {
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;
+        $this->errorFormatter = $responseFormatter === null ?
+            new ExactErrorFormatter() :
+            $responseFormatter;
     }
 
     /**
@@ -190,7 +206,7 @@ EOD;
             $activities = $xml->xpath('/TrackResponse/Consignment/StatusData');
 
             if (!$activities) {
-                return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
+                return new TrackingResult(TrackingResult::STATUS_ERROR, $this->errorFormatter->format($body));
             }
 
             $activities = (new Collection($activities))->map(function (SimpleXMLElement $e): TrackingActivity {

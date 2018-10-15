@@ -27,12 +27,14 @@ use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\Pickup;
 use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\QuoteRequest;
+use Vinnia\Shipping\ErrorFormatterInterface;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Parcel;
 use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
+use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
@@ -64,16 +66,29 @@ class Service implements ServiceInterface
     private $baseUrl;
 
     /**
+     * @var null|ErrorFormatterInterface
+     */
+    private $errorFormatter;
+
+    /**
      * DHL constructor.
      * @param ClientInterface $guzzle
      * @param Credentials $credentials
      * @param string $baseUrl
      */
-    function __construct(ClientInterface $guzzle, Credentials $credentials, string $baseUrl = self::URL_PRODUCTION)
+    function __construct(
+        ClientInterface $guzzle,
+        Credentials $credentials,
+        string $baseUrl = self::URL_PRODUCTION,
+        ?ErrorFormatterInterface $responseFormatter = null
+    )
     {
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;
+        $this->errorFormatter = $responseFormatter === null ?
+            new ExactErrorFormatter() :
+            $responseFormatter;
     }
 
     protected function getQuoteOrCapability(QuoteRequest $request, string $elementName): PromiseInterface
@@ -569,6 +584,7 @@ EOD;
 
         $error = htmlspecialchars_decode($error);
         $error = preg_replace('/\s+/', ' ', $error);
+        $error = $this->errorFormatter->format($error);
 
         return [$error];
     }

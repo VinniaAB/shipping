@@ -27,6 +27,7 @@ use Vinnia\Shipping\Pickup;
 use Vinnia\Shipping\PickupRequest;
 use Vinnia\Shipping\ProofOfDeliveryResult;
 use Vinnia\Shipping\QuoteRequest;
+use Vinnia\Shipping\ErrorFormatterInterface;
 use Vinnia\Shipping\ServiceException;
 use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\Parcel;
@@ -34,6 +35,7 @@ use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 use SimpleXMLElement;
 use Vinnia\Shipping\ShipmentRequest;
+use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
@@ -68,11 +70,32 @@ class Service implements ServiceInterface
      */
     private $url;
 
-    function __construct(ClientInterface $guzzle, Credentials $credentials, string $url = self::URL_PRODUCTION)
+    /**
+     * @var null|ErrorFormatterInterface
+     */
+    private $errorFormatter;
+
+    /**
+     * Service constructor.
+     * @param ClientInterface $guzzle
+     * @param Credentials $credentials
+     * @param string $url
+     * @param null|ErrorFormatterInterface $errorFormatter
+     */
+    function __construct(
+        ClientInterface $guzzle,
+        Credentials $credentials,
+        string $url = self::URL_PRODUCTION,
+        ?ErrorFormatterInterface $errorFormatter = null
+
+    )
     {
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->url = $url;
+        $this->errorFormatter = $errorFormatter === null ?
+            new ExactErrorFormatter() :
+            $errorFormatter;
     }
 
     /**
@@ -685,7 +708,7 @@ EOD;
         }
 
         $errors = array_map(function (array $notification): string {
-            return $notification['Message'];
+            return $this->errorFormatter->format($notification['Message']);
         }, $notifications);
 
         throw new ServiceException($errors, $body);
@@ -697,7 +720,7 @@ EOD;
      */
     protected function throwAuthError(string $body)
     {
-        throw new ServiceException(['Authentification failed'], $body);
+        throw new ServiceException([$this->errorFormatter->format('Authentification failed')], $body);
     }
 
     /**
