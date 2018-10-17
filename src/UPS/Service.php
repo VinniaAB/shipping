@@ -14,6 +14,7 @@ use GuzzleHttp\Promise\FulfilledPromise;
 use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
+use LogicException;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
@@ -215,12 +216,15 @@ class Service implements ServiceInterface
     }
 
     /**
-     * @param string $trackingNumber
-     * @param array $options
-     * @return PromiseInterface
+     * @inheritdoc
      */
-    public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
+    public function getTrackingStatus(array $trackingNumbers, array $options = []): PromiseInterface
     {
+        if (count($trackingNumbers) > 1) {
+            throw new LogicException("UPS only allows tracking of 1 shipment at a time.");
+        }
+
+        $trackingNo = $trackingNumbers[0] ?? '';
         $body = [
             'UPSSecurity' => [
                 'UsernameToken' => [
@@ -236,7 +240,7 @@ class Service implements ServiceInterface
                     // All activities
                     'RequestOption' => '1',
                 ],
-                'InquiryNumber' => $trackingNumber,
+                'InquiryNumber' => $trackingNo,
             ],
         ];
 
@@ -246,12 +250,14 @@ class Service implements ServiceInterface
                 'Content-Type' => 'application/json',
             ],
             'json' => $body,
-        ])->then(function (ResponseInterface $response) {
+        ])->then(function (ResponseInterface $response) use ($trackingNo) {
             $body = (string) $response->getBody();
             $json = json_decode($body, true);
 
             if (Arrays::get($json, 'TrackResponse.Shipment') === null) {
-                return new TrackingResult(TrackingResult::STATUS_ERROR, $this->errorFormatter->format($body));
+                return [
+                    new TrackingResult(TrackingResult::STATUS_ERROR, $trackingNo, $this->errorFormatter->format($body)),
+                ];
             }
 
             $estimatedDelivery = null;
@@ -296,7 +302,9 @@ class Service implements ServiceInterface
 
             $tracking->estimatedDeliveryDate = $estimatedDelivery;
 
-            return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
+            return [
+                new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking),
+            ];
         });
     }
 

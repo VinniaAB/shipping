@@ -51,9 +51,10 @@ class DHLTest extends AbstractServiceTest
     public function trackingNumberProvider(): array
     {
         $data = require __DIR__ . '/../credentials.php';
-        return array_map(function (string $value) {
-            return [$value];
-        }, $data['dhl']['tracking_numbers']);
+
+        return [
+            [$data['dhl']['tracking_numbers']],
+        ];
     }
 
     public function testCreateLabel()

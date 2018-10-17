@@ -17,6 +17,7 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ServerException;
 use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
+use LogicException;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
@@ -262,12 +263,14 @@ EOD;
     }
 
     /**
-     * @param string $trackingNumber
-     * @param array $options
-     * @return PromiseInterface
+     * @inheritdoc
      */
-    public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
+    public function getTrackingStatus(array $trackingNumbers, array $options = []): PromiseInterface
     {
+        if (count($trackingNumbers) > 30) {
+            throw new LogicException("FedEx only allows tracking of 30 shipments at a time.");
+        }
+
         $trackRequest = Xml::fromArray([
             'TrackRequest' => [
                 'WebAuthenticationDetail' => [
@@ -286,12 +289,14 @@ EOD;
                     'Intermediate' => 0,
                     'Minor' => 0,
                 ],
-                'SelectionDetails' => [
-                    'PackageIdentifier' => [
-                        'Type' => 'TRACKING_NUMBER_OR_DOORTAG',
-                        'Value' => $trackingNumber,
-                    ],
-                ],
+                'SelectionDetails' => array_map(function (string $num) {
+                    return [
+                        'PackageIdentifier' => [
+                            'Type' => 'TRACKING_NUMBER_OR_DOORTAG',
+                            'Value' => $num,
+                        ],
+                    ];
+                }, $trackingNumbers),
                 'ProcessingOptions' => 'INCLUDE_DETAILED_SCANS',
             ],
         ]);
@@ -308,58 +313,66 @@ EOD;
             $body = (string)$response->getBody();
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
             $arrayed = Xml::toArray($xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body')[0]);
+            $items = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails');
+
+            if (!Xml::isNumericKeyArray($items)) {
+                $items = [$items];
+            }
 
             $validator = new Validator([
-                'TrackReply.CompletedTrackDetails.TrackDetails.Notification.Severity' => 'required|ne:ERROR',
-                'TrackReply.CompletedTrackDetails.TrackDetails.Events' => 'array',
-                'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type' => 'required|string',
+                'TrackDetails.Notification.Severity' => 'required|ne:ERROR',
+                'TrackDetails.Events' => 'array',
+                'TrackDetails.Service.Type' => 'required|string',
             ]);
 
-            $bag = $validator->validate($arrayed);
+            return array_map(function (array $item) use ($body, $validator) {
+                $trackingNo = (string) Arrays::get($item, 'TrackDetails.TrackingNumber');
+                $bag = $validator->validate($item);
 
-            if (count($bag) !== 0) {
-                return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
-            }
-
-            $service = (string)Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Service.Type');
-
-            $datesOrTimes = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.DatesOrTimes') ?? [];
-            $estimatedDelivery = null;
-            foreach ($datesOrTimes as $shipmentDate) {
-                /** If shipment delivered, this is replaced by ACTUAL_DELIVERY */
-                $dateType = $shipmentDate['Type'] ?? '';
-                if ('ESTIMATED_DELIVERY' == $dateType) {
-                    $estimatedDelivery = new DateTimeImmutable($shipmentDate['DateOrTimestamp']);
+                if (count($bag) !== 0) {
+                    return new TrackingResult(TrackingResult::STATUS_ERROR, '', $body);
                 }
-            }
 
-            $events = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails.TrackDetails.Events') ?? [];
+                $service = (string) Arrays::get($item, 'TrackDetails.Service.Type');
+                $datesOrTimes = Arrays::get($item, 'TrackDetails.DatesOrTimes') ?? [];
+                $estimatedDelivery = null;
+                foreach ($datesOrTimes as $shipmentDate) {
+                    /** If shipment delivered, this is replaced by ACTUAL_DELIVERY */
+                    $dateType = $shipmentDate['Type'] ?? '';
+                    if ('ESTIMATED_DELIVERY' == $dateType) {
+                        $estimatedDelivery = new DateTimeImmutable($shipmentDate['DateOrTimestamp']);
+                        // is the missing break here intentional?
+                    }
+                }
 
-            if (!Xml::isNumericKeyArray($events)) {
-                $events = [$events];
-            }
+                $events = Arrays::get($item, 'TrackDetails.Events') ?? [];
 
-            $activities = (new Collection($events))->map(function (array $element) {
-                $status = $this->getStatusFromEventType((string)$element['EventType']);
-                $description = $element['EventDescription'];
-                $dt = new DateTimeImmutable($element['Timestamp']);
-                $address = new Address(
-                    '',
-                    [],
-                    $element['Address']['PostalCode'] ?? '',
-                    $element['Address']['City'] ?? '',
-                    $element['Address']['StateOrProvinceCode'] ?? '',
-                    $element['Address']['CountryName'] ?? ''
-                );
+                if (!Xml::isNumericKeyArray($events)) {
+                    $events = [$events];
+                }
 
-                return new TrackingActivity($status, $description, $dt, $address);
-            })->value();
+                $activities = (new Collection($events))->map(function (array $element) {
+                    $status = $this->getStatusFromEventType((string)$element['EventType']);
+                    $description = $element['EventDescription'];
+                    $dt = new DateTimeImmutable($element['Timestamp']);
+                    $address = new Address(
+                        '',
+                        [],
+                        $element['Address']['PostalCode'] ?? '',
+                        $element['Address']['City'] ?? '',
+                        $element['Address']['StateOrProvinceCode'] ?? '',
+                        $element['Address']['CountryName'] ?? ''
+                    );
 
-            $tracking = new Tracking('FedEx', $service, $activities);
+                    return new TrackingActivity($status, $description, $dt, $address);
+                })->value();
 
-            $tracking->estimatedDeliveryDate = $estimatedDelivery;
+                $tracking = new Tracking('FedEx', $service, $activities);
 
-            return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
+                $tracking->estimatedDeliveryDate = $estimatedDelivery;
+
+                return new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking);
+            }, $items);
         });
     }
 

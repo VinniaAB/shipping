@@ -14,6 +14,7 @@ use GuzzleHttp\Promise\FulfilledPromise;
 use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
+use LogicException;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
@@ -30,6 +31,7 @@ use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
+use Vinnia\Shipping\Xml;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 use DateTimeImmutable;
@@ -169,18 +171,21 @@ EOD;
     }
 
     /**
-     * @param string $trackingNumber
-     * @param array $options
-     * @return PromiseInterface
+     * @inheritdoc
      */
-    public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
+    public function getTrackingStatus(array $trackingNumbers, array $options = []): PromiseInterface
     {
+        if (count($trackingNumbers) > 50) {
+            throw new LogicException("TNT only allows tracking of 50 shipments at a time.");
+        }
+
+        $nums = Xml::fromArray([
+            'ConsignmentNumber' => $trackingNumbers,
+        ]);
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <TrackRequest locale="en_US" version="3.1">
-    <SearchCriteria marketType="INTERNATIONAL" originCountry="US">
-        <ConsignmentNumber>{$trackingNumber}</ConsignmentNumber>
-    </SearchCriteria>
+    <SearchCriteria marketType="INTERNATIONAL" originCountry="US">{$nums}</SearchCriteria>
     <LevelOfDetail>
         <Complete shipment="true" />
     </LevelOfDetail>
@@ -203,28 +208,33 @@ EOD;
 
             $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
 
-            $activities = $xml->xpath('/TrackResponse/Consignment/StatusData');
+            $items = $xml->xpath('/TrackResponse/Consignment');
 
-            if (!$activities) {
-                return new TrackingResult(TrackingResult::STATUS_ERROR, $this->errorFormatter->format($body));
-            }
+            return array_map(function (SimpleXMLElement $element) use ($body) {
+                $activities = $element->xpath('StatusData');
+                $trackingNo = (string) $element->ConsignmentNumber;
 
-            $activities = (new Collection($activities))->map(function (SimpleXMLElement $e): TrackingActivity {
-                $dt = DateTimeImmutable::createFromFormat('YmdHi', ((string) $e->LocalEventDate) . ((string) $e->LocalEventTime));
+                if (!$activities) {
+                    return new TrackingResult(TrackingResult::STATUS_ERROR, $trackingNo, $this->errorFormatter->format($body));
+                }
 
-                // unfortunately TNT only supplies a "Depot" and "DepotName" for the location
-                // of the status update so we can't really create a good address from it.
-                $address = new Address('', [], '', (string) $e->DepotName, '', '');
-                $status = $this->getStatusFromCode((string) $e->StatusCode);
-                $description = (string) $e->StatusDescription;
-                return new TrackingActivity($status, $description, $dt, $address);
-            })->value();
+                $activities = (new Collection($activities))->map(function (SimpleXMLElement $e): TrackingActivity {
+                    $dt = DateTimeImmutable::createFromFormat('YmdHi', ((string) $e->LocalEventDate) . ((string) $e->LocalEventTime));
 
-            $service = (string) $xml->Consignment->ShipmentSummary->Service;
+                    // unfortunately TNT only supplies a "Depot" and "DepotName" for the location
+                    // of the status update so we can't really create a good address from it.
+                    $address = new Address('', [], '', (string) $e->DepotName, '', '');
+                    $status = $this->getStatusFromCode((string) $e->StatusCode);
+                    $description = (string) $e->StatusDescription;
+                    return new TrackingActivity($status, $description, $dt, $address);
+                })->value();
 
-            $tracking = new Tracking('TNT', $service, $activities);
+                $service = (string) $element->ShipmentSummary->Service;
 
-            return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
+                $tracking = new Tracking('TNT', $service, $activities);
+
+                return new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking);
+            }, $items);
         });
     }
 

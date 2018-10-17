@@ -40,9 +40,9 @@ class TNTTest extends AbstractServiceTest
     public function trackingNumberProvider(): array
     {
         $data = require __DIR__ . '/../credentials.php';
-        return array_map(function (string $value) {
-            return [$value];
-        }, $data['tnt']['tracking_numbers']);
+        return [
+            [$data['tnt']['tracking_numbers']],
+        ];
     }
 
     public function testGetProofOfDeliveryThrowsError()

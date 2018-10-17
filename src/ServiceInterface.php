@@ -21,11 +21,11 @@ interface ServiceInterface
     public function getQuotes(QuoteRequest $request): PromiseInterface;
 
     /**
-     * @param string $trackingNumber
+     * @param string[] $trackingNumbers
      * @param array $options vendor specific options
-     * @return PromiseInterface resolved with a \Vinnia\Shipping\TrackingResult
+     * @return PromiseInterface resolved with an array of \Vinnia\Shipping\TrackingResult
      */
-    public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface;
+    public function getTrackingStatus(array $trackingNumbers, array $options = []): PromiseInterface;
 
     /**
      * @param ShipmentRequest $request

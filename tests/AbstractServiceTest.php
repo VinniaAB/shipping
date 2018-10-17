@@ -117,14 +117,15 @@ abstract class AbstractServiceTest extends TestCase
 
     /**
      * @dataProvider trackingNumberProvider
-     * @param string $trackingNumber
+     * @param string[] $trackingNumbers
      */
-    public function testGetTrackingStatus(string $trackingNumber)
+    public function testGetTrackingStatus(array $trackingNumbers)
     {
-        $promise = $this->service->getTrackingStatus($trackingNumber);
+        $promise = $this->service->getTrackingStatus($trackingNumbers);
 
-        /* @var TrackingResult|null $result */
-        $result = $promise->wait();
+        /* @var TrackingResult[] $result */
+        $results = $promise->wait();
+        $result = $results[0];
 
         $this->assertEquals(TrackingResult::STATUS_SUCCESS, $result->status);
 

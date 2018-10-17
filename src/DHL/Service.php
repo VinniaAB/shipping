@@ -17,6 +17,7 @@ use GuzzleHttp\Promise\FulfilledPromise;
 use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
+use LogicException;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
@@ -223,12 +224,14 @@ EOD;
     }
 
     /**
-     * @param string $trackingNumber
-     * @param array $options
-     * @return PromiseInterface
+     * @inheritdoc
      */
-    public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
+    public function getTrackingStatus(array $trackingNumbers, array $options = []): PromiseInterface
     {
+        if (count($trackingNumbers) > 10) {
+            throw new LogicException("DHL only allows tracking of 10 shipments at a time.");
+        }
+
         $trackRequest = Xml::fromArray([
             'Request' => [
                 'ServiceHeader' => [
@@ -237,7 +240,7 @@ EOD;
                 ],
             ],
             'LanguageCode' => 'en',
-            'AWBNumber' => $trackingNumber,
+            'AWBNumber' => $trackingNumbers,
             'LevelOfDetails' => 'ALL_CHECK_POINTS',
             'PiecesEnabled' => 'S',
         ]);
@@ -267,37 +270,45 @@ EOD;
             // the track was successful. it turns out some labels do not have shipment
             // events (especially when they're newly created). instead let's check if
             // the product code exists, which should hopefully be accurate.
-            $info = $xml->xpath('/req:TrackingResponse/AWBInfo/ShipmentInfo[GlobalProductCode]');
+            $info = $xml->xpath('/req:TrackingResponse/AWBInfo');
 
-            if (!$info) {
-                return new TrackingResult(TrackingResult::STATUS_ERROR, $body);
-            }
+            return array_map(function (SimpleXMLElement $element) use ($body): TrackingResult {
+                $info = $element->xpath('ShipmentInfo[GlobalProductCode]');
+                $trackingNo = (string) $element->AWBNumber;
 
-            $estimatedDelivery = \DateTime::createFromFormat('Y-m-d H:i:s', (string)$info[0]->{'EstDlvyDateUTC'}, new DateTimeZone('UTC'));
+                if (!$info) {
+                    return new TrackingResult(TrackingResult::STATUS_ERROR, $trackingNo, $body);
+                }
 
+                $estimatedDelivery = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', (string) $info[0]->{'EstDlvyDateUTC'}, new DateTimeZone('UTC'));
 
-            $activities = (new Collection($info[0]->xpath('ShipmentEvent')))->map(function (SimpleXMLElement $element) {
-                $dtString = ((string)$element->{'Date'}) . ' ' . ((string)$element->{'Time'});
-                $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
+                // createFromFormat returns false when parsing fails.
+                // we don't want any booleans in our result.
+                $estimatedDelivery = $estimatedDelivery ?: null;
 
-                // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
-                $addressParts = explode(' - ', (string)$element->{'ServiceArea'}->{'Description'});
+                $activities = (new Collection($info[0]->xpath('ShipmentEvent')))->map(function (SimpleXMLElement $element) {
+                    $dtString = ((string)$element->{'Date'}) . ' ' . ((string)$element->{'Time'});
+                    $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
 
-                $address = new Address('', [], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
+                    // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
+                    $addressParts = explode(' - ', (string)$element->{'ServiceArea'}->{'Description'});
 
-                // the description will sometimes include the location too.
-                $description = (string)$element->{'ServiceEvent'}->{'Description'};
+                    $address = new Address('', [], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
 
-                $status = $this->getStatusFromEventCode((string)$element->{'ServiceEvent'}->{'EventCode'});
+                    // the description will sometimes include the location too.
+                    $description = (string)$element->{'ServiceEvent'}->{'Description'};
 
-                return new TrackingActivity($status, $description, $dt, $address);
-            })->reverse()->value(); // DHL orders the events in ascending order, we want the most recent first.
+                    $status = $this->getStatusFromEventCode((string)$element->{'ServiceEvent'}->{'EventCode'});
 
-            $tracking = new Tracking('DHL', (string)$info[0]->{'GlobalProductCode'}, $activities);
+                    return new TrackingActivity($status, $description, $dt, $address);
+                })->reverse()->value(); // DHL orders the events in ascending order, we want the most recent first.
 
-            $tracking->estimatedDeliveryDate = $estimatedDelivery;
+                $tracking = new Tracking('DHL', (string) $info[0]->GlobalProductCode, $activities);
 
-            return new TrackingResult(TrackingResult::STATUS_SUCCESS, $body, $tracking);
+                $tracking->estimatedDeliveryDate = $estimatedDelivery;
+
+                return new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking);
+            }, $info);
         });
     }
 

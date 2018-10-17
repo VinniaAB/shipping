@@ -23,6 +23,11 @@ class TrackingResult
     /**
      * @var string
      */
+    public $trackingNumber;
+
+    /**
+     * @var string
+     */
     public $body;
 
     /**
@@ -33,12 +38,14 @@ class TrackingResult
     /**
      * TrackingResult constructor.
      * @param int $status
+     * @param string $trackingNumber
      * @param string $body
      * @param null|Tracking $tracking
      */
-    function __construct(int $status, string $body, ?Tracking $tracking = null)
+    function __construct(int $status, string $trackingNumber, string $body, ?Tracking $tracking = null)
     {
         $this->status = $status;
+        $this->trackingNumber = $trackingNumber;
         $this->body = $body;
         $this->tracking = $tracking;
     }
