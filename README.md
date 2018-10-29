@@ -5,6 +5,7 @@ The following carriers are supported:
 - DHL
 - FedEx
 - TNT
+- DPD (Coming...)
 
 **Note: the code in this library is a work in progress; BC breaks will happen on a regular basis.**
 
