@@ -300,6 +300,12 @@ EOD;
 
                     $status = $this->getStatusFromEventCode((string)$element->{'ServiceEvent'}->{'EventCode'});
 
+                    // Append signature to description
+                    $signature = (string)$element->{'Signatory'};
+                    if ($signature !== '') {
+                        $description .= ': ' . $signature;
+                    }
+
                     return new TrackingActivity($status, $description, $dt, $address);
                 })->reverse()->value(); // DHL orders the events in ascending order, we want the most recent first.
 
