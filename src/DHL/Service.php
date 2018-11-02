@@ -301,9 +301,8 @@ EOD;
                     $status = $this->getStatusFromEventCode((string)$element->{'ServiceEvent'}->{'EventCode'});
 
                     // Append signature to description
-                    $signature = (string)$element->{'Signatory'};
-                    if ($signature !== '') {
-                        $description .= ': ' . $signature;
+                    if (strpos($description, 'Signed for by') !== false) {
+                        $description .= ': ' . ((string)$element->{'Signatory'} ?: 'Not provided');
                     }
 
                     return new TrackingActivity($status, $description, $dt, $address);
