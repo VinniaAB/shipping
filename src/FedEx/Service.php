@@ -399,6 +399,9 @@ EOD;
                 // returned to shipper
                 'RS',
             ],
+            TrackingActivity::STATUS_NOTIFICATION => [
+                'OC',
+            ],
         ];
 
         foreach ($typeMap as $status => $types) {

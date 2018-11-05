@@ -18,6 +18,7 @@ class TrackingActivity implements JsonSerializable
     const STATUS_DELIVERED      = 100;
     const STATUS_IN_TRANSIT     = 200;
     const STATUS_EXCEPTION      = 500;
+    const STATUS_NOTIFICATION   = 700;
 
     /**
      * @var int
