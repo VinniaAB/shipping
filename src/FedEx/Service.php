@@ -77,6 +77,13 @@ class Service implements ServiceInterface
     private $errorFormatter;
 
     /**
+     * @var array
+     */
+    private $residentailServices = [
+        'GROUND_HOME_DELIVERY',
+    ];
+
+    /**
      * Service constructor.
      * @param ClientInterface $guzzle
      * @param Credentials $credentials
@@ -103,7 +110,11 @@ class Service implements ServiceInterface
      * @param Address $address
      * @return array
      */
-    private function addressToArray(Address $address, $encodingMode = ENCODING_CDATA | ENCODING_HTML): array
+    private function addressToArray(
+        Address $address,
+        bool $isResidenial = false,
+        $encodingMode = ENCODING_CDATA | ENCODING_HTML
+    ): array
     {
         // fedex only supports 2 street lines so
         // let's put everything that overflows
@@ -112,14 +123,20 @@ class Service implements ServiceInterface
             $address->lines[0] ?? '',
             implode(', ', array_slice($address->lines, 1)),
         ];
-        return [
+
+        $addressArray = [
             'StreetLines' => array_map([Xml::class, 'cdata'], array_filter($lines)),
             'City' => Xml::cdata($address->city),
             'StateOrProvinceCode' => $this->encodeValue($address->state, $encodingMode),
             'PostalCode' => $address->zip,
             'CountryCode' => $address->countryCode,
-//            'Residential' => null,
         ];
+
+        if ($isResidenial) {
+            $addressArray['Residential'] = true;
+        }
+
+        return $addressArray;
     }
 
     /**
@@ -520,7 +537,10 @@ EOD;
                             'CompanyName' => Xml::cdata($request->recipient->name),
                             'PhoneNumber' => Xml::cdata($request->recipient->contactPhone),
                         ],
-                        'Address' => $this->addressToArray($request->recipient),
+                        'Address' => $this->addressToArray(
+                            $request->recipient,
+                            $this->serviceIsResidential($request->service)
+                        ),
                     ],
                     'ShippingChargesPayment' => [
                         'PaymentType' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER ?
@@ -939,7 +959,11 @@ EOD;
                             'CompanyName' => Xml::cdata($request->pickupAddress->name),
                             'PhoneNumber' => Xml::cdata($request->pickupAddress->contactPhone),
                         ],
-                        'Address' => $this->addressToArray($request->pickupAddress, ENCODING_HTML),
+                        'Address' => $this->addressToArray(
+                            $request->pickupAddress,
+                            false,
+                            ENCODING_HTML
+                        ),
                     ],
                     /**
                      * The time is local to the pickup postal code.
@@ -1082,5 +1106,14 @@ EOD;
         }, function (ServerException $exception) {
             throw $exception;
         });
+    }
+
+    /**
+     * @param string $service
+     * @return bool
+     */
+    private function serviceIsResidential(string $service): bool
+    {
+        return in_array($service, $this->residentailServices);
     }
 }
