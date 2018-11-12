@@ -368,7 +368,10 @@ EOD;
                     $events = [$events];
                 }
 
-                $activities = (new Collection($events))->map(function (array $element) {
+                // Activities are sent in reverse order where the most recent status is at the top.
+                // For consistency we are going to order them chronologically with the oldest status
+                // at the top.
+                $activities = (new Collection($events))->reverse()->map(function (array $element) {
                     $status = $this->getStatusFromEventType((string)$element['EventType']);
                     $description = $element['EventDescription'];
                     $dt = new DateTimeImmutable($element['Timestamp']);
