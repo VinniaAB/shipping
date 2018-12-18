@@ -213,8 +213,8 @@ class DHLTest extends AbstractServiceTest
 
     private function createMockPickupRequest(): PickupRequest
     {
-        $requestorAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
-        $pickupAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'Nebraska', 'US', 'Helmut', '123456');
+        $requestorAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'NE', 'US', 'Helmut', '123456');
+        $pickupAddress = new Address('Helmut Inc.', ['Road 1'], '68183', 'Omaha', 'NE', 'US', 'Helmut', '123456');
 
         $from = new \DateTimeImmutable();
         $to = $from->add(new \DateInterval("PT3H"));

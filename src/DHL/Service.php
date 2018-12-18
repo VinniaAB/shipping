@@ -592,17 +592,20 @@ EOD;
     {
         $xml = new SimpleXMLElement($body);
         $arrayed = Xml::toArray($xml);
-        $error = Arrays::get($arrayed, 'Response.Status.Condition.ConditionData');
+        $conditions = Arrays::get($arrayed, 'Response.Status.Condition');
 
-        if (!$error) {
+        if (!$conditions) {
             return [];
         }
 
-        $error = htmlspecialchars_decode($error);
-        $error = preg_replace('/\s+/', ' ', $error);
-        $error = $this->errorFormatter->format($error);
-
-        return [$error];
+        return array_map(function (array $item) {
+            $message = htmlspecialchars_decode(
+                $item['ConditionData']
+            );
+            $message = preg_replace('/\s+/', ' ', $message);
+            $message = $this->errorFormatter->format($message);
+            return $message;
+        }, Arrays::isNumericKeyArray($conditions) ? $conditions : [$conditions]);
     }
 
     protected function getErrorsAndMaybeThrow(string $body): void
@@ -699,19 +702,24 @@ EOD;
                     'Phone' => $request->requestorAddress->contactPhone,
                 ],
                 'CompanyName' => Xml::cdata($request->requestorAddress->name),
-                'Address1' => array_map([Xml::class, 'cdata'], array_filter($request->requestorAddress->lines)),
+                'Address1' => Xml::cdata($request->requestorAddress->lines[0] ?? ''),
+                'Address2' => Xml::cdata($request->requestorAddress->lines[1] ?? ''),
+                'Address3' => Xml::cdata($request->requestorAddress->lines[2] ?? ''),
                 'City' => Xml::cdata($request->requestorAddress->city),
                 'CountryCode' => $request->requestorAddress->countryCode,
-                'PostalCode' => htmlentities($request->requestorAddress->zip),
+                'PostalCode' => $request->requestorAddress->zip,
             ],
             'Place' => [
                 'LocationType' => $this->formatLocationType($request->locationType), // B - Business, R - Residence, C- (Business/Residence)
-                'CompanyName' => htmlentities($request->pickupAddress->name),
-                'Address1' => array_map('htmlentities', array_filter($request->pickupAddress->lines)),
+                'CompanyName' => Xml::cdata($request->pickupAddress->name),
+                'Address1' => Xml::cdata($request->pickupAddress->lines[0] ?? ''),
+                'Address2' => Xml::cdata($request->pickupAddress->lines[1] ?? ''),
+                'Address3' => Xml::cdata($request->pickupAddress->lines[2] ?? ''),
                 'PackageLocation' => '',
                 'City' => Xml::cdata($request->pickupAddress->city),
+                'StateCode' => $request->pickupAddress->state,
                 'CountryCode' => $request->pickupAddress->countryCode,
-                'PostalCode' => htmlentities($request->pickupAddress->zip),
+                'PostalCode' => $request->pickupAddress->zip,
             ],
             'Pickup' => [
                 'PickupDate' => $request->earliestPickup->format('Y-m-d'),
