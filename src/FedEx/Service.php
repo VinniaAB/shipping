@@ -373,7 +373,7 @@ EOD;
                 // at the top.
                 $activities = (new Collection($events))->reverse()->map(function (array $element) {
                     $status = $this->getStatusFromEventType((string)$element['EventType']);
-                    $description = $element['EventDescription'];
+                    $description = $element['EventDescription'] ?? '';
                     $dt = new DateTimeImmutable($element['Timestamp']);
                     $address = new Address(
                         '',
