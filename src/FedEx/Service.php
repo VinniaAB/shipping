@@ -340,17 +340,18 @@ EOD;
                 'TrackDetails.Notification.Severity' => 'required|ne:ERROR',
                 'TrackDetails.Events' => 'array',
                 'TrackDetails.Service.Type' => 'required|string',
+                'TrackingDetails.PackageDimensions' => 'array'
             ]);
 
             return array_map(function (array $item) use ($body, $validator) {
-                $trackingNo = (string) Arrays::get($item, 'TrackDetails.TrackingNumber');
+                $trackingNo = (string)Arrays::get($item, 'TrackDetails.TrackingNumber');
                 $bag = $validator->validate($item);
 
                 if (count($bag) !== 0) {
                     return new TrackingResult(TrackingResult::STATUS_ERROR, '', $body);
                 }
 
-                $service = (string) Arrays::get($item, 'TrackDetails.Service.Type');
+                $service = (string)Arrays::get($item, 'TrackDetails.Service.Type');
                 $datesOrTimes = Arrays::get($item, 'TrackDetails.DatesOrTimes') ?? [];
                 $estimatedDelivery = null;
                 foreach ($datesOrTimes as $shipmentDate) {
@@ -363,6 +364,10 @@ EOD;
                 }
 
                 $events = Arrays::get($item, 'TrackDetails.Events') ?? [];
+
+                $packageDimensions = Arrays::get($item, 'TrackDetails.PackageDimensions') ?? [];
+
+                $packageWeight = Arrays::get($item, 'TrackDetails.PackageWeight') ?? [];
 
                 if (!Xml::isNumericKeyArray($events)) {
                     $events = [$events];
@@ -387,11 +392,26 @@ EOD;
                     return new TrackingActivity($status, $description, $dt, $address);
                 })->value();
 
+                if (!empty($packageDimensions)) {
+                    $parcel = new Parcel(
+                        new Amount((float)$packageDimensions['Width'], $packageDimensions['Units']),
+                        new Amount((float)$packageDimensions['Height'], $packageDimensions['Units']),
+                        new Amount((float)$packageDimensions['Length'], $packageDimensions['Units']),
+                        new Amount((float)$packageWeight['Value'], $packageWeight['Units'])
+                    );
+                }
+
                 $tracking = new Tracking('FedEx', $service, $activities);
 
                 $tracking->estimatedDeliveryDate = $estimatedDelivery;
 
-                return new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking);
+                if (!empty($packageDimensions)) {
+                    $trackingResult = new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking, $parcel);
+                } else {
+                    $trackingResult = new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking);
+                }
+
+                return $trackingResult;
             }, $items);
         });
     }

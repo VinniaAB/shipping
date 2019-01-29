@@ -5,7 +5,7 @@
  * Date: 2017-03-01
  * Time: 15:38
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Vinnia\Shipping\Tests;
 
@@ -83,8 +83,7 @@ abstract class AbstractServiceTest extends TestCase
         try {
             /* @var Quote[] $quotes */
             $quotes = $promise->wait();
-        }
-        catch (RejectionException $e) {
+        } catch (RejectionException $e) {
             $reason = $e->getReason();
 
             var_dump($reason);
@@ -130,6 +129,10 @@ abstract class AbstractServiceTest extends TestCase
         $this->assertEquals(TrackingResult::STATUS_SUCCESS, $result->status);
 
         $tracking = $result->tracking;
+
+        if ($result->parcel) {
+            $this->assertInstanceOf(Parcel::class, $result->parcel);
+        }
 
         $this->assertInstanceOf(Tracking::class, $tracking);
         $this->assertTrue($tracking->estimatedDeliveryDate instanceof \DateTimeInterface || $tracking->estimatedDeliveryDate === null);
