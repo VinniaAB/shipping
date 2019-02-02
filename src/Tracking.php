@@ -31,6 +31,11 @@ class Tracking implements JsonSerializable
     public $activities;
 
     /**
+     * @var Parcel[]
+     */
+    public $parcels = [];
+
+    /**
      * @var DateTimeInterface|null
      */
     public $estimatedDeliveryDate;
@@ -57,6 +62,7 @@ class Tracking implements JsonSerializable
             'vendor' => $this->vendor,
             'service' => $this->service,
             'activities' => $this->activities,
+            'parcels' => $this->parcels,
         ];
     }
 

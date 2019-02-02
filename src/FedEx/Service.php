@@ -14,6 +14,7 @@ use DateTimeImmutable;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ServerException;
 use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -302,7 +303,7 @@ EOD;
                 ],
                 'Version' => [
                     'ServiceId' => 'trck',
-                    'Major' => 14,
+                    'Major' => 16,
                     'Intermediate' => 0,
                     'Minor' => 0,
                 ],
@@ -320,7 +321,7 @@ EOD;
 
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/track/v14">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/track/v16">
    <soapenv:Header />
    <soapenv:Body>{$trackRequest}</soapenv:Body>
 </soapenv:Envelope>
@@ -365,10 +366,6 @@ EOD;
 
                 $events = Arrays::get($item, 'TrackDetails.Events') ?? [];
 
-                $packageDimensions = Arrays::get($item, 'TrackDetails.PackageDimensions') ?? [];
-
-                $packageWeight = Arrays::get($item, 'TrackDetails.PackageWeight') ?? [];
-
                 if (!Xml::isNumericKeyArray($events)) {
                     $events = [$events];
                 }
@@ -392,24 +389,29 @@ EOD;
                     return new TrackingActivity($status, $description, $dt, $address);
                 })->value();
 
-                if (!empty($packageDimensions)) {
-                    $parcel = new Parcel(
-                        new Amount((float)$packageDimensions['Width'], $packageDimensions['Units']),
-                        new Amount((float)$packageDimensions['Height'], $packageDimensions['Units']),
-                        new Amount((float)$packageDimensions['Length'], $packageDimensions['Units']),
-                        new Amount((float)$packageWeight['Value'], $packageWeight['Units'])
-                    );
-                }
+                $dimensions = Arrays::get($item, 'TrackDetails.PackageDimensions', [
+                    'Width' => 0.00,
+                    'Height' => 0.00,
+                    'Length' => 0.00,
+                    'Units' => 'CM',
+                ]);
+                $weight = Arrays::get($item, 'TrackDetails.PackageWeight', [
+                    'Value' => 0.00,
+                    'Units' => 'KG',
+                ]);
 
+                $parcel = Parcel::make(
+                    (float) $dimensions['Width'],
+                    (float) $dimensions['Height'],
+                    (float) $dimensions['Length'],
+                    (float) $weight['Value'],
+                    $dimensions['Units'] === 'IN' ? Unit::INCH : Unit::CENTIMETER,
+                    $weight['Units'] === 'LB' ? Unit::POUND : Unit::KILOGRAM
+                );
                 $tracking = new Tracking('FedEx', $service, $activities);
-
                 $tracking->estimatedDeliveryDate = $estimatedDelivery;
-
-                if (!empty($packageDimensions)) {
-                    $trackingResult = new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking, $parcel);
-                } else {
-                    $trackingResult = new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking);
-                }
+                $tracking->parcels = [$parcel];
+                $trackingResult = new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking);
 
                 return $trackingResult;
             }, $items);

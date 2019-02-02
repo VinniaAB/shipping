@@ -122,17 +122,13 @@ abstract class AbstractServiceTest extends TestCase
     {
         $promise = $this->service->getTrackingStatus($trackingNumbers);
 
-        /* @var TrackingResult[] $result */
+        /* @var TrackingResult $result */
         $results = $promise->wait();
         $result = $results[0];
 
         $this->assertEquals(TrackingResult::STATUS_SUCCESS, $result->status);
 
         $tracking = $result->tracking;
-
-        if ($result->parcel) {
-            $this->assertInstanceOf(Parcel::class, $result->parcel);
-        }
 
         $this->assertInstanceOf(Tracking::class, $tracking);
         $this->assertTrue($tracking->estimatedDeliveryDate instanceof \DateTimeInterface || $tracking->estimatedDeliveryDate === null);
@@ -151,11 +147,15 @@ abstract class AbstractServiceTest extends TestCase
             );*/
         }
 
-        $prev = PHP_INT_MAX;
+        $prev = 0;
         foreach ($tracking->activities as $activity) {
             $ts = $activity->date->getTimestamp();
-            $this->assertLessThanOrEqual($prev, $ts);
+            $this->assertGreaterThanOrEqual($prev, $ts);
             $prev = $ts;
+        }
+
+        foreach ($tracking->parcels as $parcel) {
+            $this->assertInstanceOf(Parcel::class, $parcel);
         }
     }
 

@@ -5,6 +5,7 @@
  * Date: 2017-12-21
  * Time: 22:46
  */
+declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
@@ -36,25 +37,18 @@ class TrackingResult
     public $tracking;
 
     /**
-     * @var Parcel|null
-     */
-    public $parcel;
-
-    /**
      * TrackingResult constructor.
      * @param int $status
      * @param string $trackingNumber
      * @param string $body
      * @param null|Tracking $tracking
-     * @param null|Parcel $parcel
      */
-    function __construct(int $status, string $trackingNumber, string $body, ?Tracking $tracking = null, ?Parcel $parcel = null)
+    function __construct(int $status, string $trackingNumber, string $body, ?Tracking $tracking = null)
     {
         $this->status = $status;
         $this->trackingNumber = $trackingNumber;
         $this->body = $body;
         $this->tracking = $tracking;
-        $this->parcel = $parcel;
     }
 
 }
