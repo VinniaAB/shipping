@@ -18,6 +18,9 @@
         "moneyphp/money": "^3.0",
         "vinnia/util": "dev-master"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^7.0"
+    },
     "autoload": {
         "psr-4": {
             "Vinnia\\Shipping\\": "src/"
@@ -27,9 +30,6 @@
         "psr-4": {
             "Vinnia\\Shipping\\Tests\\": "tests/"
         }
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^6.0"
     },
     "repositories": [
         {
