@@ -26,6 +26,8 @@ class Tracking implements JsonSerializable
     public $service;
 
     /**
+     * Activities are not guaranteed to be sorted chronologically.
+     *
      * @var TrackingActivity[]
      */
     public $activities;

@@ -147,13 +147,6 @@ abstract class AbstractServiceTest extends TestCase
             );*/
         }
 
-        $prev = 0;
-        foreach ($tracking->activities as $activity) {
-            $ts = $activity->date->getTimestamp();
-            $this->assertGreaterThanOrEqual($prev, $ts);
-            $prev = $ts;
-        }
-
         foreach ($tracking->parcels as $parcel) {
             $this->assertInstanceOf(Parcel::class, $parcel);
         }

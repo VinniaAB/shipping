@@ -242,7 +242,7 @@ EOD;
             'LanguageCode' => 'en',
             'AWBNumber' => $trackingNumbers,
             'LevelOfDetails' => 'ALL_CHECK_POINTS',
-            'PiecesEnabled' => 'S',
+            'PiecesEnabled' => 'B',
         ]);
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
@@ -274,6 +274,7 @@ EOD;
 
             return array_map(function (SimpleXMLElement $element) use ($body): TrackingResult {
                 $info = $element->xpath('ShipmentInfo[GlobalProductCode]');
+
                 $trackingNo = (string) $element->AWBNumber;
 
                 if (!$info) {
@@ -306,11 +307,29 @@ EOD;
                     }
 
                     return new TrackingActivity($status, $description, $dt, $address);
-                })->reverse()->value(); // DHL orders the events in ascending order, we want the most recent first.
+                })->value();
+
+                $pieceInfos = Arrays::get(Xml::toArray($element), 'Pieces.PieceInfo');
+
+                if (!Arrays::isNumericKeyArray($pieceInfos)) {
+                    $pieceInfos = [$pieceInfos];
+                }
+
+                $parcels = array_map(function (array $pieceInfo) {
+                    $details = $pieceInfo['PieceDetails'];
+                    return Parcel::make(
+                        (float) $details['Width'],
+                        (float) $details['Height'],
+                        (float) $details['Depth'],
+                        (float) $details['Weight'],
+                        $details['WeightUnit'] === 'K' ? Unit::CENTIMETER : Unit::INCH,
+                        $details['WeightUnit'] === 'K' ? Unit::KILOGRAM : Unit::POUND
+                    );
+                }, $pieceInfos);
 
                 $tracking = new Tracking('DHL', (string) $info[0]->GlobalProductCode, $activities);
-
                 $tracking->estimatedDeliveryDate = $estimatedDelivery;
+                $tracking->parcels = $parcels;
 
                 return new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking);
             }, $info);
