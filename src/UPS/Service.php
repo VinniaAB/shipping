@@ -9,6 +9,7 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\UPS;
 
+use DateTimeImmutable;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
 use function GuzzleHttp\Promise\promise_for;
@@ -264,7 +265,10 @@ class Service implements ServiceInterface
             $deliveryDetail = $json['TrackResponse']['Shipment']['DeliveryDetail'] ?? [];
             if (!empty($deliveryDetail['Type']) && 'Scheduled Delivery' === $deliveryDetail['Type']['Description']) {
                 //They only supply the date so let's set time to 12 to cover most of the world
-                $estimatedDelivery = \DateTime::createFromFormat('Ymd H:i:s', $deliveryDetail['Date'].' 12:00:00', new \DateTimeZone('UTC'));
+                $estimatedDelivery = DateTimeImmutable::createFromFormat(
+                    'Ymd H:i:s',
+                    $deliveryDetail['Date'].' 12:00:00', new \DateTimeZone('UTC')
+                );
             }
 
             // if we're tracking a multi-piece shipment
@@ -272,6 +276,7 @@ class Service implements ServiceInterface
             // master package.
             $packages = $json['TrackResponse']['Shipment']['Package'] ?? [];
             $activities = [];
+            $parcels = [];
             if (!empty($packages)) {
                 $package = Xml::isNumericKeyArray($packages) ? $packages[0] : $packages;
 
@@ -296,11 +301,23 @@ class Service implements ServiceInterface
                     $description = $row['Status']['Description'] ?? '';
                     return new TrackingActivity($status, $description, $date, $address);
                 })->value();
+
+                $parcels[] = Parcel::make(
+                    // UPS does not provide any dimension information in the tracking response.
+                    0.00,
+                    0.00,
+                    0.00,
+                    (float) $package['PackageWeight']['Weight'],
+                    Unit::CENTIMETER,
+                    $package['PackageWeight']['UnitOfMeasurement']['Code'] === 'LBS' ?
+                        Unit::POUND :
+                        Unit::KILOGRAM
+                );
             }
 
             $tracking = new Tracking('UPS', $json['TrackResponse']['Shipment']['Service']['Description'], $activities);
-
             $tracking->estimatedDeliveryDate = $estimatedDelivery;
+            $tracking->parcels = $parcels;
 
             return [
                 new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking),
