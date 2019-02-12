@@ -318,12 +318,12 @@ EOD;
                 $parcels = array_map(function (array $pieceInfo) {
                     $details = $pieceInfo['PieceDetails'];
                     return Parcel::make(
-                        (float) $details['Width'],
-                        (float) $details['Height'],
-                        (float) $details['Depth'],
-                        (float) $details['Weight'],
-                        $details['WeightUnit'] === 'K' ? Unit::CENTIMETER : Unit::INCH,
-                        $details['WeightUnit'] === 'K' ? Unit::KILOGRAM : Unit::POUND
+                        (float) ($details['Width'] ?? 0.00),
+                        (float) ($details['Height'] ?? 0.00),
+                        (float) ($details['Depth'] ?? 0.00),
+                        (float) ($details['Weight'] ?? 0.00),
+                        ($details['WeightUnit'] ?? 'K') === 'K' ? Unit::CENTIMETER : Unit::INCH,
+                        ($details['WeightUnit'] ?? 'K') === 'K' ? Unit::KILOGRAM : Unit::POUND
                     );
                 }, $pieceInfos);
 
