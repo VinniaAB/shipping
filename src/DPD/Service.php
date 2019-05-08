@@ -98,6 +98,7 @@ class Service implements ServiceInterface
     }
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
+        $countryNames = require __DIR__ . '/../../countries.php';
         $now = new \DateTimeImmutable('now');
         $totalWeight = array_reduce($request->parcels, function (Amount $carry, Parcel $current) use ($request): Amount {
             $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
@@ -106,67 +107,72 @@ class Service implements ServiceInterface
 
             return new Amount($carry->getValue() + $parcel->weight->getValue(), $parcel->weight->getUnit());
         }, new Amount(0, ''));
-        $data = [
-                    {
-                        "job_id": null,
-                        "collectionOnDelivery": false,
-                        "invoice": null,
-                        "collectionDate": $now,
-                        "consolidate": true,
-                        "consignment": [
-                            {
-                                "consignmentNumber": null,
-                                "consignmentRef": null,
-                                "parcels": [],
-                                "collectionDetails": {
-                                    "contactDetails": {
-                                        "contactName": Xml::cdata($request->sender->contactName),
-                                        "telephone": Xml::cdata($request->sender->contactPhone),
-                                    },
-                                    "address": {
-                                        "organisation": Xml::cdata($request->sender->name),
-                                        "countryCode": $request->sender->countryCode,
-                                        "postcode": $request->sender->zip,
-                                        "street": array_map([Xml::class, 'cdata'], $request->sender->lines),
-                                        "locality": "",
-                                        "town": Xml::cdata($request->sender->city),
-                                        "county": $countryNames[$request->sender->countryCode]
-                                    }
-                                },
-                                "deliveryDetails": {
-                                    "contactDetails": {
-                                        "contactName": Xml::cdata($request->recipient->contactName),
-                                        "telephone": Xml::cdata($request->recipient->contactPhone)
-                                    },
-                                    "address": {
-                                        "organisation": Xml::cdata($request->recipient->name),
-                                        "countryCode": $request->recipient->countryCode,
-                                        "postcode": $request->recipient->zip,
-                                        "street": array_map([Xml::class, 'cdata'], array_filter($request->recipient->lines)),
-                                        "locality": "",
-                                        "town": Xml::cdata($request->recipient->city),
-                                        "county": $countryNames[$request->recipient->countryCode]
-                                    },
-                                    "notificationDetails": {
-                                        "email": "",
-                                        "mobile": Xml::cdata($request->recipient->contactPhone)
-                                    }
-                                },
-                                "networkCode": "",
-                                "numberOfParcels": count($request->parcels),
-                                "totalWeight": $totalWeight,
-                                "shippingRef1": "",
-                                "shippingRef2": "",
-                                "shippingRef3": "",
-                                "customsValue": number_format($request->value, 2, '.', ''),
-                                "deliveryInstructions": "",
-                                "parcelDescription": "",
-                                "liabilityValue": null,
-                                "liability": false
-                            }
+        $dataCls = new \stdClass();
+        $dataCls->data = [
+
+        ];
+
+        $data =
+            (object)[
+                        "job_id"=> null,
+                        "collectionOnDelivery"=> false,
+                        "invoice"=> null,
+                        "collectionDate"=> $now,
+                        "consolidate"=> true,
+                        "consignment"=> [
+                            (object)[
+                                "consignmentNumber"=> null,
+                                "consignmentRef"=> null,
+                                "parcels"=> [],
+                                "collectionDetails"=> (object)[
+                                    "contactDetails"=> (object)[
+                                        "contactName"=> Xml::cdata($request->sender->contactName),
+                                        "telephone"=> Xml::cdata($request->sender->contactPhone),
+                                    ],
+                                    "address"=> (object)[
+                                        "organisation"=> Xml::cdata($request->sender->name),
+                                        "countryCode"=> $request->sender->countryCode,
+                                        "postcode"=> $request->sender->zip,
+                                        "street"=> array_map([Xml::class, 'cdata'], $request->sender->lines),
+                                        "locality"=> "",
+                                        "town"=> Xml::cdata($request->sender->city),
+                                        "county"=> $countryNames[$request->recipient->countryCode]
+                                    ]
+                                ],
+                                "deliveryDetails"=> (object)[
+                                    "contactDetails"=> (object)[
+                                        "contactName"=> Xml::cdata($request->recipient->contactName),
+                                        "telephone"=> Xml::cdata($request->recipient->contactPhone)
+                                    ],
+                                    "address"=> (object)[
+                                        "organisation"=> Xml::cdata($request->recipient->name),
+                                        "countryCode"=> $request->recipient->countryCode,
+                                        "postcode"=> $request->recipient->zip,
+                                        "street"=> array_map([Xml::class, 'cdata'], array_filter($request->recipient->lines)),
+                                        "locality"=> "",
+                                        "town"=> Xml::cdata($request->recipient->city),
+                                        "county"=> $countryNames[$request->recipient->countryCode]
+                                    ],
+                                    "notificationDetails"=> (object)[
+                                        "email"=> "",
+                                        "mobile"=> Xml::cdata($request->recipient->contactPhone)
+                                    ]
+                                ],
+                                "networkCode"=> "",
+                                "numberOfParcels"=> count($request->parcels),
+                                "totalWeight"=> $totalWeight,
+                                "shippingRef1"=> "",
+                                "shippingRef2"=> "",
+                                "shippingRef3"=> "",
+                                "customsValue"=> number_format($request->value, 2, '.', ''),
+                                "deliveryInstructions"=> "",
+                                "parcelDescription"=> "",
+                                "liabilityValue"=> null,
+                                "liability"=> false
+                            ]
                         ]
-                    }
-                ]
+                    ];
+
         $data = Xml::removeKeysWithEmptyValues($data);
         $shipmentRequest = Xml::fromArray($data);
         $body = <<<EOD
