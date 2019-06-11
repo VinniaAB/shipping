@@ -10,6 +10,7 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping;
 
 use JsonSerializable;
+use Vinnia\Util\Collection;
 
 class Address implements JsonSerializable
 {
@@ -139,4 +140,31 @@ class Address implements JsonSerializable
         );
     }
 
+    /**
+     * @return string
+     */
+    public function __toString()
+    {
+        $parts = [
+            $this->name,
+            $this->lines[0] ?? '',
+            $this->lines[1] ?? '',
+            $this->lines[2] ?? '',
+            $this->zip . ' ' . $this->city,
+            $this->state,
+            $this->countryCode,
+            $this->contactName,
+            $this->contactPhone,
+            $this->contactEmail,
+        ];
+
+        return (new Collection($parts))
+            ->map(function (string $part) {
+                return trim($part);
+            })
+            ->filter(function (string $part) {
+                return !empty($part);
+            })
+            ->join("\n");
+    }
 }
