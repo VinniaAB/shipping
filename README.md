@@ -63,7 +63,7 @@ DHL example:
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
 use Vinnia\Shipping\DHL\Service as DHLService;
 use Vinnia\Shipping\Address;
-use Vinnia\Shipping\Package;
+use Vinnia\Shipping\Parcel;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 
@@ -73,12 +73,9 @@ $dhl = new DHLService($guzzle, $credentials);
 
 $sender = new Address('', [], '97334', 'Luleå', '', 'SE');
 $recipient = new Address('', [], '21115', 'Malmö', '', 'SE');
+$parcel = Parcel::make(30, 30, 30, 5, Unit::CENTIMETER, Unit::KILOGRAM);
 
-$size = new Amount(30, Unit::CENTIMETER);
-$weight = new Amount(5, Unit::KILOGRAM);
-$package = new Package($size, $size, $size, $weight);
-
-$dhl->getQuotes($sender, $recipient, $package)->then(function (array $quotes) {
+$dhl->getQuotes($sender, $recipient, $parcel)->then(function (array $quotes) {
     // do something with the quote array
     
     foreach ($quotes as $quote) {
