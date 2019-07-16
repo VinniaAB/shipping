@@ -66,6 +66,8 @@ use Vinnia\Shipping\Address;
 use Vinnia\Shipping\Parcel;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
+use Vinnia\Shipping\QuoteRequest;
+
 
 $guzzle = new \GuzzleHttp\Client();
 $credentials = new DHLCredentials('site_id', 'password', 'account_number');
@@ -73,9 +75,10 @@ $dhl = new DHLService($guzzle, $credentials);
 
 $sender = new Address('', [], '97334', 'Luleå', '', 'SE');
 $recipient = new Address('', [], '21115', 'Malmö', '', 'SE');
-$parcel = Parcel::make(30, 30, 30, 5, Unit::CENTIMETER, Unit::KILOGRAM);
+$parcel = [Parcel::make(30, 30, 30, 5, Unit::CENTIMETER, Unit::KILOGRAM)];
+$request = new QuoteRequest ($sender, $recipient, $parcel );
 
-$dhl->getQuotes($sender, $recipient, $parcel)->then(function (array $quotes) {
+$dhl->getQuotes($request)->then(function (array $quotes) {
     // do something with the quote array
     
     foreach ($quotes as $quote) {
