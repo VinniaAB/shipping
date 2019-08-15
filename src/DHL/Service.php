@@ -14,7 +14,6 @@ use DateTimeInterface;
 use DateTimeZone;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
-use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use LogicException;
@@ -383,6 +382,17 @@ EOD;
     }
 
     /**
+     * @return array
+     */
+    private function getMetaData(): array
+    {
+        return [
+            'SoftwareName' => sprintf('%s/PHP %s', PHP_OS, PHP_VERSION),
+            'SoftwareVersion' => PHP_VERSION,
+        ];
+    }
+
+    /**
      * @param ShipmentRequest $request
      * @return PromiseInterface
      */
@@ -440,6 +450,7 @@ EOD;
                     'SiteID' => $this->credentials->getSiteID(),
                     'Password' => $this->credentials->getPassword(),
                 ],
+                'MetaData' => $this->getMetaData(),
             ],
             'LanguageCode' => 'en',
             'PiecesEnabled' => 'Y',
@@ -475,19 +486,23 @@ EOD;
                 'DeclaredCurrency' => $request->currency,
             ],
             'ExportDeclaration' => [
+                'InvoiceNumber' => $request->reference,
+                'InvoiceDate' => $request->date->format('Y-m-d'),
                 'ExportLineItem' => array_map(function (int $key, ExportDeclaration $decl) use ($request, $weightUnitName): array {
+                    $weight = [
+                        'Weight' => $decl->weight
+                            ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
+                            ->format(2),
+                        'WeightUnit' => $weightUnitName,
+                    ];
                     return [
                         'LineNumber' => $key + 1,
                         'Quantity' => $decl->quantity,
-                        'QuantityUnit' => 'Piece',
+                        'QuantityUnit' => 'PCS',
                         'Description' => $decl->description,
                         'Value' => number_format($decl->value, 2, '.', ''),
-                        'Weight' => [
-                            'Weight' => $decl->weight
-                                ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
-                                ->format(2),
-                            'WeightUnit' => $weightUnitName,
-                        ],
+                        'Weight' => $weight,
+                        'GrossWeight' => $weight,
                         'ManufactureCountryCode' => $decl->originCountryCode,
                     ];
                 }, array_keys($request->exportDeclarations), $request->exportDeclarations),
@@ -553,7 +568,7 @@ EOD;
 
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
-<req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd" schemaVersion="6.0">
+<req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd" schemaVersion="6.2">
 {$shipmentRequest}
 </req:ShipmentRequest>
 EOD;
@@ -713,10 +728,7 @@ EOD;
                     'SiteID' => $this->credentials->getSiteID(),
                     'Password' => $this->credentials->getPassword(),
                 ],
-                'MetaData' => [
-                    'SoftwareName' => 'XMLPI',
-                    'SoftwareVersion' => '1.0'
-                ],
+                'MetaData' => $this->getMetaData(),
             ],
             'RegionCode' => 'AM',
             'Requestor' => [
@@ -885,10 +897,7 @@ EOD;
                     'SiteID' => $this->credentials->getSiteID(),
                     'Password' => $this->credentials->getPassword(),
                 ],
-                'MetaData' => [
-                    'SoftwareName' => 'XMLPI',
-                    'SoftwareVersion' => '1.0'
-                ],
+                'MetaData' => $this->getMetaData(),
             ],
             'RegionCode' => 'AM',
             'ConfirmationNumber' => $request->id,
