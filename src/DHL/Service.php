@@ -445,12 +445,18 @@ EOD;
             'PiecesEnabled' => 'Y',
             'Billing' => [
                 'ShipperAccountNumber' => $this->credentials->getAccountNumber(),
-                'ShippingPaymentType' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT ?
-                    'R' : 'S',
-                'BillingAccountNumber' => null,
-                'DutyPaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT ?
-                    'R' : 'S',
-                'DutyAccountNumber' => null,
+                'ShippingPaymentType' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT
+                    ? 'R'
+                    : 'S',
+                'BillingAccountNumber' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER
+                    ? $this->credentials->getAccountNumber()
+                    : null,
+                'DutyPaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT
+                    ? 'R'
+                    : 'S',
+                'DutyAccountNumber' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER
+                    ? $this->credentials->getAccountNumber()
+                    : null,
             ],
             'Consignee' => [
                 'CompanyName' => Xml::cdata($request->recipient->name),
