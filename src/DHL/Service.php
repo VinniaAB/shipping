@@ -387,8 +387,8 @@ EOD;
     private function getMetaData(): array
     {
         return [
-            'SoftwareName' => sprintf('%s/PHP %s', PHP_OS, PHP_VERSION),
-            'SoftwareVersion' => PHP_VERSION,
+            'SoftwareName' => mb_substr(sprintf('%s/PHP %s', PHP_OS, PHP_VERSION), 0, 30, 'utf-8'),
+            'SoftwareVersion' => mb_substr((string) PHP_VERSION, 0, 10, 'utf-8'),
         ];
     }
 
