@@ -617,8 +617,8 @@ EOD;
                     ],
                     'LabelSpecification' => [
                         'LabelFormatType' => 'COMMON2D',
-                        'ImageType' => $request->labelFormat ?? 'PDF',
-                        'LabelStockType' => $request->labelSize ?? 'PAPER_LETTER',
+                        'ImageType' => $request->labelFormat ?: 'PDF',
+                        'LabelStockType' => $request->labelSize ?: 'PAPER_LETTER',
                     ],
                     'ShippingDocumentSpecification' => [],
                     'MasterTrackingId' => $parcelIndex === 0 ? null : [
