@@ -748,10 +748,10 @@ EOD;
             ],
             'Place' => [
                 'LocationType' => $this->formatLocationType($request->locationType), // B - Business, R - Residence, C- (Business/Residence)
-                'CompanyName' => Xml::cdata($request->pickupAddress->name),
-                'Address1' => Xml::cdata($request->pickupAddress->lines[0] ?? ''),
-                'Address2' => Xml::cdata($request->pickupAddress->lines[1] ?? ''),
-                'Address3' => Xml::cdata($request->pickupAddress->lines[2] ?? ''),
+                'CompanyName' => $request->pickupAddress->name,
+                'Address1' => $request->pickupAddress->lines[0] ?? '',
+                'Address2' => $request->pickupAddress->lines[1] ?? '',
+                'Address3' => $request->pickupAddress->lines[2] ?? '',
                 'PackageLocation' => '',
                 'City' => Xml::cdata($request->pickupAddress->city),
                 'StateCode' => $request->pickupAddress->state,
