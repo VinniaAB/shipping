@@ -32,10 +32,10 @@ use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
-use Vinnia\Shipping\Xml;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
+use Vinnia\Util\Xml;
 
 class Service implements ServiceInterface
 {

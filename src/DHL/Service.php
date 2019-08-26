@@ -38,11 +38,11 @@ use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
-use Vinnia\Shipping\Xml;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
+use Vinnia\Util\Xml;
 
 class Service implements ServiceInterface
 {
@@ -122,7 +122,7 @@ class Service implements ServiceInterface
                 'From' => [
                     'CountryCode' => $sender->countryCode,
                     'Postalcode' => $sender->zip,
-                    'City' => Xml::cdata($sender->city),
+                    'City' => $sender->city,
                 ],
                 'BkgDetails' => [
                     'PaymentCountryCode' => $sender->countryCode,
@@ -141,7 +141,7 @@ class Service implements ServiceInterface
                 'To' => [
                     'CountryCode' => $recipient->countryCode,
                     'Postalcode' => $recipient->zip,
-                    'City' => Xml::cdata($recipient->city),
+                    'City' => $recipient->city,
                 ],
                 'Dutiable' => [
                     'DeclaredCurrency' => $request->currency,
@@ -160,7 +160,7 @@ class Service implements ServiceInterface
             Arrays::set($getQuoteRequest, "GetQuote.BkgDetails.QtdShp.QtdShpExChrg.$key.SpecialServiceType", $service);
         }
 
-        $getQuoteRequest = Xml::removeKeysWithEmptyValues($getQuoteRequest);
+        $getQuoteRequest = removeKeysWithValues($getQuoteRequest, [], null);
         $getQuoteRequest = Xml::fromArray($getQuoteRequest);
 
         $body = <<<EOD
@@ -470,14 +470,14 @@ EOD;
                     : null,
             ],
             'Consignee' => [
-                'CompanyName' => Xml::cdata($request->recipient->name),
-                'AddressLine' => array_map([Xml::class, 'cdata'], array_filter($request->recipient->lines)),
-                'City' => Xml::cdata($request->recipient->city),
+                'CompanyName' => $request->recipient->name,
+                'AddressLine' => array_filter($request->recipient->lines),
+                'City' => $request->recipient->city,
                 'PostalCode' => $request->recipient->zip,
                 'CountryCode' => $request->recipient->countryCode,
                 'CountryName' => $countryNames[$request->recipient->countryCode],
                 'Contact' => [
-                    'PersonName' => Xml::cdata($request->recipient->contactName),
+                    'PersonName' => $request->recipient->contactName,
                     'PhoneNumber' => $request->recipient->contactPhone,
                 ],
             ],
@@ -533,14 +533,14 @@ EOD;
             ],
             'Shipper' => [
                 'ShipperID' => $this->credentials->getAccountNumber(),
-                'CompanyName' => Xml::cdata($request->sender->name),
-                'AddressLine' => array_map([Xml::class, 'cdata'], $request->sender->lines),
-                'City' => Xml::cdata($request->sender->city),
+                'CompanyName' => $request->sender->name,
+                'AddressLine' => $request->sender->lines,
+                'City' => $request->sender->city,
                 'PostalCode' => $request->sender->zip,
                 'CountryCode' => $request->sender->countryCode,
                 'CountryName' => $countryNames[$request->sender->countryCode],
                 'Contact' => [
-                    'PersonName' => Xml::cdata($request->sender->contactName),
+                    'PersonName' => $request->sender->contactName,
                     'PhoneNumber' => $request->sender->contactPhone,
                 ],
             ],
@@ -563,7 +563,7 @@ EOD;
             Arrays::set($data, $key, $value);
         }
 
-        $data = Xml::removeKeysWithEmptyValues($data);
+        $data = removeKeysWithValues($data, [], null);
         $shipmentRequest = Xml::fromArray($data);
 
         $body = <<<EOD
@@ -735,14 +735,14 @@ EOD;
                 'AccountType' => 'D',
                 'AccountNumber' => $this->credentials->getAccountNumber(),
                 'RequestorContact' => [
-                    'PersonName' => Xml::cdata($request->requestorAddress->contactName),
+                    'PersonName' => $request->requestorAddress->contactName,
                     'Phone' => $request->requestorAddress->contactPhone,
                 ],
-                'CompanyName' => Xml::cdata($request->requestorAddress->name),
-                'Address1' => Xml::cdata($request->requestorAddress->lines[0] ?? ''),
-                'Address2' => Xml::cdata($request->requestorAddress->lines[1] ?? ''),
-                'Address3' => Xml::cdata($request->requestorAddress->lines[2] ?? ''),
-                'City' => Xml::cdata($request->requestorAddress->city),
+                'CompanyName' => $request->requestorAddress->name,
+                'Address1' => $request->requestorAddress->lines[0] ?? '',
+                'Address2' => $request->requestorAddress->lines[1] ?? '',
+                'Address3' => $request->requestorAddress->lines[2] ?? '',
+                'City' => $request->requestorAddress->city,
                 'CountryCode' => $request->requestorAddress->countryCode,
                 'PostalCode' => $request->requestorAddress->zip,
             ],
@@ -753,7 +753,7 @@ EOD;
                 'Address2' => $request->pickupAddress->lines[1] ?? '',
                 'Address3' => $request->pickupAddress->lines[2] ?? '',
                 'PackageLocation' => '',
-                'City' => Xml::cdata($request->pickupAddress->city),
+                'City' => $request->pickupAddress->city,
                 'StateCode' => $request->pickupAddress->state,
                 'CountryCode' => $request->pickupAddress->countryCode,
                 'PostalCode' => $request->pickupAddress->zip,
@@ -773,7 +773,7 @@ EOD;
                 ],
             ],
             'PickupContact' => [
-                'PersonName' => Xml::cdata($request->pickupAddress->contactName),
+                'PersonName' => $request->pickupAddress->contactName,
                 'Phone' => $request->pickupAddress->contactPhone,
             ],
             'ShipmentDetails' => [
@@ -800,7 +800,7 @@ EOD;
                 ],
             ]
         ];
-        $data = Xml::removeKeysWithEmptyValues($data);
+        $data = removeKeysWithValues($data, [], null);
         $shipmentRequest = Xml::fromArray($data);
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>
@@ -901,13 +901,13 @@ EOD;
             ],
             'RegionCode' => 'AM',
             'ConfirmationNumber' => $request->id,
-            'RequestorName' => Xml::cdata($request->requestorAddress->contactName),
+            'RequestorName' => $request->requestorAddress->contactName,
             'CountryCode' => $request->requestorAddress->countryCode,
             'OriginSvcArea' => $request->locationCode,
             'PickupDate' => $request->date->format('Y-m-d'),
             'CancelTime' => $now->format('H:i'),
         ];
-        $data = Xml::removeKeysWithEmptyValues($data);
+        $data = removeKeysWithValues($data, [], null);
         $shipmentRequest = Xml::fromArray($data);
         $body = <<<EOD
 <?xml version="1.0" encoding="UTF-8"?>

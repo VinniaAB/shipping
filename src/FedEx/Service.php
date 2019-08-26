@@ -41,15 +41,12 @@ use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
-use Vinnia\Shipping\Xml;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Validation\Validator;
-
-define('ENCODING_CDATA', 1);
-define('ENCODING_HTML', 2);
+use Vinnia\Util\Xml;
 
 class Service implements ServiceInterface
 {
@@ -109,13 +106,10 @@ class Service implements ServiceInterface
 
     /**
      * @param Address $address
+     * @param bool $isResidential
      * @return array
      */
-    private function addressToArray(
-        Address $address,
-        bool $isResidenial = false,
-        $encodingMode = ENCODING_CDATA | ENCODING_HTML
-    ): array
+    private function addressToArray(Address $address, bool $isResidential = false): array
     {
         // fedex only supports 2 street lines so
         // let's put everything that overflows
@@ -126,34 +120,18 @@ class Service implements ServiceInterface
         ];
 
         $addressArray = [
-            'StreetLines' => array_map([Xml::class, 'cdata'], array_filter($lines)),
-            'City' => Xml::cdata($address->city),
-            'StateOrProvinceCode' => $this->encodeValue($address->state, $encodingMode),
+            'StreetLines' => array_filter($lines),
+            'City' => $address->city,
+            'StateOrProvinceCode' => $address->state,
             'PostalCode' => $address->zip,
             'CountryCode' => $address->countryCode,
         ];
 
-        if ($isResidenial) {
+        if ($isResidential) {
             $addressArray['Residential'] = true;
         }
 
         return $addressArray;
-    }
-
-    /**
-     * @param $value
-     * @param $encodingMode
-     * @return string
-     */
-    private function encodeValue($value, $encodingMode)
-    {
-        return $encodingMode === (ENCODING_CDATA | ENCODING_HTML) ?
-            Xml::cdata(htmlentities($value)) :
-            (
-            $encodingMode === ENCODING_CDATA ?
-                Xml::cdata($value) :
-                htmlentities($value)
-            );
     }
 
     /**
@@ -249,7 +227,7 @@ class Service implements ServiceInterface
             ],
         ];
 
-        $rateRequest = Xml::removeKeysWithEmptyValues($rateRequest);
+        $rateRequest = removeKeysWithValues($rateRequest, [], null);
         $xml = Xml::fromArray($rateRequest);
 
         $body = <<<EOD
@@ -547,17 +525,17 @@ EOD;
                     ],
                     'Shipper' => [
                         'Contact' => [
-                            'PersonName' => Xml::cdata($request->sender->contactName),
-                            'CompanyName' => Xml::cdata($request->sender->name),
-                            'PhoneNumber' => Xml::cdata($request->sender->contactPhone),
+                            'PersonName' => $request->sender->contactName,
+                            'CompanyName' => $request->sender->name,
+                            'PhoneNumber' => $request->sender->contactPhone,
                         ],
                         'Address' => $this->addressToArray($request->sender),
                     ],
                     'Recipient' => [
                         'Contact' => [
-                            'PersonName' => Xml::cdata($request->recipient->contactName),
-                            'CompanyName' => Xml::cdata($request->recipient->name),
-                            'PhoneNumber' => Xml::cdata($request->recipient->contactPhone),
+                            'PersonName' => $request->recipient->contactName,
+                            'CompanyName' => $request->recipient->name,
+                            'PhoneNumber' => $request->recipient->contactPhone,
                         ],
                         'Address' => $this->addressToArray(
                             $request->recipient,
@@ -598,7 +576,7 @@ EOD;
                         'Commodities' => array_map(function (ExportDeclaration $decl) use ($request) {
                             return [
                                 'NumberOfPieces' => $decl->quantity,
-                                'Description' => Xml::cdata($decl->description),
+                                'Description' => $decl->description,
                                 'CountryOfManufacture' => $decl->originCountryCode,
                                 'Weight' => [
                                     'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
@@ -662,7 +640,7 @@ EOD;
             Arrays::set($data, $key, $value);
         }
 
-        $data = Xml::removeKeysWithEmptyValues($data);
+        $data = removeKeysWithValues($data, [], null);
         $shipRequest = Xml::fromArray($data);
 
         $body = <<<EOD
@@ -977,14 +955,13 @@ EOD;
                 'OriginDetail' => [
                     'PickupLocation' => [
                         'Contact' => [
-                            'PersonName' => Xml::cdata($request->pickupAddress->contactName),
-                            'CompanyName' => Xml::cdata($request->pickupAddress->name),
-                            'PhoneNumber' => Xml::cdata($request->pickupAddress->contactPhone),
+                            'PersonName' => $request->pickupAddress->contactName,
+                            'CompanyName' => $request->pickupAddress->name,
+                            'PhoneNumber' => $request->pickupAddress->contactPhone,
                         ],
                         'Address' => $this->addressToArray(
                             $request->pickupAddress,
-                            false,
-                            ENCODING_HTML
+                            false
                         ),
                     ],
                     /**
