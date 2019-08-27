@@ -1,26 +1,19 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-02
- * Time: 13:01
- */
 declare(strict_types=1);
 
 namespace Vinnia\Shipping\DHL;
 
+use DOMDocument;
+use DOMNode;
 use DateTimeImmutable;
-use DateTimeInterface;
 use DateTimeZone;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Promise\RejectedPromise;
 use LogicException;
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
-use SimpleXMLElement;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\CancelPickupRequest;
 use Vinnia\Shipping\ExportDeclaration;
@@ -43,13 +36,10 @@ use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Text\Xml;
-use DOMDocument;
-use DOMNode;
-use Vinnia\Util\Text\XMLCallbackParser;
+use Vinnia\Util\Text\XmlCallbackParser;
 
 class Service implements ServiceInterface
 {
-
     const URL_TEST = 'https://xmlpitest-ea.dhl.com/XMLShippingServlet';
     const URL_PRODUCTION = 'https://xmlpi-ea.dhl.com/XMLShippingServlet';
 
@@ -78,6 +68,7 @@ class Service implements ServiceInterface
      * @param ClientInterface $guzzle
      * @param Credentials $credentials
      * @param string $baseUrl
+     * @param ErrorFormatterInterface|null $responseFormatter
      */
     function __construct(
         ClientInterface $guzzle,
@@ -89,9 +80,7 @@ class Service implements ServiceInterface
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;
-        $this->errorFormatter = $responseFormatter === null ?
-            new ExactErrorFormatter() :
-            $responseFormatter;
+        $this->errorFormatter = $responseFormatter ?: new ExactErrorFormatter();
     }
 
     protected function getQuoteOrCapability(QuoteRequest $request, string $elementName): PromiseInterface
@@ -270,52 +259,61 @@ EOD;
             'body' => $body,
         ])->then(function (ResponseInterface $response) {
             $body = (string)$response->getBody();
-            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
+            $xml = new DOMDocument('1.0', 'utf-8');
+            $xml->loadXML($body);
+
+            $arrayed = Xml::toArray($xml);
 
             // previously we were using "ShipmentInfo[ShipmentEvent]" to determine if
             // the track was successful. it turns out some labels do not have shipment
             // events (especially when they're newly created). instead let's check if
             // the product code exists, which should hopefully be accurate.
-            $info = $xml->xpath('/req:TrackingResponse/AWBInfo');
+            $info = Arrays::isNumericKeyArray($arrayed['AWBInfo'])
+                ? $arrayed['AWBInfo']
+                : [$arrayed['AWBInfo']];
 
-            return array_map(function (SimpleXMLElement $element) use ($body): TrackingResult {
-                $info = $element->xpath('ShipmentInfo[GlobalProductCode]');
+            return array_map(function (array $element) use ($body): TrackingResult {
+                $info = Arrays::get($element, 'ShipmentInfo');
+                $productCode = Arrays::get($element, 'ShipmentInfo.GlobalProductCode');
 
-                $trackingNo = (string) $element->AWBNumber;
+                $trackingNo = (string) $element['AWBNumber'];
 
-                if (!$info) {
+                if (!$productCode) {
                     return new TrackingResult(TrackingResult::STATUS_ERROR, $trackingNo, $body);
                 }
 
-                $estimatedDelivery = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', (string) $info[0]->{'EstDlvyDateUTC'}, new DateTimeZone('UTC'));
+                $estimatedDelivery = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $info['EstDlvyDateUTC'] ?? '', new DateTimeZone('UTC'));
 
                 // createFromFormat returns false when parsing fails.
                 // we don't want any booleans in our result.
                 $estimatedDelivery = $estimatedDelivery ?: null;
+                $events = Arrays::isNumericKeyArray($info['ShipmentEvent'])
+                    ? $info['ShipmentEvent']
+                    : [$info['ShipmentEvent']];
 
-                $activities = (new Collection($info[0]->xpath('ShipmentEvent')))->map(function (SimpleXMLElement $element) {
-                    $dtString = ((string)$element->{'Date'}) . ' ' . ((string)$element->{'Time'});
+                $activities = (new Collection($events))->map(function (array $element) {
+                    $dtString = ((string)$element['Date']) . ' ' . ((string)$element['Time']);
                     $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
 
                     // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
-                    $addressParts = explode(' - ', (string)$element->{'ServiceArea'}->{'Description'});
+                    $addressParts = explode(' - ', (string)$element['ServiceArea']['Description']);
 
                     $address = new Address('', [], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
 
                     // the description will sometimes include the location too.
-                    $description = (string)$element->{'ServiceEvent'}->{'Description'};
+                    $description = (string)$element['ServiceEvent']['Description'];
 
-                    $status = $this->getStatusFromEventCode((string)$element->{'ServiceEvent'}->{'EventCode'});
+                    $status = $this->getStatusFromEventCode((string)$element['ServiceEvent']['EventCode']);
 
                     // Append signature to description
                     if (strpos($description, 'Signed for by') !== false) {
-                        $description .= ': ' . ((string)$element->{'Signatory'} ?: 'Not provided');
+                        $description .= ': ' . ((string)$element['Signatory'] ?: 'Not provided');
                     }
 
                     return new TrackingActivity($status, $description, $dt, $address);
                 })->value();
 
-                $pieceInfos = Arrays::get(Xml::toArray($element), 'Pieces.PieceInfo');
+                $pieceInfos = Arrays::get($element, 'Pieces.PieceInfo');
 
                 if (!Arrays::isNumericKeyArray($pieceInfos)) {
                     $pieceInfos = [$pieceInfos];
@@ -333,7 +331,7 @@ EOD;
                     );
                 }, $pieceInfos);
 
-                $tracking = new Tracking('DHL', (string) $info[0]->GlobalProductCode, $activities);
+                $tracking = new Tracking('DHL', (string) $productCode, $activities);
                 $tracking->estimatedDeliveryDate = $estimatedDelivery;
                 $tracking->parcels = $parcels;
 
@@ -594,7 +592,7 @@ EOD;
 
             $number = '';
             $awbData = '';
-            $parser = new XMLCallbackParser([
+            $parser = new XmlCallbackParser([
                 'AirwayBillNumber' => function (DOMNode $node) use (&$number) {
                     $number = $node->textContent;
                 },
@@ -835,7 +833,7 @@ EOD;
 
             $number = '';
             $locationCode = '';
-            $parser = new XMLCallbackParser([
+            $parser = new XmlCallbackParser([
                 'ConfirmationNumber' => function (DOMNode $node) use (&$number) {
                     $number = $node->textContent;
                 },
@@ -940,7 +938,7 @@ EOD;
             $body = (string)$response->getBody();
             $number = '';
 
-            $parser = new XMLCallbackParser([
+            $parser = new XmlCallbackParser([
                 'ConfirmationNumber' => function (DOMNode $node) use (&$number) {
                     $number = $node->textContent;
                 },
