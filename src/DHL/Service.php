@@ -168,7 +168,7 @@ EOD;
 
         return $this->guzzle->requestAsync('POST', $this->baseUrl, [
             'query' => [
-                'isUTF8Support' => true,
+                'isUTF8Support' => 'true',
             ],
             'headers' => [
                 'Accept' => 'text/xml',
@@ -250,7 +250,7 @@ EOD;
 
         return $this->guzzle->requestAsync('POST', $this->baseUrl, [
             'query' => [
-                'isUTF8Support' => true,
+                'isUTF8Support' => 'true',
             ],
             'headers' => [
                 'Accept' => 'text/xml',
@@ -580,7 +580,7 @@ EOD;
 
         return $this->guzzle->requestAsync('POST', $this->baseUrl, [
             'query' => [
-                'isUTF8Support' => true,
+                'isUTF8Support' => 'true',
             ],
             'headers' => [
                 'Accept' => 'text/xml',
@@ -821,7 +821,7 @@ EOD;
 
         return $this->guzzle->requestAsync('POST', $this->baseUrl, [
             'query' => [
-                'isUTF8Support' => true,
+                'isUTF8Support' => 'true',
             ],
             'headers' => [
                 'Accept' => 'text/xml',
@@ -927,7 +927,7 @@ EOD;
 
         return $this->guzzle->requestAsync('POST', $this->baseUrl, [
             'query' => [
-                'isUTF8Support' => true,
+                'isUTF8Support' => 'true',
             ],
             'headers' => [
                 'Accept' => 'text/xml',
