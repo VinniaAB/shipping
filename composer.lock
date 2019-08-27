@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1f2ec090211c749114fcdfdefddf41db",
+    "content-hash": "fae6c108d7af22864a2b2b30e109a4e4",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -371,12 +371,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/VinniaAB/util.git",
-                "reference": "fa3dbe8216889469b9a48840d34ef9899e262a20"
+                "reference": "32b31cd381bc27cd948ce385602ee61ae1400497"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VinniaAB/util/zipball/fa3dbe8216889469b9a48840d34ef9899e262a20",
-                "reference": "fa3dbe8216889469b9a48840d34ef9899e262a20",
+                "url": "https://api.github.com/repos/VinniaAB/util/zipball/32b31cd381bc27cd948ce385602ee61ae1400497",
+                "reference": "32b31cd381bc27cd948ce385602ee61ae1400497",
                 "shasum": ""
             },
             "require": {
@@ -418,7 +418,7 @@
                 "source": "https://github.com/VinniaAB/util/tree/master",
                 "issues": "https://github.com/VinniaAB/util/issues"
             },
-            "time": "2019-08-27T19:21:52+00:00"
+            "time": "2019-08-27T20:54:29+00:00"
         }
     ],
     "packages-dev": [
@@ -1952,6 +1952,7 @@
     "platform": {
         "php": ">=7.2.0",
         "ext-curl": "*",
+        "ext-dom": "*",
         "ext-mbstring": "*",
         "ext-simplexml": "*",
         "ext-xml": "*"
