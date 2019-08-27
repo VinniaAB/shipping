@@ -1,3 +1,11 @@
+<h2>
+
+```diff
+-! This library is a work in progress. Don't use it in production. !-
+```
+
+</h2>
+
 # 3rdparty shipping lib
 This is a library for rating & tracking packages from various shipping carriers.
 The following carriers are supported:
@@ -7,7 +15,7 @@ The following carriers are supported:
 - TNT
 - DPD (Coming...)
 
-**Note: the code in this library is a work in progress; BC breaks will happen on a regular basis.**
+
 
 ## Requirements
 - php 7.2+
