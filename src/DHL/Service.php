@@ -43,6 +43,9 @@ use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Text\Xml;
+use DOMDocument;
+use DOMNode;
+use Vinnia\Util\Text\XMLCallbackParser;
 
 class Service implements ServiceInterface
 {
@@ -194,11 +197,13 @@ EOD;
     {
         return $this->getQuoteOrCapability($request, 'GetQuote')->then(function (ResponseInterface $response) {
             $body = (string)$response->getBody();
+            $xml = new DOMDocument('1.0', 'utf-8');
+            $xml->loadXML($body, LIBXML_PARSEHUGE);
 
-            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
-            $qtdShip = $xml->xpath('/res:DCTResponse/GetQuoteResponse/BkgDetails/QtdShp');
+            $arrayed = Xml::toArray($xml);
+            $qtdShip = Arrays::get($arrayed, 'GetQuoteResponse.BkgDetails.QtdShp');
 
-            if (count($qtdShip) === 0) {
+            if (!$qtdShip) {
                 $this->throwError($body);
             }
 
@@ -206,18 +211,20 @@ EOD;
 
             // somestimes the DHL api responds with a correct response
             // without ShippingCharge values which is strange.
-            return $qtdShip->filter(function (SimpleXMLElement $element): bool {
-                $charge = (string)$element->{'ShippingCharge'};
-                return $charge !== '';
-            })->map(function (SimpleXMLElement $element): Quote {
-                $amountString = (string)$element->{'ShippingCharge'};
+            return $qtdShip->filter(function (array $element): bool {
+                return ((string) $element['ShippingCharge']) !== '';
+            })->map(function (array $element): Quote {
+                $amountString = (string)$element['ShippingCharge'];
 
                 // the amount is a decimal string, deal with that
-                $amount = (int)round(((float)$amountString) * pow(10, 2));
+                $amount = (int) round(((float)$amountString) * pow(10, 2));
+                $product = (string) $element['GlobalProductCode'];
 
-                $product = (string)$element->{'GlobalProductCode'};
+                // 2019-08-27: it seems DHL sometimes decides to not
+                // return a currency code. weird, huh.
+                $money = new Money($amount, new Currency($element['CurrencyCode'] ?? 'EUR'));
 
-                return new Quote('DHL', $product, new Money($amount, new Currency((string)$element->{'CurrencyCode'})));
+                return new Quote('DHL', $product, $money);
             })->value();
         });
     }
@@ -585,20 +592,23 @@ EOD;
         ])->then(function (ResponseInterface $response) {
             $body = (string)$response->getBody();
 
-            // yes, it is ridiculous to parse xml with a regex.
-            // we're doing it here because SimpleXML seems to have
-            // issues with non-latin characters in the DHL response
-            // eg. ÅÄÖ.
-            // Also, http://stackoverflow.com/a/1732454 :)
-            if (preg_match('/<AirwayBillNumber>(.+)<\/AirwayBillNumber>/', $body, $matches) === 0) {
+            $number = '';
+            $awbData = '';
+            $parser = new XMLCallbackParser([
+                'AirwayBillNumber' => function (DOMNode $node) use (&$number) {
+                    $number = $node->textContent;
+                },
+                'OutputImage' => function (DOMNode $node) use (&$awbData) {
+                    $awbData = $node->textContent;
+                },
+            ]);
+            $parser->parse($body);
+
+            if (!$number) {
                 $this->throwError($body);
             }
 
-            $number = $matches[1];
-
-            preg_match('/<OutputImage>(.+)<\/OutputImage>/', $body, $matches);
-
-            $data = base64_decode($matches[1]);
+            $data = base64_decode($awbData);
 
             return [new Shipment($number, 'DHL', $data, $body)];
         });
@@ -630,7 +640,9 @@ EOD;
      */
     protected function getErrors(string $body): array
     {
-        $xml = new SimpleXMLElement($body);
+        $xml = new DOMDocument('1.0', 'utf-8');
+        $xml->loadXML($body, LIBXML_PARSEHUGE);
+
         $arrayed = Xml::toArray($xml);
         $conditions = Arrays::get($arrayed, 'Response.Status.Condition');
 
@@ -639,9 +651,7 @@ EOD;
         }
 
         return array_map(function (array $item) {
-            $message = htmlspecialchars_decode(
-                $item['ConditionData']
-            );
+            $message = $item['ConditionData'];
             $message = preg_replace('/\s+/', ' ', $message);
             $message = $this->errorFormatter->format($message);
             return $message;
@@ -668,7 +678,9 @@ EOD;
 
             $this->getErrorsAndMaybeThrow($body);
 
-            $xml = new SimpleXMLElement($body);
+            $xml = new DOMDocument('1.0', 'utf-8');
+            $xml->loadXML($body, LIBXML_PARSEHUGE);
+
             $arrayed = Xml::toArray($xml);
             $services = Arrays::get($arrayed, 'GetCapabilityResponse.Srvs.Srv') ?? [];
 
@@ -821,22 +833,21 @@ EOD;
         ])->then(function (ResponseInterface $response) use ($request) {
             $body = (string)$response->getBody();
 
-            // yes, it is ridiculous to parse xml with a regex.
-            // we're doing it here because SimpleXML seems to have
-            // issues with non-latin characters in the DHL response
-            // eg. ÅÄÖ.
-            // Also, http://stackoverflow.com/a/1732454 :)
-            if (preg_match('/<ConfirmationNumber>(.+)<\/ConfirmationNumber>/', $body, $matches) === 0) {
+            $number = '';
+            $locationCode = '';
+            $parser = new XMLCallbackParser([
+                'ConfirmationNumber' => function (DOMNode $node) use (&$number) {
+                    $number = $node->textContent;
+                },
+                'OriginSvcArea' => function (DOMNode $node) use (&$locationCode) {
+                    $locationCode = $node->textContent;
+                },
+            ]);
+            $parser->parse($body);
+
+            if (!$number || !$locationCode) {
                 $this->throwError($body);
             }
-
-            $number = $matches[1];
-
-            if (preg_match('/<OriginSvcArea>(.+)<\/OriginSvcArea>/', $body, $matches) === 0) {
-                $this->throwError($body);
-            }
-
-            $locationCode = $matches[1];
 
             return new Pickup(
                 'DHL',
@@ -927,13 +938,16 @@ EOD;
             'body' => $body,
         ])->then(function (ResponseInterface $response) {
             $body = (string)$response->getBody();
+            $number = '';
 
-            // yes, it is ridiculous to parse xml with a regex.
-            // we're doing it here because SimpleXML seems to have
-            // issues with non-latin characters in the DHL response
-            // eg. ÅÄÖ.
-            // Also, http://stackoverflow.com/a/1732454 :)
-            if (preg_match('/<ConfirmationNumber>(.+)<\/ConfirmationNumber>/', $body, $matches) === 0) {
+            $parser = new XMLCallbackParser([
+                'ConfirmationNumber' => function (DOMNode $node) use (&$number) {
+                    $number = $node->textContent;
+                },
+            ]);
+            $parser->parse($body);
+
+            if (!$number) {
                 $this->throwError($body);
             }
 
