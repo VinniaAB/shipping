@@ -35,7 +35,7 @@ use Vinnia\Shipping\TrackingResult;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
-use Vinnia\Util\Xml;
+use Vinnia\Util\Text\Xml;
 
 class Service implements ServiceInterface
 {
@@ -201,7 +201,7 @@ class Service implements ServiceInterface
             // sometimes UPS likes to return a single rate response.
             // this causes the json to appear as an object instead
             // of an array.
-            $shipments = Xml::isNumericKeyArray($shipments) ? $shipments : [$shipments];
+            $shipments = Arrays::isNumericKeyArray($shipments) ? $shipments : [$shipments];
 
             return array_map(function (array $shipment): Quote {
                 $charges = $shipment['TotalCharges'];
@@ -278,14 +278,14 @@ class Service implements ServiceInterface
             $activities = [];
             $parcels = [];
             if (!empty($packages)) {
-                $package = Xml::isNumericKeyArray($packages) ? $packages[0] : $packages;
+                $package = Arrays::isNumericKeyArray($packages) ? $packages[0] : $packages;
 
                 $activities = $package['Activity'] ?? [];
 
                 // if there is only one activity UPS decides to not return
                 // an array of activities and instead they only list one.
                 // probably because they're converting from XML.
-                $activities = Xml::isNumericKeyArray($activities) ? $activities : [$activities];
+                $activities = Arrays::isNumericKeyArray($activities) ? $activities : [$activities];
 
                 $activities = (new Collection($activities))->map(function (array $row): TrackingActivity {
                     $address = new Address(

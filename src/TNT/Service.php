@@ -33,7 +33,7 @@ use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
-use Vinnia\Util\Xml;
+use Vinnia\Util\Text\Xml;
 use DateTimeImmutable;
 use DateTimeZone;
 use SimpleXMLElement;

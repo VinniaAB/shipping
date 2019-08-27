@@ -42,7 +42,7 @@ use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
-use Vinnia\Util\Xml;
+use Vinnia\Util\Text\Xml;
 
 class Service implements ServiceInterface
 {
@@ -672,7 +672,7 @@ EOD;
             $arrayed = Xml::toArray($xml);
             $services = Arrays::get($arrayed, 'GetCapabilityResponse.Srvs.Srv') ?? [];
 
-            if (!Xml::isNumericKeyArray($services)) {
+            if (!Arrays::isNumericKeyArray($services)) {
                 $services = [$services];
             }
 

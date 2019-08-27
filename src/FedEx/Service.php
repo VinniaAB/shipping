@@ -46,7 +46,7 @@ use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Validation\Validator;
-use Vinnia\Util\Xml;
+use Vinnia\Util\Text\Xml;
 
 class Service implements ServiceInterface
 {
@@ -311,7 +311,7 @@ EOD;
             $arrayed = Xml::toArray($xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body')[0]);
             $items = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails');
 
-            if (!Xml::isNumericKeyArray($items)) {
+            if (!Arrays::isNumericKeyArray($items)) {
                 $items = [$items];
             }
 
@@ -344,7 +344,7 @@ EOD;
 
                 $events = Arrays::get($item, 'TrackDetails.Events') ?? [];
 
-                if (!Xml::isNumericKeyArray($events)) {
+                if (!Arrays::isNumericKeyArray($events)) {
                     $events = [$events];
                 }
 
@@ -739,7 +739,7 @@ EOD;
         // array we can't really be sure which elements
         // may have multiple occurrences. in this case
         // we know that there may be multiple notifications.
-        if (!Xml::isNumericKeyArray($notifications)) {
+        if (!Arrays::isNumericKeyArray($notifications)) {
             $notifications = [$notifications];
         }
 
@@ -809,7 +809,7 @@ EOD;
             $arrayed = Xml::toArray($xml);
             $services = Arrays::get($arrayed, 'Body.ServiceAvailabilityReply.Options') ?? [];
 
-            if (!Xml::isNumericKeyArray($services)) {
+            if (!Arrays::isNumericKeyArray($services)) {
                 $services = [$services];
             }
 
