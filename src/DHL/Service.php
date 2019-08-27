@@ -697,11 +697,11 @@ EOD;
     /**
      * @param string $trackingNumber
      * @return PromiseInterface
-     * @throws ServiceException
+     * @throws \Exception
      */
     public function getProofOfDelivery(string $trackingNumber): PromiseInterface
     {
-        $this->throwError('Not implemented');
+        throw new \Exception('Not implemented');
     }
 
     public function createPickup(PickupRequest $request): PromiseInterface
