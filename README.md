@@ -10,10 +10,11 @@ The following carriers are supported:
 **Note: the code in this library is a work in progress; BC breaks will happen on a regular basis.**
 
 ## Requirements
-- php 7.1+
+- php 7.2+
 - ext-curl
-- ext-xml
+- ext-dom
 - ext-mbstring
+- ext-xml
 
 ## Usage
 All shipping services are built around a common interface:

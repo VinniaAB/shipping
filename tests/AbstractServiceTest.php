@@ -41,7 +41,7 @@ abstract class AbstractServiceTest extends TestCase
      */
     abstract public function trackingNumberProvider(): array;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
