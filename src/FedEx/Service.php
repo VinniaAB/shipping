@@ -211,9 +211,7 @@ class Service implements ServiceInterface
                         'Address' => $this->addressToArray($recipient),
                     ],
                     'ShippingChargesPayment' => [
-                        'PaymentType' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER ?
-                            'SENDER' :
-                            'RECIPIENT',
+                        'PaymentType' => 'SENDER',
                         'Payor' => [
                             'ResponsibleParty' => [
                                 'AccountNumber' => $this->credentials->getAccountNumber(),
@@ -543,9 +541,7 @@ EOD;
                         ),
                     ],
                     'ShippingChargesPayment' => [
-                        'PaymentType' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER ?
-                            'SENDER' :
-                            'RECIPIENT',
+                        'PaymentType' => 'SENDER',
                         'Payor' => [
                             'ResponsibleParty' => [
                                 'AccountNumber' => $this->credentials->getAccountNumber(),
@@ -557,7 +553,7 @@ EOD;
                     ],
                     'CustomsClearanceDetail' => [
                         'DutiesPayment' => [
-                            'PaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER ?
+                            'PaymentType' => $request->getPaymentTypeOfIncoterm() === ShipmentRequest::PAYMENT_TYPE_SENDER ?
                                 'SENDER' :
                                 'RECIPIENT',
                             'Payor' => [

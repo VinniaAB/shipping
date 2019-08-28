@@ -461,16 +461,12 @@ EOD;
             'PiecesEnabled' => 'Y',
             'Billing' => [
                 'ShipperAccountNumber' => $this->credentials->getAccountNumber(),
-                'ShippingPaymentType' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT
-                    ? 'R'
-                    : 'S',
-                'BillingAccountNumber' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER
-                    ? $this->credentials->getAccountNumber()
-                    : null,
-                'DutyPaymentType' => $request->dutyPaymentType === ShipmentRequest::PAYMENT_TYPE_RECIPIENT
-                    ? 'R'
-                    : 'S',
-                'DutyAccountNumber' => $request->shipmentPaymentType === ShipmentRequest::PAYMENT_TYPE_SENDER
+                'ShippingPaymentType' => 'S',
+                'BillingAccountNumber' => $this->credentials->getAccountNumber(),
+                'DutyPaymentType' => $request->getPaymentTypeOfIncoterm() === ShipmentRequest::PAYMENT_TYPE_SENDER
+                    ? 'S'
+                    : 'R',
+                'DutyAccountNumber' => $request->getPaymentTypeOfIncoterm() === ShipmentRequest::PAYMENT_TYPE_SENDER
                     ? $this->credentials->getAccountNumber()
                     : null,
             ],

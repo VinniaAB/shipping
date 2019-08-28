@@ -68,16 +68,6 @@ class QuoteRequest
     /**
      * @var string
      */
-    public $dutyPaymentType = self::PAYMENT_TYPE_RECIPIENT;
-
-    /**
-     * @var string
-     */
-    public $shipmentPaymentType = self::PAYMENT_TYPE_SENDER;
-
-    /**
-     * @var string
-     */
     public $incoterm = '';
 
     /**
@@ -115,4 +105,13 @@ class QuoteRequest
         $this->date = new DateTimeImmutable();
     }
 
+    /**
+     * @return string
+     */
+    public function getPaymentTypeOfIncoterm(): string
+    {
+        return !$this->incoterm || in_array(mb_strtoupper($this->incoterm, 'utf-8'), ['DDP'], true)
+            ? static::PAYMENT_TYPE_SENDER
+            : static::PAYMENT_TYPE_RECIPIENT;
+    }
 }

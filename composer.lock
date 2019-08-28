@@ -371,12 +371,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/VinniaAB/util.git",
-                "reference": "40a5102e01d1689bd5a1fa9692e60df5b4a0de00"
+                "reference": "1f2b661a5b2c3c5ad0f665895ef702c72195bc81"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VinniaAB/util/zipball/40a5102e01d1689bd5a1fa9692e60df5b4a0de00",
-                "reference": "40a5102e01d1689bd5a1fa9692e60df5b4a0de00",
+                "url": "https://api.github.com/repos/VinniaAB/util/zipball/1f2b661a5b2c3c5ad0f665895ef702c72195bc81",
+                "reference": "1f2b661a5b2c3c5ad0f665895ef702c72195bc81",
                 "shasum": ""
             },
             "require": {
@@ -418,7 +418,7 @@
                 "source": "https://github.com/VinniaAB/util/tree/master",
                 "issues": "https://github.com/VinniaAB/util/issues"
             },
-            "time": "2019-08-27T21:39:18+00:00"
+            "time": "2019-08-28T15:51:51+00:00"
         }
     ],
     "packages-dev": [
