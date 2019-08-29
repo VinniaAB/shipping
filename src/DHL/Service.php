@@ -296,16 +296,18 @@ EOD;
                 $activities = (new Collection($events))->map(function (array $element) {
                     $dtString = ((string)$element['Date']) . ' ' . ((string)$element['Time']);
                     $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
+                    $area = $element['ServiceArea'];
+                    $event = $element['ServiceEvent'];
 
                     // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
-                    $addressParts = explode(' - ', (string)$element['ServiceArea']['Description'] ?? '');
+                    $addressParts = explode(' - ', $area['Description'] ?? '');
 
                     $address = new Address('', [], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
 
                     // the description will sometimes include the location too.
-                    $description = (string)$element['ServiceEvent']['Description'] ?? '';
+                    $description = $event['Description'] ?? '';
 
-                    $status = $this->getStatusFromEventCode((string)$element['ServiceEvent']['EventCode']);
+                    $status = $this->getStatusFromEventCode($event['EventCode'] ?? '');
 
                     // Append signature to description
                     if (strpos($description, 'Signed for by') !== false) {
