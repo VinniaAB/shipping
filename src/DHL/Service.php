@@ -263,14 +263,15 @@ EOD;
             $xml->loadXML($body);
 
             $arrayed = Xml::toArray($xml);
+            $awbInfo = $arrayed['AWBInfo'] ?? [];
 
             // previously we were using "ShipmentInfo[ShipmentEvent]" to determine if
             // the track was successful. it turns out some labels do not have shipment
             // events (especially when they're newly created). instead let's check if
             // the product code exists, which should hopefully be accurate.
-            $info = Arrays::isNumericKeyArray($arrayed['AWBInfo'])
-                ? $arrayed['AWBInfo']
-                : [$arrayed['AWBInfo']];
+            $infos = Arrays::isNumericKeyArray($awbInfo)
+                ? $awbInfo
+                : [$awbInfo];
 
             return array_map(function (array $element) use ($body): TrackingResult {
                 $info = Arrays::get($element, 'ShipmentInfo');
@@ -287,9 +288,10 @@ EOD;
                 // createFromFormat returns false when parsing fails.
                 // we don't want any booleans in our result.
                 $estimatedDelivery = $estimatedDelivery ?: null;
-                $events = Arrays::isNumericKeyArray($info['ShipmentEvent'])
-                    ? $info['ShipmentEvent']
-                    : [$info['ShipmentEvent']];
+                $events = $info['ShipmentEvent'] ?? [];
+                $events = Arrays::isNumericKeyArray($events)
+                    ? $events
+                    : [$events];
 
                 $activities = (new Collection($events))->map(function (array $element) {
                     $dtString = ((string)$element['Date']) . ' ' . ((string)$element['Time']);
@@ -336,7 +338,7 @@ EOD;
                 $tracking->parcels = $parcels;
 
                 return new TrackingResult(TrackingResult::STATUS_SUCCESS, $trackingNo, $body, $tracking);
-            }, $info);
+            }, $infos);
         });
     }
 
