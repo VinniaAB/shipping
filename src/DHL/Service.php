@@ -298,12 +298,12 @@ EOD;
                     $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
 
                     // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
-                    $addressParts = explode(' - ', (string)$element['ServiceArea']['Description']);
+                    $addressParts = explode(' - ', (string)$element['ServiceArea']['Description'] ?? '');
 
                     $address = new Address('', [], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
 
                     // the description will sometimes include the location too.
-                    $description = (string)$element['ServiceEvent']['Description'];
+                    $description = (string)$element['ServiceEvent']['Description'] ?? '';
 
                     $status = $this->getStatusFromEventCode((string)$element['ServiceEvent']['EventCode']);
 
