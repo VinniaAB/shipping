@@ -47,10 +47,10 @@ use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Validation\Validator;
 use Vinnia\Util\Text\Xml;
+use DOMDocument;
 
 class Service implements ServiceInterface
 {
-
     const URL_TEST = 'https://wsbeta.fedex.com:443/web-services';
     const URL_PRODUCTION = 'https://ws.fedex.com:443/web-services';
 
@@ -305,9 +305,10 @@ EOD;
 
         return $this->send('/track', $body, function (ResponseInterface $response) {
             $body = (string)$response->getBody();
-            $xml = new SimpleXMLElement($body, LIBXML_PARSEHUGE);
-            $arrayed = Xml::toArray($xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body')[0]);
-            $items = Arrays::get($arrayed, 'TrackReply.CompletedTrackDetails');
+            $doc = new DOMDocument('1.0', 'utf-8');
+            $doc->loadXML($body, LIBXML_PARSEHUGE);
+            $arrayed = Xml::toArray($doc);
+            $items = Arrays::get($arrayed['SOAP-ENV:Body'], 'TrackReply.CompletedTrackDetails');
 
             if (!Arrays::isNumericKeyArray($items)) {
                 $items = [$items];
