@@ -466,6 +466,7 @@ EOD;
 
                 $shipments[] = $shipment;
             } catch (Exception $e) {
+
                 // if one parcel fails we need to rollback the other shipments
                 foreach ($shipments as $shipment) {
                     $this->cancelShipment($shipment->id, [
@@ -505,7 +506,7 @@ EOD;
                 ],
                 'Version' => [
                     'ServiceId' => 'ship',
-                    'Major' => 21,
+                    'Major' => 25,
                     'Intermediate' => 0,
                     'Minor' => 0,
                 ],
@@ -641,7 +642,7 @@ EOD;
         $shipRequest = Xml::fromArray($data);
 
         $body = <<<EOD
-<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/ship/v21">
+<p:Envelope xmlns:p="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://fedex.com/ws/ship/v25">
    <p:Body>$shipRequest</p:Body>
 </p:Envelope>
 EOD;
