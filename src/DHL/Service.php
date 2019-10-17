@@ -564,6 +564,13 @@ EOD;
             $data['Dutiable']['TermsOfTrade'] = $request->incoterm;
         }
 
+        if ($request->itn) {
+            $data['Dutiable']['Filing'] = [
+                'FilingType' => 'ITN',
+                'ITN' => $request->itn,
+            ];
+        }
+
         foreach ($request->extra as $key => $value) {
             Arrays::set($data, $key, $value);
         }
