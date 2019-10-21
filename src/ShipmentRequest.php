@@ -37,6 +37,11 @@ class ShipmentRequest extends QuoteRequest
     public $signatureRequired = false;
 
     /**
+     * @var string
+     */
+    public $internationalTransactionNo;
+
+    /**
      * ShipmentRequest constructor.
      * @param string $service
      * @param Address $sender
