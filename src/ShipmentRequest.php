@@ -39,7 +39,7 @@ class ShipmentRequest extends QuoteRequest
     /**
      * @var string
      */
-    public $itn;
+    public $internationalTransactionNo;
 
     /**
      * ShipmentRequest constructor.

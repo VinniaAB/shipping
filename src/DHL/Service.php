@@ -564,10 +564,10 @@ EOD;
             $data['Dutiable']['TermsOfTrade'] = $request->incoterm;
         }
 
-        if ($request->itn) {
+        if ($request->internationalTransactionNo) {
             $data['Dutiable']['Filing'] = [
                 'FilingType' => 'ITN',
-                'ITN' => $request->itn,
+                'ITN' => $request->internationalTransactionNo,
             ];
         }
 
