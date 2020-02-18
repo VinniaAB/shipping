@@ -480,7 +480,7 @@ EOD;
                 'City' => $request->recipient->city,
                 'PostalCode' => $request->recipient->zip,
                 'CountryCode' => $request->recipient->countryCode,
-                'CountryName' => $countryNames[$request->recipient->countryCode],
+                'CountryName' => mb_substr($countryNames[$request->recipient->countryCode], 0, 35, 'utf-8'),
                 'Contact' => [
                     'PersonName' => $request->recipient->contactName,
                     'PhoneNumber' => $request->recipient->contactPhone,
@@ -543,7 +543,7 @@ EOD;
                 'City' => $request->sender->city,
                 'PostalCode' => $request->sender->zip,
                 'CountryCode' => $request->sender->countryCode,
-                'CountryName' => $countryNames[$request->sender->countryCode],
+                'CountryName' => mb_substr($countryNames[$request->sender->countryCode], 0, 35, 'utf-8'),
                 'Contact' => [
                     'PersonName' => $request->sender->contactName,
                     'PhoneNumber' => $request->sender->contactPhone,
