@@ -1,5 +1,6 @@
 {
     "name": "vinnia/shipping",
+    "description": "Library for tracking shipments",
     "type": "library",
     "license": "MIT",
     "authors": [
