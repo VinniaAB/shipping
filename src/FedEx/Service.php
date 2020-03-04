@@ -895,7 +895,7 @@ EOD;
             $arrayed = Xml::toArray($xml->xpath('/SOAP-ENV:Envelope/SOAP-ENV:Body')[0]);
 
             $validator = new Validator([
-                'GetTrackingDocumentsReply.Notifications.Severity' => 'required|ne:ERROR',
+                'GetTrackingDocumentsReply.Notifications.Severity' => 'required|eq:SUCCESS',
                 'GetTrackingDocumentsReply.Documents' => 'array',
                 'GetTrackingDocumentsReply.Documents.Parts' => 'array',
                 'GetTrackingDocumentsReply.Documents.Parts.Content' => 'required|string',
