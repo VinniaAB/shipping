@@ -811,7 +811,9 @@ EOD;
                 $services = [$services];
             }
 
-            return (new Collection($services))->map(function (array $service): string {
+            return (new Collection($services))->filter(function (array $service) {
+                return isset( $service['Service'] );
+            })->map(function (array $service): string {
                 return $service['Service'];
             })->value();
         });
