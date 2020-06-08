@@ -33,6 +33,7 @@ use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Util\Measurement\Amount;
 use Vinnia\Util\Measurement\Unit;
+use function GuzzleHttp\Psr7\stream_for;
 
 class FedExTest extends AbstractServiceTest
 {
@@ -372,4 +373,84 @@ EOD;
         );
     }
 
+    public function testFindsAvailableServicesWithGapsInTheXml()
+    {
+        $client = new Client([
+            // notice the empty <Options /> elements.
+            'handler' => HandlerStack::create(function (RequestInterface $request, array $options = []) {
+                $body = <<<TXT
+<?xml version="1.0" encoding="UTF-8"?>
+<Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+   <Header />
+   <Body>
+      <ServiceAvailabilityReply xmlns="http://fedex.com/ws/vacs/v8">
+         <HighestSeverity>WARNING</HighestSeverity>
+         <Notifications>
+            <Severity>WARNING</Severity>
+            <Source>vacs</Source>
+            <Code>2027</Code>
+            <Message>Service was validated at the country level, but might not be valid for the actual intended city for the destination.</Message>
+            <LocalizedMessage>Service was validated at the country level, but might not be valid for the actual intended city for the destination.</LocalizedMessage>
+         </Notifications>
+         <Notifications>
+            <Severity>NOTE</Severity>
+            <Source>vacs</Source>
+            <Code>2024</Code>
+            <Message>The country's default routing code was used for the destination.</Message>
+            <LocalizedMessage>The country's default routing code was used for the destination.</LocalizedMessage>
+         </Notifications>
+         <Notifications>
+            <Severity>NOTE</Severity>
+            <Source>vacs</Source>
+            <Code>2002</Code>
+            <Message>Your Packaging was assumed.</Message>
+            <LocalizedMessage>Your Packaging was assumed.</LocalizedMessage>
+         </Notifications>
+         <Version>
+            <ServiceId>vacs</ServiceId>
+            <Major>8</Major>
+            <Intermediate>0</Intermediate>
+            <Minor>0</Minor>
+         </Version>
+         <Options>
+            <Service>INTERNATIONAL_PRIORITY</Service>
+         </Options>
+         <Options />
+         <Options />
+         <Options>
+            <Service>INTERNATIONAL_ECONOMY</Service>
+         </Options>
+         <Options>
+            <Service>INTERNATIONAL_PRIORITY_DISTRIBUTION</Service>
+         </Options>
+      </ServiceAvailabilityReply>
+   </Body>
+</Envelope>
+TXT;
+
+                $response = new Response(200, [], stream_for($body));
+
+                return promise_for($response);
+            }),
+        ]);
+        $sender = new Address(
+            '',
+            [''],
+            '',
+            '',
+            '',
+            '',
+        );
+        $request = new QuoteRequest($sender, $sender, [
+            Parcel::make(1.0, 1.0, 1.0, 0.1, Unit::CENTIMETER)
+        ]);
+        $service = new FedEx($client, new Credentials('', '', '', ''));
+        $available = $service->getAvailableServices($request)->wait();
+
+        $this->assertSame([
+            'INTERNATIONAL_PRIORITY',
+            'INTERNATIONAL_ECONOMY',
+            'INTERNATIONAL_PRIORITY_DISTRIBUTION',
+        ], $available);
+    }
 }

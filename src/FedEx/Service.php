@@ -811,11 +811,10 @@ EOD;
                 $services = [$services];
             }
 
-            return (new Collection($services))->filter(function (array $service) {
-                return isset( $service['Service'] );
-            })->map(function (array $service): string {
-                return $service['Service'];
-            })->value();
+            return (new Collection($services))
+                ->filter(fn ($service) => ($service['Service'] ?? '') !== '')
+                ->map(fn ($service) => $service['Service'])
+                ->value();
         });
     }
 
