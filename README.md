@@ -18,7 +18,7 @@ The following carriers are supported:
 
 
 ## Requirements
-- php 7.2+
+- php 7.4+
 - ext-curl
 - ext-dom
 - ext-mbstring
