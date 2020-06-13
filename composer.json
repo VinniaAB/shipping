@@ -18,7 +18,6 @@
         "ext-simplexml": "*",
         "ext-xml": "*",
         "guzzlehttp/guzzle": "^6.2",
-        "moneyphp/money": "^3.0",
         "vinnia/util": "dev-master"
     },
     "require-dev": {

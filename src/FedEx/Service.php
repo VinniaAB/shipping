@@ -19,8 +19,6 @@ use GuzzleHttp\Exception\ServerException;
 use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use LogicException;
-use Money\Currency;
-use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\CancelPickupRequest;
@@ -249,9 +247,9 @@ EOD;
                     ->{'TotalNetChargeWithDutiesAndTaxes'};
 
                 $amountString = (string)$total->{'Amount'};
-                $amount = (int)round(((float)$amountString) * pow(10, 2));
+                $amount = (float) $amountString;
 
-                return new Quote('FedEx', $product, new Money($amount, new Currency((string)$total->{'Currency'})));
+                return new Quote('FedEx', $product, Array ('amount'=> $amount, 'currency' => (string)$total->{'Currency'}));
             }, $details);
         });
     }

@@ -15,8 +15,6 @@ use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use LogicException;
-use Money\Currency;
-use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\CancelPickupRequest;
@@ -158,12 +156,12 @@ EOD;
             $services = $xml->xpath('/document/priceResponse/ratedServices/ratedService');
 
             return (new Collection($services))->map(function (SimpleXMLElement $element): Quote {
-                $amount = ((float) ((string) $element->totalPrice)) * pow(10, 2);
+                $amount = ((float) ((string) $element->totalPrice));
 
                 // TODO: fix hard coded currency. the currency should probably be a
                 // property of the credentials since TNT requires a manually specified
                 // currency.
-                $money = new Money($amount, new Currency('EUR'));
+                $money = Array('amount'=> $amount, 'currency' => 'EUR');
 
                 return new Quote('TNT', (string) $element->product->productDesc, $money);
             })->value();

@@ -9,7 +9,6 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
-use Money\Money;
 use JsonSerializable;
 
 class Quote implements JsonSerializable
@@ -26,7 +25,7 @@ class Quote implements JsonSerializable
     public $service;
 
     /**
-     * @var Money
+     * @var Array
      */
     public $price;
 
@@ -34,9 +33,9 @@ class Quote implements JsonSerializable
      * Quote constructor.
      * @param string $vendor
      * @param string $service
-     * @param Money $price
+     * @param Array $price
      */
-    function __construct(string $vendor, string $service, Money $price)
+    function __construct(string $vendor, string $service, Array $price)
     {
         $this->vendor = $vendor;
         $this->service = $service;

@@ -16,8 +16,6 @@ use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use LogicException;
-use Money\Currency;
-use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\CancelPickupRequest;
@@ -203,12 +201,12 @@ class Service implements ServiceInterface
 
             return array_map(function (array $shipment): Quote {
                 $charges = empty($this->credentials->getShipperNumber()) ? $shipment['TotalCharges'] : $shipment['NegotiatedRateCharges']['TotalCharge'];
-                $amount = (int) round(((float) $charges['MonetaryValue']) * pow(10, 2));
+                $amount = (float) $charges['MonetaryValue'];
 
                 return new Quote(
                     'UPS',
                     (string) Arrays::get($shipment, 'Service.Code'),
-                    new Money($amount, new Currency($charges['CurrencyCode']))
+                    Array('amount'=> $amount, 'currency' => $charges['CurrencyCode'])
                 );
             }, $shipments);
         });

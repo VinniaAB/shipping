@@ -11,8 +11,6 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Promise\PromiseInterface;
 use LogicException;
-use Money\Currency;
-use Money\Money;
 use Psr\Http\Message\ResponseInterface;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\CancelPickupRequest;
@@ -206,12 +204,12 @@ EOD;
                 $amountString = (string)$element['ShippingCharge'];
 
                 // the amount is a decimal string, deal with that
-                $amount = (int) round(((float)$amountString) * pow(10, 2));
+                $amount = (float) $amountString;
                 $product = (string) $element['GlobalProductCode'];
 
                 // 2019-08-27: it seems DHL sometimes decides to not
                 // return a currency code. weird, huh.
-                $money = new Money($amount, new Currency($element['CurrencyCode'] ?? 'EUR'));
+                $money = Array('amount'=> $amount,  'currency' => $element['CurrencyCode'] ?? 'USD');
 
                 return new Quote('DHL', $product, $money);
             })->value();
