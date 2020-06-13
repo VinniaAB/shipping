@@ -126,7 +126,7 @@ class Service implements ServiceInterface
                 'Shipment' => [
                     'Shipper' => [
                         'Name' => '',
-                        'ShipperNumber' => '',
+                        'ShipperNumber' =>  $this->credentials->getShipperNumber(),
                         'Address' => [
                             'AddressLine' => array_filter($sender->lines),
                             'City' => $sender->city,
@@ -176,9 +176,7 @@ class Service implements ServiceInterface
                             ],
                         ];
                     }, $parcels),
-                    //'ShipmentRatingOptions' => [
-                    //    'NegotiatedRatesIndicator' => '',
-                    //],
+                    empty($this->credentials->getShipperNumber()) ?: 'ShipmentRatingOptions' => ['NegotiatedRatesIndicator' => '',],
                 ],
             ],
         ];
@@ -204,7 +202,7 @@ class Service implements ServiceInterface
             $shipments = Arrays::isNumericKeyArray($shipments) ? $shipments : [$shipments];
 
             return array_map(function (array $shipment): Quote {
-                $charges = $shipment['TotalCharges'];
+                $charges = empty($this->credentials->getShipperNumber()) ? $shipment['TotalCharges'] : $shipment['NegotiatedRateCharges']['TotalCharge'];
                 $amount = (int) round(((float) $charges['MonetaryValue']) * pow(10, 2));
 
                 return new Quote(

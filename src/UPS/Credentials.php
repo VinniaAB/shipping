@@ -26,12 +26,18 @@ class Credentials
      * @var string
      */
     private $accessLicense;
+    
+    /**
+     * @var string
+     */
+    private $shipperNumber;
 
-    function __construct(string $username, string $password, string $accessLicense)
+    function __construct(string $username, string $password, string $accessLicense, string $shipperNumber = '')
     {
         $this->username = $username;
         $this->password = $password;
         $this->accessLicense = $accessLicense;
+        $this->shipperNumber = $shipperNumber;
     }
 
     /**
@@ -58,4 +64,11 @@ class Credentials
         return $this->accessLicense;
     }
 
+    /**
+     * @return string
+     */
+    public function getShipperNumber(): string
+    {
+        return $this->shipperNumber;
+    }
 }
