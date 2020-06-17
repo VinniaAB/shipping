@@ -203,6 +203,17 @@ EOD;
             'form_params' => [
                 'xml_in' => $body,
             ],
+
+            // the TNT server is old and supports ciphers that newer libraries have blacklisted.
+            // on some operating systems cURL throws the following error on connect:
+            //
+            //   cURL error 35: error:141A318A:SSL routines:tls_process_ske_dhe:dh key too small
+            //
+            // let's disable dh key exchange and force TLS.
+            'curl' => [
+                CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1,
+                CURLOPT_SSL_CIPHER_LIST => 'DEFAULT:!DH',
+            ],
         ])->then(function (ResponseInterface $response) {
             $body = (string) $response->getBody();
 
