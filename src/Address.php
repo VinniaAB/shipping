@@ -121,11 +121,11 @@ class Address implements JsonSerializable
     public static function fromArray(array $data): self
     {
         return new Address(
-            $data['name'],
-            $data['lines'],
-            $data['zip'],
-            $data['city'],
-            $data['state'],
+            $data['name'] ?? '',
+            $data['lines'] ?? ['', '', ''],
+            $data['zip'] ?? '',
+            $data['city'] ?? '',
+            $data['state'] ?? '',
             $data['country_code'],
             $data['contact_name'] ?? '',
             $data['contact_phone'] ?? '',

@@ -5,9 +5,8 @@ namespace Vinnia\Shipping;
 
 use GuzzleHttp\Promise\PromiseInterface;
 
-interface ServiceInterface
+interface ServiceInterface extends ShipmentServiceInterface
 {
-
     /**
      * @param QuoteRequest $request
      * @return PromiseInterface promise resolved with an array of \Vinnia\Shipping\Quote on success
@@ -22,19 +21,6 @@ interface ServiceInterface
     public function getTrackingStatus(array $trackingNumbers, array $options = []): PromiseInterface;
 
     /**
-     * @param ShipmentRequest $request
-     * @return PromiseInterface resolved with an array of \Vinnia\Shipping\Shipment
-     */
-    public function createShipment(ShipmentRequest $request): PromiseInterface;
-
-    /**
-     * @param string $id
-     * @param array $data
-     * @return PromiseInterface
-     */
-    public function cancelShipment(string $id, array $data = []): PromiseInterface;
-
-    /**
      * @param QuoteRequest $request
      * @return PromiseInterface promise resolved with an array of strings
      */
@@ -47,6 +33,7 @@ interface ServiceInterface
     public function getProofOfDelivery(string $trackingNumber): PromiseInterface;
 
     /**
+     * @param PickupRequest $request
      * @return PromiseInterface
      */
     public function createPickup(PickupRequest $request): PromiseInterface;
