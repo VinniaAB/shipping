@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-01
- * Time: 14:36
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping\UPS;
@@ -39,7 +33,6 @@ use Vinnia\Util\Text\Xml;
 
 class Service implements ServiceInterface
 {
-
     const URL_TEST = 'https://wwwcie.ups.com/rest';
     const URL_PRODUCTION = 'https://onlinetools.ups.com/rest';
     const NON_SI_COUNTRIES = ['US'];
@@ -70,13 +63,12 @@ class Service implements ServiceInterface
      * @param Credentials $credentials
      * @param string $baseUrl
      */
-    function __construct(
+    public function __construct(
         ClientInterface $guzzle,
         Credentials $credentials,
         string $baseUrl = self::URL_PRODUCTION,
         ?ErrorFormatterInterface $responseFormatter = null
-    )
-    {
+    ) {
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;

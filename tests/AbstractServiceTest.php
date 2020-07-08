@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-01
- * Time: 15:38
- */
 declare(strict_types=1);
 
 namespace Vinnia\Shipping\Tests;
@@ -151,5 +145,4 @@ abstract class AbstractServiceTest extends TestCase
             $this->assertInstanceOf(Parcel::class, $parcel);
         }
     }
-
 }

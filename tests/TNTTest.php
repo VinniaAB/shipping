@@ -1,13 +1,6 @@
-<?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-09
- * Time: 12:07
- */
+<?php declare(strict_types=1);
 
 namespace Vinnia\Shipping\Tests;
-
 
 use GuzzleHttp\Client;
 use Vinnia\Shipping\ServiceInterface;

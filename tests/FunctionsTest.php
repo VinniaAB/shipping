@@ -3,7 +3,6 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\Tests;
 
-
 use PHPUnit\Framework\TestCase;
 
 class FunctionsTest extends TestCase

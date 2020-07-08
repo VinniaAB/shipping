@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-04
- * Time: 14:03
- */
 declare(strict_types=1);
 
 namespace Vinnia\Shipping\Tests;
@@ -197,7 +191,6 @@ EOD;
 
     public function testGetProofOfDeliveryWhichExists()
     {
-
         $c = require __DIR__ . '/../credentials.php';
         $credentials = new Credentials(
             $c['fedex']['credential_key'],
@@ -280,7 +273,6 @@ EOD;
 
     public function testCancelFedexPickup()
     {
-
         $request = $this->createMockPickupRequest();
 
         $request->units = PickupRequest::UNITS_IMPERIAL;
@@ -304,7 +296,6 @@ EOD;
 
     public function testFedexErrorFormatter()
     {
-
         $c = require __DIR__ . '/../credentials.php';
         $credentials = new Credentials(
             $c['fedex']['credential_key'],
@@ -313,9 +304,7 @@ EOD;
             $c['fedex']['meter_number']
         );
 
-        $formatter = new class implements ErrorFormatterInterface
-        {
-
+        $formatter = new class implements ErrorFormatterInterface {
             public function format(string $message): string
             {
                 switch ($message) {
@@ -340,7 +329,6 @@ EOD;
         try {
             $service->createPickup($request)->wait();
         } catch (ServiceException $e) {
-
             $this->assertEquals('Pickup time possibly too narrow', $e->getMessage());
             throw $e;
         }
@@ -360,7 +348,7 @@ EOD;
                 new Amount(30, Unit::CENTIMETER),
                 new Amount(30, Unit::CENTIMETER),
                 new Amount(2, Unit::KILOGRAM)
-            )
+            ),
         ];
 
         return new PickupRequest(
@@ -442,7 +430,7 @@ TXT;
             '',
         );
         $request = new QuoteRequest($sender, $sender, [
-            Parcel::make(1.0, 1.0, 1.0, 0.1, Unit::CENTIMETER)
+            Parcel::make(1.0, 1.0, 1.0, 0.1, Unit::CENTIMETER),
         ]);
         $service = new FedEx($client, new Credentials('', '', '', ''));
         $available = $service->getAvailableServices($request)->wait();

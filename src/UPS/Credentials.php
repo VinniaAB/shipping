@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-01
- * Time: 14:37
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping\UPS;
@@ -27,7 +21,7 @@ class Credentials
      */
     private $accessLicense;
 
-    function __construct(string $username, string $password, string $accessLicense)
+    public function __construct(string $username, string $password, string $accessLicense)
     {
         $this->username = $username;
         $this->password = $password;
@@ -57,5 +51,4 @@ class Credentials
     {
         return $this->accessLicense;
     }
-
 }

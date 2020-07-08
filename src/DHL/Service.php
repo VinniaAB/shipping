@@ -70,13 +70,12 @@ class Service implements ServiceInterface
      * @param string $baseUrl
      * @param ErrorFormatterInterface|null $responseFormatter
      */
-    function __construct(
+    public function __construct(
         ClientInterface $guzzle,
         Credentials $credentials,
         string $baseUrl = self::URL_PRODUCTION,
         ?ErrorFormatterInterface $responseFormatter = null
-    )
-    {
+    ) {
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;
@@ -813,9 +812,9 @@ EOD;
                 'InsuredAmount' => number_format($request->insuredValue, 2, '.', ''),
                 'InsuredCurrencyCode' => $request->currency,
                 'Pieces' => [
-                    'Piece' => $parcelsData
+                    'Piece' => $parcelsData,
                 ],
-            ]
+            ],
         ];
         $data = removeKeysWithValues($data, [], null);
         $shipmentRequest = Xml::fromArray($data);

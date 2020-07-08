@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-01
- * Time: 14:06
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
@@ -62,5 +56,4 @@ interface ServiceInterface
      * @return PromiseInterface
      */
     public function cancelPickup(CancelPickupRequest $request): PromiseInterface;
-
 }

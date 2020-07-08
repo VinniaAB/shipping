@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-01
- * Time: 16:44
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping\Tests;
@@ -39,7 +33,7 @@ class UPSTest extends AbstractServiceTest
         $data = require __DIR__ . '/../credentials.php';
 
         return [
-            [$data['ups']['tracking_numbers']]
+            [$data['ups']['tracking_numbers']],
         ];
     }
 }

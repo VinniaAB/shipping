@@ -1,19 +1,11 @@
-<?php
-/**
- * Created by PhpStorm.
- * User: Bro
- * Date: 04.09.2018
- * Time: 17:03
- */
+<?php declare(strict_types=1);
 
 namespace Vinnia\Shipping;
 
 use DateTimeImmutable;
 
-
 class PickupRequest
 {
-
     const UNITS_METRIC = 'metric';
     const UNITS_IMPERIAL = 'imperial';
 
@@ -101,9 +93,7 @@ class PickupRequest
         DateTimeImmutable $earliestPickup,
         DateTimeImmutable $latestPickup,
         array $parcels
-    )
-    {
-
+    ) {
         $this->service = $service;
         $this->pickupAddress = $pickupAddress;
         $this->requestorAddress = $requestorAddress;

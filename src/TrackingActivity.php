@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-07
- * Time: 18:06
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
@@ -14,11 +8,10 @@ use JsonSerializable;
 
 class TrackingActivity implements JsonSerializable
 {
-
-    const STATUS_DELIVERED      = 100;
-    const STATUS_IN_TRANSIT     = 200;
-    const STATUS_EXCEPTION      = 500;
-    const STATUS_NOTIFICATION   = 700;
+    const STATUS_DELIVERED = 100;
+    const STATUS_IN_TRANSIT = 200;
+    const STATUS_EXCEPTION = 500;
+    const STATUS_NOTIFICATION = 700;
 
     /**
      * @var int
@@ -47,7 +40,7 @@ class TrackingActivity implements JsonSerializable
      * @param DateTimeInterface $date
      * @param Address $address
      */
-    function __construct(int $status, string $description, DateTimeInterface $date, Address $address)
+    public function __construct(int $status, string $description, DateTimeInterface $date, Address $address)
     {
         $this->status = $status;
         $this->description = $description;
@@ -75,5 +68,4 @@ class TrackingActivity implements JsonSerializable
     {
         return $this->toArray();
     }
-
 }

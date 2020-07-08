@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-09
- * Time: 00:40
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping\TNT;
@@ -40,7 +34,6 @@ use SimpleXMLElement;
 
 class Service implements ServiceInterface
 {
-
     const URL_TEST = 'https://test';
     const URL_PRODUCTION = 'https://express.tnt.com/expressconnect';
 
@@ -71,13 +64,12 @@ class Service implements ServiceInterface
      * @param string $baseUrl
      * @param null|ErrorFormatterInterface $responseFormatter
      */
-    function __construct(
+    public function __construct(
         ClientInterface $guzzle,
         Credentials $credentials,
         string $baseUrl = self::URL_PRODUCTION,
         ?ErrorFormatterInterface $responseFormatter = null
-    )
-    {
+    ) {
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;
@@ -148,7 +140,7 @@ EOD;
         return $this->guzzle->requestAsync('POST', $this->baseUrl . '/pricing/getprice', [
             'headers' => [
                 'Accept' => 'text/xml',
-                'Content-Type' => 'text/xml'
+                'Content-Type' => 'text/xml',
             ],
             'auth' => [$this->credentials->getUsername(), $this->credentials->getPassword(), 'basic'],
             'body' => $body,

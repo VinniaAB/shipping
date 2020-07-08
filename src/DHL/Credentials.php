@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-02
- * Time: 17:08
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping\DHL;
@@ -33,7 +27,7 @@ class Credentials
      * @param string $password
      * @param string $accountNumber
      */
-    function __construct(string $siteID, string $password, string $accountNumber)
+    public function __construct(string $siteID, string $password, string $accountNumber)
     {
         $this->siteID = $siteID;
         $this->password = $password;
@@ -63,5 +57,4 @@ class Credentials
     {
         return $this->accountNumber;
     }
-
 }

@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-02
- * Time: 17:17
- */
 declare(strict_types=1);
 
 namespace Vinnia\Shipping\Tests;
@@ -119,7 +113,6 @@ class DHLTest extends AbstractServiceTest
 
     public function testQuoteError()
     {
-
         $sender = new Address('', [], '', '', '', '', '', '');
         $package = new Parcel(
             new Amount(1.0, Unit::METER),
@@ -225,7 +218,7 @@ class DHLTest extends AbstractServiceTest
                 new Amount(30, Unit::CENTIMETER),
                 new Amount(30, Unit::CENTIMETER),
                 new Amount(2, Unit::KILOGRAM)
-            )
+            ),
         ];
 
         return new PickupRequest(
@@ -237,5 +230,4 @@ class DHLTest extends AbstractServiceTest
             $parcels
         );
     }
-
 }

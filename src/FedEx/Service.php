@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-03
- * Time: 19:24
- */
 declare(strict_types=1);
 
 namespace Vinnia\Shipping\FedEx;
@@ -88,14 +82,13 @@ class Service implements ServiceInterface
      * @param string $url
      * @param null|ErrorFormatterInterface $errorFormatter
      */
-    function __construct(
+    public function __construct(
         ClientInterface $guzzle,
         Credentials $credentials,
         string $url = self::URL_PRODUCTION,
         ?ErrorFormatterInterface $errorFormatter = null
 
-    )
-    {
+    ) {
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->url = $url;
@@ -318,7 +311,7 @@ EOD;
                 'TrackDetails.Notification.Severity' => 'required|ne:ERROR',
                 'TrackDetails.Events' => 'array',
                 'TrackDetails.Service.Type' => 'required|string',
-                'TrackingDetails.PackageDimensions' => 'array'
+                'TrackingDetails.PackageDimensions' => 'array',
             ]);
 
             return array_map(function (array $item) use ($body, $validator) {
@@ -486,8 +479,7 @@ EOD;
         int $parcelIndex,
         Amount $totalWeight,
         ?string $masterTrackingId = null
-    ): string
-    {
+    ): string {
         $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
             $request->parcels[$parcelIndex]->convertTo(Unit::INCH, Unit::POUND) :
             $request->parcels[$parcelIndex]->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
@@ -580,7 +572,7 @@ EOD;
                                     'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
                                     'Value' => $decl->weight
                                         ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
-                                        ->format(2)
+                                        ->format(2),
                                 ],
                                 'Quantity' => $decl->quantity,
                                 'QuantityUnits' => 'Pieces',
@@ -790,7 +782,7 @@ EOD;
                     'CountryCode' => $request->recipient->countryCode,
                 ],
                 'ShipDate' => $request->date->format('Y-m-d'),
-            ]
+            ],
         ];
 
         $xml = Xml::fromArray($data);
@@ -866,18 +858,18 @@ EOD;
                         'Type' => 'TRACKING_NUMBER_OR_DOORTAG',
                         'Value' => $trackingNumber,
                     ],
-                    'SecureSpodAccount' => $this->credentials->getAccountNumber()
+                    'SecureSpodAccount' => $this->credentials->getAccountNumber(),
                 ],
                 'TrackingDocumentSpecification' => [
                     'DocumentTypes' => 'SIGNATURE_PROOF_OF_DELIVERY',
                     'SignatureProofOfDeliveryDetail' => [
                         'DocumentFormat' => [
                             'Dispositions' => [
-                                'DispositionType' => 'RETURN'
-                            ]
-                        ]
-                    ]
-                ]
+                                'DispositionType' => 'RETURN',
+                            ],
+                        ],
+                    ],
+                ],
             ],
         ]);
 
@@ -973,11 +965,11 @@ EOD;
                 'PackageCount' => count($request->parcels),
                 'TotalWeight' => [
                     'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
-                    'Value' => $totalWeight->format(2)
+                    'Value' => $totalWeight->format(2),
                 ],
                 'CarrierCode' => $request->service,
                 'Remarks' => $request->notes,
-            ]
+            ],
         ]);
 
         $body = <<<EOD
@@ -1008,8 +1000,7 @@ EOD;
         ResponseInterface $response,
         string $service,
         DateTimeImmutable $date
-    ): Pickup
-    {
+    ): Pickup {
         $body = (string)$response->getBody();
 
         // remove namespace prefixes to ease parsing
@@ -1088,7 +1079,7 @@ EOD;
                 'PickupConfirmationNumber' => $request->id,
                 'ScheduledDate' => $request->date->format('Y-m-d'),
                 'Location' => $request->locationCode,
-            ]
+            ],
         ]);
 
         $body = <<<EOD
