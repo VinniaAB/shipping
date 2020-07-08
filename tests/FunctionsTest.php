@@ -23,6 +23,6 @@ class FunctionsTest extends TestCase
      */
     public function testRemoveKeysWithEmptyValues(array $expected, array $source)
     {
-        $this->assertEquals($expected, removeKeysWithValues($source, [], null));
+        $this->assertSame($expected, removeKeysWithValues($source, [], null));
     }
 }
