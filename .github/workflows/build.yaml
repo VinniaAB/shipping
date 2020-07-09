@@ -24,3 +24,8 @@ jobs:
         run: composer run test
       - name: Archive output
         run: 7z a output.7z -p${SECRET_KEY} tests/output/*
+      - name: Save output
+        uses: actions/upload-artifact@v2
+        with:
+          name: output.7z
+          path: output.7z
