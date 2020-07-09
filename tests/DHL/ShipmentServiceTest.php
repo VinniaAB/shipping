@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Credentials;
+use Vinnia\Shipping\DHL\Service;
 use Vinnia\Shipping\DHL\ShipmentService;
 use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\Parcel;
@@ -50,7 +51,7 @@ XML
         $this->assertSame('MY_LABEL_IMAGE', $shipments[0]->labelData);
     }
 
-    public function testCreateShipmentFromSwitzerlandToTheUnitedKingdom()
+    public function testCreateDutiableShipmentFromSwitzerlandToTheUnitedKingdom()
     {
         $credentials = $this->getCredentialsOfName('dhl_export_switzerland');
         $service = new ShipmentService(
@@ -86,12 +87,49 @@ XML
         $request->exportDeclarations = [
             new ExportDeclaration('Solid cube of titanium', 'CH', 1, 100.00, 'CHF', new Amount(2.0, Unit::KILOGRAM)),
         ];
+        $request->isDutiable = true;
 
-        /* @var \Vinnia\Shipping\Shipment[] $shipments */
-        $shipments = $service->createShipment($request)
-            ->wait();
+        $this->executeCreateShipmentTest(fn () => $service->createShipment($request)->wait());
+    }
 
-        $this->assertCount(1, $shipments);
-        $this->assertMatchesRegularExpression('#^\d+$#', $shipments[0]->id);
+    public function testCreateNonDutiableShipmentFromSwitzerlandToTheUnitedKingdom()
+    {
+        $credentials = $this->getCredentialsOfName('dhl_export_switzerland');
+        $service = new ShipmentService(
+            new Client(),
+            $credentials,
+            ShipmentService::URL_TEST
+        );
+
+        $sender = new Address(
+            'Some Company',
+            ['Bächlerstrasse 1'],
+            '8802',
+            'Kilchberg',
+            '',
+            'CH',
+            'Some Dude',
+            '12345',
+        );
+        $recipient = new Address(
+            'Some Other Company',
+            ['1 Bakers Road'],
+            'UB8 1RG',
+            'Uxbridge',
+            '',
+            'GB',
+            'Some Other Dude',
+            '12345',
+        );
+
+        $request = new ShipmentRequest('K', $sender, $recipient, [
+            Parcel::make(10.0, 10.0, 10.0, 2.0, Unit::CENTIMETER, Unit::KILOGRAM),
+        ]);
+        $request->exportDeclarations = [
+            new ExportDeclaration('Solid cube of titanium', 'CH', 1, 100.00, 'CHF', new Amount(2.0, Unit::KILOGRAM)),
+        ];
+        $request->isDutiable = false;
+
+        $this->executeCreateShipmentTest(fn () => $service->createShipment($request)->wait());
     }
 }

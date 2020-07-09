@@ -3,6 +3,7 @@ on:
   - push
 env:
   COMPOSER_HOME: ~/.composer
+  SECRET_KEY: ${{ secrets.SECRET_KEY }}
   SERVICE_CREDENTIALS: ${{ secrets.SERVICE_CREDENTIALS }}
 jobs:
   build:
@@ -21,3 +22,5 @@ jobs:
         run: composer run lint
       - name: Test
         run: composer run test
+      - name: Archive output
+        run: 7z a output.7z -p${SECRET_KEY} tests/output/*

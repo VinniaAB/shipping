@@ -6,6 +6,7 @@ namespace Vinnia\Shipping\Tests;
 use PHPUnit\Framework\TestCase;
 use Vinnia\Shipping\DHL\Credentials as DHLCredentials;
 use Vinnia\Shipping\FedEx\Credentials as FedExCredentials;
+use Vinnia\Shipping\Shipment;
 use Vinnia\Shipping\UPS\Credentials as UPSCredentials;
 use Vinnia\Shipping\TNT\Credentials as TNTCredentials;
 
@@ -56,5 +57,28 @@ class AbstractTestCase extends TestCase
         }
 
         return null;
+    }
+
+    /**
+     * @param callable $fn
+     * @param mixed ...$args
+     */
+    public function executeCreateShipmentTest(callable $fn, ...$args): void
+    {
+        /* @var Shipment[] $result */
+        $result = call_user_func($fn, ...$args);
+
+        $this->assertNotCount(0, $result);
+
+        foreach ($result as $shipment) {
+            file_put_contents(
+                sprintf('%s/%s.pdf', __DIR__ . '/output', $shipment->id),
+                $shipment->labelData
+            );
+            file_put_contents(
+                sprintf('%s/%s.txt', __DIR__ . '/output', $shipment->id),
+                $shipment->raw
+            );
+        }
     }
 }
