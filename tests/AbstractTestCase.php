@@ -19,11 +19,14 @@ class AbstractTestCase extends TestCase
     {
         $credentials = getenv('SERVICE_CREDENTIALS') ?: '';
         $decoded = json_decode($credentials, true);
+        $path = __DIR__ . '/../credentials.php';
 
         // prioritize credentials passed as a JSON-encoded env variable.
         $stuff = [
             $decoded ?: [],
-            require __DIR__ . '/../credentials.php',
+            file_exists($path)
+                ? require $path
+                : [],
         ];
 
         foreach ($stuff as $credentials) {
