@@ -92,12 +92,6 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
                 'ShipperAccountNumber' => $this->credentials->accountNumber,
                 'ShippingPaymentType' => 'S',
                 'BillingAccountNumber' => $this->credentials->accountNumber,
-                'DutyPaymentType' => $request->getPaymentTypeOfIncoterm() === ShipmentRequest::PAYMENT_TYPE_SENDER
-                    ? 'S'
-                    : 'R',
-                'DutyAccountNumber' => $request->getPaymentTypeOfIncoterm() === ShipmentRequest::PAYMENT_TYPE_SENDER
-                    ? $this->credentials->accountNumber
-                    : null,
             ],
             'Consignee' => [
                 'CompanyName' => $request->recipient->name,
@@ -184,6 +178,17 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
                 'LabelTemplate' => $request->labelSize ?: '8X4_A4_PDF',
             ],
         ];
+
+        // if we include these fields for a non-dutiable shipments
+        // DHL will reject it for unknown reasons.
+        if ($request->isDutiable) {
+            $data['Billing']['DutyPaymentType'] = $request->getPaymentTypeOfIncoterm() === ShipmentRequest::PAYMENT_TYPE_SENDER
+                ? 'S'
+                : 'R';
+            $data['Billing']['DutyAccountNumber'] = $request->getPaymentTypeOfIncoterm() === ShipmentRequest::PAYMENT_TYPE_SENDER
+                ? $this->credentials->accountNumber
+                : null;
+        }
 
         if ($request->isDutiable && $request->incoterm) {
             $data['Dutiable']['TermsOfTrade'] = $request->incoterm;
