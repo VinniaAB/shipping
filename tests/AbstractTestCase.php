@@ -12,6 +12,21 @@ use Vinnia\Shipping\TNT\Credentials as TNTCredentials;
 
 class AbstractTestCase extends TestCase
 {
+    protected static bool $didCleanupOutput = false;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        if (!static::$didCleanupOutput) {
+            $files = glob(__DIR__ . '/output/*.{pdf,txt}', GLOB_BRACE);
+            foreach ($files as $file) {
+                unlink($file);
+            }
+            static::$didCleanupOutput = true;
+        }
+    }
+
     /**
      * @param string $name
      * @return DHLCredentials|FedExCredentials|UPSCredentials|TNTCredentials|null
