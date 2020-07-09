@@ -17,6 +17,8 @@ Thumbs.db
 .idea/
 
 /credentials.php
+/credentials.json
+
 tests/labels/*.pdf
 .phpunit*
 

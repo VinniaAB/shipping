@@ -13,75 +13,36 @@ class QuoteRequest
     const UNITS_METRIC = 'metric';
     const UNITS_IMPERIAL = 'imperial';
 
-    /**
-     * @var Address
-     */
-    public $sender;
-
-    /**
-     * @var Address
-     */
-    public $recipient;
+    public Address $sender;
+    public Address $recipient;
 
     /**
      * @var Parcel[]
      */
-    public $parcels;
-
-    /**
-     * @var DateTimeInterface
-     */
-    public $date;
-
-    /**
-     * @var float
-     */
-    public $value = 0.0;
-
-    /**
-     * @var string
-     */
-    public $contents = '';
-
-    /**
-     * @var float
-     */
-    public $insuredValue = 0.0;
-
-    /**
-     * @var string
-     */
-    public $currency = 'EUR';
-
-    /**
-     * @var bool
-     */
-    public $isDutiable = true;
-
-    /**
-     * @var string
-     */
-    public $incoterm = '';
+    public array $parcels;
+    public DateTimeInterface $date;
+    public float $value = 0.0;
+    public string $contents = '';
+    public float $insuredValue = 0.0;
+    public string $currency = 'EUR';
+    public bool $isDutiable = true;
+    public string $incoterm = '';
 
     /**
      * @var string[]
      */
-    public $specialServices = [];
+    public array $specialServices = [];
 
     /**
      * @var ExportDeclaration[]
      */
-    public $exportDeclarations = [];
+    public array $exportDeclarations = [];
 
     /**
-     * @var array
+     * @var mixed[]
      */
-    public $extra = [];
-
-    /**
-     * @var string
-     */
-    public $units = self::UNITS_METRIC;
+    public array $extra = [];
+    public string $units = self::UNITS_METRIC;
 
     /**
      * QuoteRequest constructor.

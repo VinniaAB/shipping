@@ -24,9 +24,9 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
     {
         $now = date('c');
         $parcels = array_map(function (Parcel $parcel) use ($request): Parcel {
-            return $request->units == ShipmentRequest::UNITS_IMPERIAL ?
-                $parcel->convertTo(Unit::INCH, Unit::POUND) :
-                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+            return $request->units == ShipmentRequest::UNITS_IMPERIAL
+                ? $parcel->convertTo(Unit::INCH, Unit::POUND)
+                : $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
         }, $request->parcels);
 
         $parcelsData = array_map(function (Parcel $parcel, int $idx): array {
@@ -66,6 +66,16 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
 
         $countryNames = require __DIR__ . '/../../countries.php';
 
+        // if we don't have an explicit contents declarations, default
+        // to the concatenated description of all export declarations.
+        $contents = $request->contents
+            ?: implode(',', array_map(fn ($e) => $e->description, $request->exportDeclarations));
+
+        // if we don't have a value specified, default to the sum of all
+        // export declarations.
+        $value = $request->value
+            ?: array_reduce($request->exportDeclarations, fn ($carry, $e) => $carry + $e->value, 0.0);
+
         $data = [
             'Request' => [
                 'ServiceHeader' => [
@@ -102,7 +112,7 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
                 ],
             ],
             'Dutiable' => [
-                'DeclaredValue' => number_format($request->value, 2, '.', ''),
+                'DeclaredValue' => number_format($value, 2, '.', ''),
                 'DeclaredCurrency' => $request->currency,
             ],
             'ExportDeclaration' => [
@@ -144,7 +154,7 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
                 'WeightUnit' => $weightUnitName,
                 'GlobalProductCode' => $request->service,
                 'Date' => $request->date->format('Y-m-d'),
-                'Contents' => $request->contents,
+                'Contents' => $contents,
                 //'DoorTo' => 'DD',
                 'DimensionUnit' => $lengthUnitName,
                 'InsuredAmount' => number_format($request->insuredValue, 2, '.', ''),

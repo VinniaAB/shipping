@@ -3,6 +3,7 @@ on:
   - push
 env:
   COMPOSER_HOME: ~/.composer
+  SERVICE_CREDENTIALS: ${{ secrets.SERVICE_CREDENTIALS }}
 jobs:
   build:
     runs-on: ubuntu-20.04

@@ -1,53 +1,31 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-03
- * Time: 16:08
- */
+declare(strict_types=1);
 
 return [
-
-    'ups' => [
-        'username' => '',
-        'password' => '',
-        'access_license' => '',
-
-        'tracking_numbers' => [
-            // tracking numbers used for tests
-        ],
-    ],
-
-    'dhl' => [
+    'dhl_export_switzerland' => [
+        'type' => 'dhl',
         'site_id' => '',
         'password' => '',
         'account_number' => '',
-
-        'tracking_numbers' => [
-            // tracking numbers used for tests
-        ],
     ],
-
+    'ups' => [
+        'type' => 'ups',
+        'username' => '',
+        'password' => '',
+        'access_license' => '',
+    ],
     'fedex' => [
+        'type' => 'fedex',
         'credential_key' => '',
         'credential_password' => '',
         'account_number' => '',
         'meter_number' => '',
-
-        'tracking_numbers' => [
-            // tracking numbers used for tests
-        ],
     ],
-
     'tnt' => [
+        'type' => 'tnt',
         'username' => '',
         'password' => '',
         'account_number' => '',
         'account_country' => '',
-
-        'tracking_numbers' => [
-            // tracking numbers used for tests
-        ],
     ],
-
 ];
