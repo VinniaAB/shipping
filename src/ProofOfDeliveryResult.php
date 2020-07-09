@@ -1,13 +1,6 @@
-<?php
-/**
- * Created by PhpStorm.
- * User: Bro
- * Date: 12.06.2018
- * Time: 15:15
- */
+<?php declare(strict_types=1);
 
 namespace Vinnia\Shipping;
-
 
 class ProofOfDeliveryResult
 {
@@ -35,7 +28,7 @@ class ProofOfDeliveryResult
      * @param string $body
      * @param null|string $document
      */
-    function __construct(int $status, string $body, ?string $document = null)
+    public function __construct(int $status, string $body, ?string $document = null)
     {
         $this->status = $status;
         $this->body = $body;

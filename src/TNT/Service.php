@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-09
- * Time: 00:40
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping\TNT;
@@ -38,7 +32,6 @@ use SimpleXMLElement;
 
 class Service implements ServiceInterface
 {
-
     const URL_TEST = 'https://test';
     const URL_PRODUCTION = 'https://express.tnt.com/expressconnect';
 
@@ -69,13 +62,12 @@ class Service implements ServiceInterface
      * @param string $baseUrl
      * @param null|ErrorFormatterInterface $responseFormatter
      */
-    function __construct(
+    public function __construct(
         ClientInterface $guzzle,
         Credentials $credentials,
         string $baseUrl = self::URL_PRODUCTION,
         ?ErrorFormatterInterface $responseFormatter = null
-    )
-    {
+    ) {
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;
@@ -146,7 +138,7 @@ EOD;
         return $this->guzzle->requestAsync('POST', $this->baseUrl . '/pricing/getprice', [
             'headers' => [
                 'Accept' => 'text/xml',
-                'Content-Type' => 'text/xml'
+                'Content-Type' => 'text/xml',
             ],
             'auth' => [$this->credentials->getUsername(), $this->credentials->getPassword(), 'basic'],
             'body' => $body,
@@ -200,6 +192,17 @@ EOD;
             // yes, TNT wants url-encoded XML for this endpoint.
             'form_params' => [
                 'xml_in' => $body,
+            ],
+
+            // the TNT server is old and supports ciphers that newer libraries have blacklisted.
+            // on some operating systems cURL throws the following error on connect:
+            //
+            //   cURL error 35: error:141A318A:SSL routines:tls_process_ske_dhe:dh key too small
+            //
+            // let's disable dh key exchange and force TLS.
+            'curl' => [
+                CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1,
+                CURLOPT_SSL_CIPHER_LIST => 'DEFAULT:!DH',
             ],
         ])->then(function (ResponseInterface $response) {
             $body = (string) $response->getBody();

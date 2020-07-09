@@ -1,13 +1,6 @@
-<?php
-/**
- * Created by PhpStorm.
- * User: Bro
- * Date: 04.09.2018
- * Time: 13:56
- */
+<?php declare(strict_types=1);
 
 namespace Vinnia\Shipping;
-
 
 class Pickup
 {
@@ -52,15 +45,14 @@ class Pickup
      * @param string $locationCode
      * @param null $raw
      */
-    function __construct(
+    public function __construct(
         string $vendor,
         string $id,
         string $service,
         \DateTimeImmutable $date,
         string $locationCode = '',
         $raw = null
-    )
-    {
+    ) {
         $this->vendor = $vendor;
         $this->id = $id;
         $this->service = $service;
@@ -68,5 +60,4 @@ class Pickup
         $this->locationCode = $locationCode;
         $this->raw = $raw;
     }
-
 }

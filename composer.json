@@ -14,6 +14,7 @@
         "php": ">=7.4.0",
         "ext-curl": "*",
         "ext-dom": "*",
+        "ext-libxml": "*",
         "ext-mbstring": "*",
         "ext-simplexml": "*",
         "ext-xml": "*",
@@ -21,7 +22,13 @@
         "vinnia/util": "dev-master"
     },
     "require-dev": {
+        "friendsofphp/php-cs-fixer": "^2.16",
         "phpunit/phpunit": "~9.0"
+    },
+    "scripts": {
+        "lint": "php-cs-fixer fix --dry-run --diff --diff-format=\"udiff\" -vvv --ansi",
+        "lint:fix": "php-cs-fixer fix --diff --diff-format=\"udiff\" -vvv --ansi",
+        "test": "phpunit --verbose"
     },
     "autoload": {
         "psr-4": {

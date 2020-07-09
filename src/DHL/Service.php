@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Vinnia\Shipping\DHL;
 
+use Exception;
+use InvalidArgumentException;
 use DOMDocument;
 use DOMNode;
 use DateTimeImmutable;
@@ -36,51 +38,8 @@ use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Text\Xml;
 use Vinnia\Util\Text\XmlCallbackParser;
 
-class Service implements ServiceInterface
+class Service extends ServiceLike implements ServiceInterface
 {
-    const URL_TEST = 'https://xmlpitest-ea.dhl.com/XMLShippingServlet';
-    const URL_PRODUCTION = 'https://xmlpi-ea.dhl.com/XMLShippingServlet';
-
-    /**
-     * @var ClientInterface
-     */
-    private $guzzle;
-
-    /**
-     * @var Credentials
-     */
-    private $credentials;
-
-    /**
-     * @var string
-     */
-    private $baseUrl;
-
-    /**
-     * @var null|ErrorFormatterInterface
-     */
-    private $errorFormatter;
-
-    /**
-     * DHL constructor.
-     * @param ClientInterface $guzzle
-     * @param Credentials $credentials
-     * @param string $baseUrl
-     * @param ErrorFormatterInterface|null $responseFormatter
-     */
-    function __construct(
-        ClientInterface $guzzle,
-        Credentials $credentials,
-        string $baseUrl = self::URL_PRODUCTION,
-        ?ErrorFormatterInterface $responseFormatter = null
-    )
-    {
-        $this->guzzle = $guzzle;
-        $this->credentials = $credentials;
-        $this->baseUrl = $baseUrl;
-        $this->errorFormatter = $responseFormatter ?: new ExactErrorFormatter();
-    }
-
     protected function getQuoteOrCapability(QuoteRequest $request, string $elementName): PromiseInterface
     {
         $parcels = array_map(function (Parcel $parcel, int $idx) use ($request): array {
@@ -105,8 +64,8 @@ class Service implements ServiceInterface
                 'Request' => [
                     'ServiceHeader' => [
                         'MessageTime' => $request->date->format('c'),
-                        'SiteID' => $this->credentials->getSiteID(),
-                        'Password' => $this->credentials->getPassword(),
+                        'SiteID' => $this->credentials->siteID,
+                        'Password' => $this->credentials->password,
                     ],
                 ],
                 'From' => [
@@ -123,7 +82,7 @@ class Service implements ServiceInterface
                     'Pieces' => [
                         'Piece' => $parcels,
                     ],
-                    'PaymentAccountNumber' => $this->credentials->getAccountNumber(),
+                    'PaymentAccountNumber' => $this->credentials->accountNumber,
                     'IsDutiable' => $request->isDutiable ? 'Y' : 'N',
                     // same as above
                     'QtdShp' => [],
@@ -228,8 +187,8 @@ EOD;
         $trackRequest = Xml::fromArray([
             'Request' => [
                 'ServiceHeader' => [
-                    'SiteID' => $this->credentials->getSiteID(),
-                    'Password' => $this->credentials->getPassword(),
+                    'SiteID' => $this->credentials->siteID,
+                    'Password' => $this->credentials->password,
                 ],
             ],
             'LanguageCode' => 'en',
@@ -342,10 +301,6 @@ EOD;
         });
     }
 
-    /**
-     * @param string $code
-     * @return int
-     */
     private function getStatusFromEventCode(string $code): int
     {
         $code = mb_strtoupper($code, 'utf-8');
@@ -388,286 +343,16 @@ EOD;
         return TrackingActivity::STATUS_IN_TRANSIT;
     }
 
-    /**
-     * @return array
-     */
-    private function getMetaData(): array
-    {
-        return [
-            'SoftwareName' => mb_substr(sprintf('%s/PHP %s', PHP_OS, PHP_VERSION), 0, 30, 'utf-8'),
-            'SoftwareVersion' => mb_substr((string) PHP_VERSION, 0, 10, 'utf-8'),
-        ];
-    }
-
-    /**
-     * @param ShipmentRequest $request
-     * @return PromiseInterface
-     */
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        $now = date('c');
-        $parcels = array_map(function (Parcel $parcel) use ($request): Parcel {
-            return $request->units == ShipmentRequest::UNITS_IMPERIAL ?
-                $parcel->convertTo(Unit::INCH, Unit::POUND) :
-                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
-        }, $request->parcels);
-
-        $parcelsData = array_map(function (Parcel $parcel, int $idx): array {
-            return [
-                'PieceID' => $idx + 1,
-                'PackageType' => 'YP',
-                'Weight' => $parcel->weight->format(2),
-                'Width' => $parcel->width->format(0),
-                'Height' => $parcel->height->format(0),
-                'Depth' => $parcel->length->format(0),
-            ];
-        }, $parcels, array_keys($parcels));
-
-        $specialServices = $request->specialServices;
-
-        // TODO: the signature service may or may not be broken
-        // on the test endpoint. currently requests with signature
-        // required enabled fails with the following error:
-        //
-        // <Condition>
-        //    <ConditionCode>154</ConditionCode>
-        //    <ConditionData>null field value is invalid</ConditionData>
-        // </Condition>
-        //
-        // we're not sending any null values so it's difficult
-        // to debug this.
-        if ($request->signatureRequired && !in_array('SA', $request->specialServices)) {
-            $specialServices[] = 'SA';
-        }
-
-        if ($request->insuredValue > 0) {
-            $specialServices[] = 'II';
-        }
-
-        $lengthUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'I' : 'C';
-        $weightUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'L' : 'K';
-
-        $countryNames = require __DIR__ . '/../../countries.php';
-
-        $data = [
-            'Request' => [
-                'ServiceHeader' => [
-                    'MessageTime' => $now,
-                    'MessageReference' => '123456789012345678901234567890',
-                    'SiteID' => $this->credentials->getSiteID(),
-                    'Password' => $this->credentials->getPassword(),
-                ],
-                'MetaData' => $this->getMetaData(),
-            ],
-            'LanguageCode' => 'en',
-            'PiecesEnabled' => 'Y',
-            'Billing' => [
-                'ShipperAccountNumber' => $this->credentials->getAccountNumber(),
-                'ShippingPaymentType' => 'S',
-                'BillingAccountNumber' => $this->credentials->getAccountNumber(),
-                'DutyPaymentType' => $request->getPaymentTypeOfIncoterm() === ShipmentRequest::PAYMENT_TYPE_SENDER
-                    ? 'S'
-                    : 'R',
-                'DutyAccountNumber' => $request->getPaymentTypeOfIncoterm() === ShipmentRequest::PAYMENT_TYPE_SENDER
-                    ? $this->credentials->getAccountNumber()
-                    : null,
-            ],
-            'Consignee' => [
-                'CompanyName' => $request->recipient->name,
-                'AddressLine' => array_filter($request->recipient->lines),
-                'City' => $request->recipient->city,
-                'PostalCode' => $request->recipient->zip,
-                'CountryCode' => $request->recipient->countryCode,
-                'CountryName' => mb_substr($countryNames[$request->recipient->countryCode], 0, 35, 'utf-8'),
-                'Contact' => [
-                    'PersonName' => $request->recipient->contactName,
-                    'PhoneNumber' => $request->recipient->contactPhone,
-                ],
-            ],
-            'Dutiable' => [
-                'DeclaredValue' => number_format($request->value, 2, '.', ''),
-                'DeclaredCurrency' => $request->currency,
-            ],
-            'ExportDeclaration' => [
-                'InvoiceNumber' => $request->reference,
-                'InvoiceDate' => $request->date->format('Y-m-d'),
-                'ExportLineItem' => array_map(function (int $key, ExportDeclaration $decl) use ($request, $weightUnitName): array {
-                    $weight = [
-                        'Weight' => $decl->weight
-                            ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
-                            ->format(2),
-                        'WeightUnit' => $weightUnitName,
-                    ];
-                    return [
-                        'LineNumber' => $key + 1,
-                        'Quantity' => $decl->quantity,
-                        'QuantityUnit' => 'PCS',
-                        'Description' => $decl->description,
-                        'Value' => number_format($decl->value, 2, '.', ''),
-                        'Weight' => $weight,
-                        'GrossWeight' => $weight,
-                        'ManufactureCountryCode' => $decl->originCountryCode,
-                    ];
-                }, array_keys($request->exportDeclarations), $request->exportDeclarations),
-            ],
-            'Reference' => [
-                'ReferenceID' => $request->reference,
-            ],
-            'ShipmentDetails' => [
-                'NumberOfPieces' => count($request->parcels),
-                'Pieces' => [
-                    'Piece' => $parcelsData,
-                ],
-                'Weight' => array_reduce($parcels, function (Amount $carry, Parcel $parcel) {
-                    return new Amount(
-                        $carry->getValue() + $parcel->weight->getValue(),
-                        $parcel->weight->getUnit()
-                    );
-                }, new Amount(0, ''))->format(2),
-                'WeightUnit' => $weightUnitName,
-                'GlobalProductCode' => $request->service,
-                'Date' => $request->date->format('Y-m-d'),
-                'Contents' => $request->contents,
-                //'DoorTo' => 'DD',
-                'DimensionUnit' => $lengthUnitName,
-                'InsuredAmount' => number_format($request->insuredValue, 2, '.', ''),
-                'IsDutiable' => $request->isDutiable ? 'Y' : 'N',
-                'CurrencyCode' => $request->currency,
-            ],
-            'Shipper' => [
-                'ShipperID' => $this->credentials->getAccountNumber(),
-                'CompanyName' => $request->sender->name,
-                'AddressLine' => $request->sender->lines,
-                'City' => $request->sender->city,
-                'PostalCode' => $request->sender->zip,
-                'CountryCode' => $request->sender->countryCode,
-                'CountryName' => mb_substr($countryNames[$request->sender->countryCode], 0, 35, 'utf-8'),
-                'Contact' => [
-                    'PersonName' => $request->sender->contactName,
-                    'PhoneNumber' => $request->sender->contactPhone,
-                ],
-            ],
-            'SpecialService' => array_map(function (string $service): array {
-                return [
-                    'SpecialServiceType' => $service,
-                ];
-            }, $specialServices),
-            'LabelImageFormat' => $request->labelFormat ?: 'PDF',
-            'Label' => [
-                'LabelTemplate' => $request->labelSize ?: '8X4_A4_PDF',
-            ],
-        ];
-
-        if ($request->isDutiable && $request->incoterm) {
-            $data['Dutiable']['TermsOfTrade'] = $request->incoterm;
-        }
-
-        if ($request->internationalTransactionNo) {
-            $data['Dutiable']['Filing'] = [
-                'FilingType' => 'ITN',
-                'ITN' => $request->internationalTransactionNo,
-            ];
-        }
-
-        foreach ($request->extra as $key => $value) {
-            Arrays::set($data, $key, $value);
-        }
-
-        $data = removeKeysWithValues($data, [], null);
-        $shipmentRequest = Xml::fromArray($data);
-
-        $body = <<<EOD
-<?xml version="1.0" encoding="UTF-8"?>
-<req:ShipmentRequest xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd" schemaVersion="6.2">
-{$shipmentRequest}
-</req:ShipmentRequest>
-EOD;
-
-        return $this->guzzle->requestAsync('POST', $this->baseUrl, [
-            'query' => [
-                'isUTF8Support' => 'true',
-            ],
-            'headers' => [
-                'Accept' => 'text/xml',
-                'Content-Type' => 'text/xml',
-            ],
-            'body' => $body,
-        ])->then(function (ResponseInterface $response) {
-            $body = (string)$response->getBody();
-
-            $number = '';
-            $awbData = '';
-            $parser = new XmlCallbackParser([
-                'AirwayBillNumber' => function (DOMNode $node) use (&$number) {
-                    $number = $node->textContent;
-                },
-                'OutputImage' => function (DOMNode $node) use (&$awbData) {
-                    $awbData = $node->textContent;
-                },
-            ]);
-            $parser->parse($body);
-
-            if (!$number) {
-                $this->throwError($body);
-            }
-
-            $data = base64_decode($awbData);
-
-            return [new Shipment($number, 'DHL', $data, $body)];
-        });
+        return (new ShipmentService($this->guzzle, $this->credentials, $this->baseUrl, $this->errorFormatter))
+            ->createShipment($request);
     }
 
-    /**
-     * @param string $id
-     * @param array $data
-     * @return PromiseInterface
-     */
     public function cancelShipment(string $id, array $data = []): PromiseInterface
     {
-        return new FulfilledPromise(true);
-    }
-
-    /**
-     * @param string $body
-     * @throws ServiceException
-     */
-    protected function throwError(string $body)
-    {
-        $errors = $this->getErrors($body);
-        throw new ServiceException($errors, $body);
-    }
-
-    /**
-     * @param string $body
-     * @return string[]
-     */
-    protected function getErrors(string $body): array
-    {
-        $xml = new DOMDocument('1.0', 'utf-8');
-        $xml->loadXML($body, LIBXML_PARSEHUGE);
-
-        $arrayed = Xml::toArray($xml);
-        $conditions = Arrays::get($arrayed, 'Response.Status.Condition');
-
-        if (!$conditions) {
-            return [];
-        }
-
-        return array_map(function (array $item) {
-            $message = $item['ConditionData'];
-            $message = preg_replace('/\s+/', ' ', $message);
-            $message = $this->errorFormatter->format($message);
-            return $message;
-        }, Arrays::isNumericKeyArray($conditions) ? $conditions : [$conditions]);
-    }
-
-    protected function getErrorsAndMaybeThrow(string $body): void
-    {
-        $errors = $this->getErrors($body);
-
-        if (!empty($errors)) {
-            throw new ServiceException($errors, $body);
-        }
+        return (new ShipmentService($this->guzzle, $this->credentials, $this->baseUrl, $this->errorFormatter))
+            ->cancelShipment($id, $data);
     }
 
     /**
@@ -697,19 +382,14 @@ EOD;
         });
     }
 
-    /**
-     * @param string $trackingNumber
-     * @return PromiseInterface
-     * @throws \Exception
-     */
     public function getProofOfDelivery(string $trackingNumber): PromiseInterface
     {
-        throw new \Exception('Not implemented');
+        throw new Exception('Not implemented');
     }
 
     public function createPickup(PickupRequest $request): PromiseInterface
     {
-        $now = new \DateTimeImmutable('now');
+        $now = new DateTimeImmutable('now');
 
         /* @var Amount $totalWeight */
         $totalWeight = array_reduce($request->parcels, function (Amount $carry, Parcel $current) use ($request): Amount {
@@ -740,15 +420,15 @@ EOD;
                 'ServiceHeader' => [
                     'MessageTime' => $now->format('c'),
                     'MessageReference' => '123456789012345678901234567890',
-                    'SiteID' => $this->credentials->getSiteID(),
-                    'Password' => $this->credentials->getPassword(),
+                    'SiteID' => $this->credentials->siteID,
+                    'Password' => $this->credentials->password,
                 ],
                 'MetaData' => $this->getMetaData(),
             ],
             'RegionCode' => 'AM',
             'Requestor' => [
                 'AccountType' => 'D',
-                'AccountNumber' => $this->credentials->getAccountNumber(),
+                'AccountNumber' => $this->credentials->accountNumber,
                 'RequestorContact' => [
                     'PersonName' => $request->requestorAddress->contactName,
                     'Phone' => $request->requestorAddress->contactPhone,
@@ -793,7 +473,7 @@ EOD;
             ],
             'ShipmentDetails' => [
                 'AccountType' => 'D',
-                'AccountNumber' => $this->credentials->getAccountNumber(),
+                'AccountNumber' => $this->credentials->accountNumber,
                 'NumberOfPieces' => count($request->parcels),
                 'Weight' => $totalWeight->format(2),
                 'WeightUnit' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'L' : 'K',
@@ -811,9 +491,9 @@ EOD;
                 'InsuredAmount' => number_format($request->insuredValue, 2, '.', ''),
                 'InsuredCurrencyCode' => $request->currency,
                 'Pieces' => [
-                    'Piece' => $parcelsData
+                    'Piece' => $parcelsData,
                 ],
-            ]
+            ],
         ];
         $data = removeKeysWithValues($data, [], null);
         $shipmentRequest = Xml::fromArray($data);
@@ -877,7 +557,7 @@ EOD;
             case PickupRequest::LOCATION_TYPE_BUSINESS_RESIDENTIAL:
                 return 'C';
             default:
-                throw new \InvalidArgumentException('Invalid pickup location type');
+                throw new InvalidArgumentException('Invalid pickup location type');
         }
     }
 
@@ -895,21 +575,21 @@ EOD;
             case PickupRequest::DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR_NON_COMPLIANT:
                 return 'DC';
             default:
-                throw new \InvalidArgumentException('Invalid pickup delivery service type');
+                throw new InvalidArgumentException('Invalid pickup delivery service type');
         }
     }
 
     public function cancelPickup(CancelPickupRequest $request): PromiseInterface
     {
-        $now = new \DateTimeImmutable('now');
+        $now = new DateTimeImmutable('now');
 
         $data = [
             'Request' => [
                 'ServiceHeader' => [
                     'MessageTime' => $now->format('c'),
                     'MessageReference' => '123456789012345678901234567890',
-                    'SiteID' => $this->credentials->getSiteID(),
-                    'Password' => $this->credentials->getPassword(),
+                    'SiteID' => $this->credentials->siteID,
+                    'Password' => $this->credentials->password,
                 ],
                 'MetaData' => $this->getMetaData(),
             ],

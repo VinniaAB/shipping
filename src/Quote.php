@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-03
- * Time: 17:22
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
@@ -35,7 +29,9 @@ class Quote implements JsonSerializable
      * @param string $service
      * @param Array $price
      */
+
     function __construct(string $vendor, string $service, Array $price)
+
     {
         $this->vendor = $vendor;
         $this->service = $service;
@@ -61,5 +57,4 @@ class Quote implements JsonSerializable
     {
         return $this->toArray();
     }
-
 }

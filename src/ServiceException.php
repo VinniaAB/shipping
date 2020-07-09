@@ -1,10 +1,4 @@
-<?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-05-29
- * Time: 19:27
- */
+<?php declare(strict_types=1);
 
 namespace Vinnia\Shipping;
 
@@ -28,12 +22,11 @@ class ServiceException extends Exception
      * @param string[] $errors
      * @param string $source
      */
-    function __construct(array $errors, string $source)
+    public function __construct(array $errors, string $source)
     {
         parent::__construct(implode("\n", $errors));
 
         $this->errors = $errors;
         $this->source = $source;
     }
-
 }

@@ -1,13 +1,6 @@
-<?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-04-04
- * Time: 15:00
- */
+<?php declare(strict_types=1);
 
 namespace Vinnia\Shipping;
-
 
 class Shipment
 {
@@ -41,12 +34,11 @@ class Shipment
      * @param string $labelData
      * @param mixed $raw
      */
-    function __construct(string $id, string $vendor, string $labelData, $raw = null)
+    public function __construct(string $id, string $vendor, string $labelData, $raw = null)
     {
         $this->id = $id;
         $this->vendor = $vendor;
         $this->labelData = $labelData;
         $this->raw = $raw;
     }
-
 }

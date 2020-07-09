@@ -1,0 +1,22 @@
+name: build
+on:
+  - push
+env:
+  COMPOSER_HOME: ~/.composer
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          path: ${{ env.COMPOSER_HOME }}
+      - name: Install dependencies
+        run: composer install
+      - name: Lint
+        run: composer run lint
+      - name: Test
+        run: composer run test

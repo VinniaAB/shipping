@@ -1,14 +1,7 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-03
- * Time: 19:27
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping\FedEx;
-
 
 class Credentials
 {
@@ -33,7 +26,7 @@ class Credentials
      */
     private $meterNumber;
 
-    function __construct(string $credentialKey, string $credentialPassword, string $accountNumber, string $meterNumber)
+    public function __construct(string $credentialKey, string $credentialPassword, string $accountNumber, string $meterNumber)
     {
         $this->credentialKey = $credentialKey;
         $this->credentialPassword = $credentialPassword;
@@ -72,5 +65,4 @@ class Credentials
     {
         return $this->meterNumber;
     }
-
 }

@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-01
- * Time: 14:07
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
@@ -72,7 +66,7 @@ class Address implements JsonSerializable
      * @param string $contactPhone
      * @param string $contactEmail
      */
-    function __construct(
+    public function __construct(
         string $name,
         array $lines,
         string $zip,
@@ -82,8 +76,7 @@ class Address implements JsonSerializable
         string $contactName = '',
         string $contactPhone = '',
         string $contactEmail = ''
-    )
-    {
+    ) {
         $this->name = $name;
         $this->lines = $lines;
         $this->zip = $zip;
@@ -128,11 +121,11 @@ class Address implements JsonSerializable
     public static function fromArray(array $data): self
     {
         return new Address(
-            $data['name'],
-            $data['lines'],
-            $data['zip'],
-            $data['city'],
-            $data['state'],
+            $data['name'] ?? '',
+            $data['lines'] ?? ['', '', ''],
+            $data['zip'] ?? '',
+            $data['city'] ?? '',
+            $data['state'] ?? '',
             $data['country_code'],
             $data['contact_name'] ?? '',
             $data['contact_phone'] ?? '',

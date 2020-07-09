@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: johan
- * Date: 2017-03-01
- * Time: 14:10
- */
 declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
@@ -46,7 +40,7 @@ class Parcel implements JsonSerializable
      * @param Amount $length
      * @param Amount $weight
      */
-    function __construct(Amount $width, Amount $height, Amount $length, Amount $weight)
+    public function __construct(Amount $width, Amount $height, Amount $length, Amount $weight)
     {
         $this->width = $width;
         $this->height = $height;
@@ -116,8 +110,7 @@ class Parcel implements JsonSerializable
         float $weight,
         string $lengthUnit = Unit::METER,
         string $weightUnit = Unit::KILOGRAM
-    ): Parcel
-    {
+    ): Parcel {
         return new Parcel(
             new Amount($width, $lengthUnit),
             new Amount($height, $lengthUnit),
@@ -125,5 +118,4 @@ class Parcel implements JsonSerializable
             new Amount($weight, $weightUnit)
         );
     }
-
 }
