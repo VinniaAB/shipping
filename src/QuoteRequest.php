@@ -64,6 +64,11 @@ class QuoteRequest
      */
     public function getPaymentTypeOfIncoterm(): string
     {
+        // FIXME: is this default correct? we are essentially saying
+        //        that DDP is the go-to duty payment type if we are
+        //        not specifying an incoterm. since we are also defaulting
+        //        isDutiable to true a more sane default might be to
+        //        do with PAYMENT_TYPE_RECIPIENT.
         return !$this->incoterm || in_array(mb_strtoupper($this->incoterm, 'utf-8'), ['DDP'], true)
             ? static::PAYMENT_TYPE_SENDER
             : static::PAYMENT_TYPE_RECIPIENT;

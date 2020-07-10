@@ -22,6 +22,18 @@ class ShipmentServiceTest extends AbstractTestCase
 {
     use GuzzleTrait;
 
+    const EMPTY_ADDRESS = [
+        'country_code' => 'US',
+    ];
+    const EMPTY_RESPONSE = <<<TXT
+<?xml version="1.0" encoding="UTF-8" ?>
+<Response>
+  <AirwayBillNumber>MY_AWB_NUMBER</AirwayBillNumber>
+  <OutputImage>TVlfTEFCRUxfSU1BR0U=</OutputImage>
+</Response>
+TXT;
+
+
     public function testCreateShipmentParsesResponseAndExtractsLabel()
     {
         $service = new ShipmentService(
@@ -29,19 +41,9 @@ class ShipmentServiceTest extends AbstractTestCase
             new Credentials('', '', ''),
             ShipmentService::URL_TEST
         );
-        $address = Address::fromArray([
-            'country_code' => 'US',
-        ]);
+        $address = Address::fromArray(static::EMPTY_ADDRESS);
         $request = new ShipmentRequest('', $address, $address, []);
-        $this->responseQueue[] = new Response(200, [], stream_for(
-            <<<XML
-<?xml version="1.0" encoding="UTF-8" ?>
-<Response>
-  <AirwayBillNumber>MY_AWB_NUMBER</AirwayBillNumber>
-  <OutputImage>TVlfTEFCRUxfSU1BR0U=</OutputImage>
-</Response>
-XML
-        ));
+        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
         /* @var \Vinnia\Shipping\Shipment[] $shipments */
         $shipments = $service->createShipment($request)
             ->wait();
@@ -131,5 +133,95 @@ XML
         $request->isDutiable = false;
 
         $this->executeCreateShipmentTest(fn () => $service->createShipment($request)->wait());
+    }
+
+    public function specialServiceCodeProvider()
+    {
+        return [
+            [['SA'], fn ($request) => $request->signatureRequired = true],
+            [['II'], fn ($request) => $request->insuredValue = 10.00],
+        ];
+    }
+
+    /**
+     * @dataProvider specialServiceCodeProvider
+     * @param string[] $expected
+     * @param callable $fn
+     */
+    public function testAddsSpecialServiceCode(array $expected, callable $fn)
+    {
+        $service = new ShipmentService($this->createClient(), new Credentials('', '', ''));
+
+        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
+        $address = Address::fromArray(static::EMPTY_ADDRESS);
+        $request = new ShipmentRequest('', $address, $address, []);
+
+        $fn($request);
+
+        $service->createShipment($request)->wait();
+        $this->assertCount(1, $this->requests);
+
+        $body = (string) $this->requests[0]->getBody();
+
+        foreach ($expected as $code) {
+            $this->assertStringContainsString("<SpecialServiceType>${code}</SpecialServiceType>", $body);
+        }
+    }
+
+    public function testDoesNotAddDutyAccountNumbersForNonDutiableShipments()
+    {
+        $service = new ShipmentService($this->createClient(), new Credentials('', '', ''));
+
+        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
+        $address = Address::fromArray(static::EMPTY_ADDRESS);
+        $request = new ShipmentRequest('', $address, $address, []);
+        $request->isDutiable = false;
+
+        $service->createShipment($request)->wait();
+        $this->assertCount(1, $this->requests);
+
+        $body = (string) $this->requests[0]->getBody();
+
+        $this->assertStringNotContainsString('<DutyPaymentType>', $body);
+        $this->assertStringNotContainsString('<DutyAccountNumber>', $body);
+    }
+
+    public function testAddsDutyAccountNumbersToDutiableShipment()
+    {
+        $service = new ShipmentService($this->createClient(), new Credentials('', '', '321'));
+
+        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
+        $address = Address::fromArray(static::EMPTY_ADDRESS);
+        $request = new ShipmentRequest('', $address, $address, []);
+        $request->isDutiable = true;
+        $request->incoterm = 'DAT';
+
+        $service->createShipment($request)->wait();
+        $this->assertCount(1, $this->requests);
+
+        $body = (string) $this->requests[0]->getBody();
+
+        $this->assertStringContainsString('<DutyPaymentType>R</DutyPaymentType>', $body);
+
+        // since the duty is paid by the recipient we don't wanna include an account number here.
+        $this->assertStringNotContainsString('<DutyAccountNumber>', $body);
+    }
+
+    public function testUsesSenderDutyPaymentTypeForDDPShipments()
+    {
+        $service = new ShipmentService($this->createClient(), new Credentials('', '', '321'));
+
+        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
+        $address = Address::fromArray(static::EMPTY_ADDRESS);
+        $request = new ShipmentRequest('', $address, $address, []);
+        $request->isDutiable = true;
+        $request->incoterm = 'DDP';
+
+        $service->createShipment($request)->wait();
+        $this->assertCount(1, $this->requests);
+
+        $body = (string) $this->requests[0]->getBody();
+
+        $this->assertStringContainsString('<DutyPaymentType>S</DutyPaymentType>', $body);
     }
 }

@@ -6,6 +6,7 @@ namespace Vinnia\Shipping\Tests;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\HandlerStack;
+use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use function GuzzleHttp\Promise\promise_for;
@@ -21,6 +22,16 @@ trait GuzzleTrait
      * @var ResponseInterface[]
      */
     public array $responseQueue = [];
+
+    public function setUp(): void
+    {
+        if ($this instanceof TestCase) {
+            parent::setUp();
+        }
+
+        $this->requests = [];
+        $this->responseQueue = [];
+    }
 
     public function createClient(): ClientInterface
     {

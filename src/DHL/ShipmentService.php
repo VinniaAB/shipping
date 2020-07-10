@@ -23,13 +23,12 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
         $now = date('c');
-        $parcels = array_map(function (Parcel $parcel) use ($request): Parcel {
-            return $request->units == ShipmentRequest::UNITS_IMPERIAL
-                ? $parcel->convertTo(Unit::INCH, Unit::POUND)
-                : $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
-        }, $request->parcels);
+        [$lengthUnit, $weightUnit] = $request->units === ShipmentRequest::UNITS_IMPERIAL
+            ? [Unit::INCH, Unit::POUND]
+            : [Unit::CENTIMETER, Unit::KILOGRAM];
 
-        $parcelsData = array_map(function (Parcel $parcel, int $idx): array {
+        $parcels = array_map(fn ($parcel) => $parcel->convertTo($lengthUnit, $weightUnit), $request->parcels);
+        $parcelsData = array_map(function (Parcel $parcel, int $idx) use ($lengthUnit, $weightUnit): array {
             return [
                 'PieceID' => $idx + 1,
                 'PackageType' => 'YP',
@@ -61,8 +60,8 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
             $specialServices[] = 'II';
         }
 
-        $lengthUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'I' : 'C';
-        $weightUnitName = $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'L' : 'K';
+        $lengthUnitName = $lengthUnit === Unit::INCH ? 'I' : 'C';
+        $weightUnitName = $weightUnit === Unit::POUND ? 'L' : 'K';
 
         $countryNames = require __DIR__ . '/../../countries.php';
 
@@ -135,7 +134,7 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
                 'ReferenceID' => $request->reference,
             ],
             'ShipmentDetails' => [
-                'NumberOfPieces' => count($request->parcels),
+                'NumberOfPieces' => count($parcels),
                 'Pieces' => [
                     'Piece' => $parcelsData,
                 ],
