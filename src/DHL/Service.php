@@ -30,6 +30,7 @@ use Vinnia\Shipping\Quote;
 use Vinnia\Shipping\ServiceInterface;
 use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\ExactErrorFormatter;
+use Vinnia\Shipping\TimezoneDetector;
 use Vinnia\Shipping\Tracking;
 use Vinnia\Shipping\TrackingActivity;
 use Vinnia\Shipping\TrackingResult;
@@ -253,15 +254,17 @@ EOD;
                     : [$events];
 
                 $activities = (new Collection($events))->map(function (array $element) {
-                    $dtString = ((string)$element['Date']) . ' ' . ((string)$element['Time']);
-                    $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString);
                     $area = $element['ServiceArea'];
                     $event = $element['ServiceEvent'];
 
                     // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
-                    $addressParts = explode(' - ', $area['Description'] ?? '');
+                    $addressParts = array_map('trim', explode('-', $area['Description'] ?? ''));
 
                     $address = new Address('', [], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
+
+                    $dtString = ((string)$element['Date']) . ' ' . ((string)$element['Time']);
+                    $tz = $this->timezoneDetector->findByCity($addressParts[0]) ?? 'UTC';
+                    $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString, new DateTimeZone($tz));
 
                     // the description will sometimes include the location too.
                     $description = $event['Description'] ?? '';

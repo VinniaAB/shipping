@@ -5,6 +5,7 @@ namespace Vinnia\Shipping\TNT;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
+use Vinnia\Shipping\TimezoneDetector;
 use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
@@ -57,6 +58,8 @@ class Service implements ServiceInterface
      */
     private $errorFormatter;
 
+    protected TimezoneDetector $timezoneDetector;
+
     /**
      * Service constructor.
      * @param ClientInterface $guzzle
@@ -76,6 +79,9 @@ class Service implements ServiceInterface
         $this->errorFormatter = $responseFormatter === null ?
             new ExactErrorFormatter() :
             $responseFormatter;
+        $this->timezoneDetector = new TimezoneDetector(
+            require __DIR__ . '/../../timezones.php'
+        );
     }
 
     /**
@@ -222,11 +228,17 @@ EOD;
                 }
 
                 $activities = (new Collection($activities))->map(function (SimpleXMLElement $e): TrackingActivity {
-                    $dt = DateTimeImmutable::createFromFormat('YmdHi', ((string) $e->LocalEventDate) . ((string) $e->LocalEventTime));
+                    $depot = (string) $e->DepotName;
 
                     // unfortunately TNT only supplies a "Depot" and "DepotName" for the location
                     // of the status update so we can't really create a good address from it.
-                    $address = new Address('', [], '', (string) $e->DepotName, '', '');
+                    $address = new Address('', [], '', $depot, '', '');
+                    $tz = $this->timezoneDetector->findByCity($depot) ?? 'UTC';
+                    $dt = DateTimeImmutable::createFromFormat(
+                        'YmdHi',
+                        ((string) $e->LocalEventDate) . ((string) $e->LocalEventTime),
+                        new DateTimeZone($tz)
+                    );
                     $status = $this->getStatusFromCode((string) $e->StatusCode);
                     $description = (string) $e->StatusDescription;
                     return new TrackingActivity($status, $description, $dt, $address);

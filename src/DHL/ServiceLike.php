@@ -8,6 +8,7 @@ use GuzzleHttp\ClientInterface;
 use Vinnia\Shipping\ErrorFormatterInterface;
 use Vinnia\Shipping\ExactErrorFormatter;
 use Vinnia\Shipping\ServiceException;
+use Vinnia\Shipping\TimezoneDetector;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Text\Xml;
 
@@ -20,6 +21,7 @@ abstract class ServiceLike
     protected Credentials $credentials;
     protected string $baseUrl;
     protected ?ErrorFormatterInterface $errorFormatter;
+    protected TimezoneDetector $timezoneDetector;
 
     public function __construct(
         ClientInterface $guzzle,
@@ -31,6 +33,9 @@ abstract class ServiceLike
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;
         $this->errorFormatter = $errorFormatter ?: new ExactErrorFormatter();
+        $this->timezoneDetector = new TimezoneDetector(
+            require __DIR__ . '/../../timezones.php'
+        );
     }
 
     protected function throwError(string $body): void
