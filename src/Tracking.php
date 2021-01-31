@@ -8,7 +8,6 @@ use JsonSerializable;
 
 class Tracking implements JsonSerializable
 {
-
     /**
      * @var string
      */

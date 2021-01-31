@@ -6,7 +6,11 @@ namespace Vinnia\Shipping\UPS;
 use DateTimeImmutable;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
-use function GuzzleHttp\Promise\promise_for;
+use Vinnia\Util\Measurement\Centimeter;
+use Vinnia\Util\Measurement\Inch;
+use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\Pound;
+use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use LogicException;
@@ -37,32 +41,11 @@ class Service implements ServiceInterface
     const URL_PRODUCTION = 'https://onlinetools.ups.com/rest';
     const NON_SI_COUNTRIES = ['US'];
 
-    /**
-     * @var ClientInterface
-     */
-    private $guzzle;
+    private ClientInterface $guzzle;
+    private Credentials $credentials;
+    private string $baseUrl;
+    private ErrorFormatterInterface $errorFormatter;
 
-    /**
-     * @var Credentials
-     */
-    private $credentials;
-
-    /**
-     * @var string
-     */
-    private $baseUrl;
-
-    /**
-     * @var null|ErrorFormatterInterface
-     */
-    private $errorFormatter;
-
-    /**
-     * Service constructor.
-     * @param ClientInterface $guzzle
-     * @param Credentials $credentials
-     * @param string $baseUrl
-     */
     public function __construct(
         ClientInterface $guzzle,
         Credentials $credentials,
@@ -72,9 +55,7 @@ class Service implements ServiceInterface
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;
-        $this->errorFormatter = $responseFormatter === null ?
-            new ExactErrorFormatter() :
-            $responseFormatter;
+        $this->errorFormatter = $responseFormatter ?? new ExactErrorFormatter();
     }
 
     /**
@@ -93,8 +74,8 @@ class Service implements ServiceInterface
 
         $parcels = array_map(function (Parcel $parcel) use ($nonSi): Parcel {
             return $parcel->convertTo(
-                $nonSi ? Unit::INCH : Unit::CENTIMETER,
-                $nonSi ? Unit::POUND : Unit::KILOGRAM
+                $nonSi ? Inch::unit() : Centimeter::unit(),
+                $nonSi ? Pound::unit() : Kilogram::unit()
             );
         }, $request->parcels);
 
@@ -156,15 +137,15 @@ class Service implements ServiceInterface
                                 'UnitOfMeasurement' => [
                                     'Code' => $lengthUnit,
                                 ],
-                                'Length' => $parcel->length->format(2, '.', ''),
-                                'Width' => $parcel->width->format(2, '.', ''),
-                                'Height' => $parcel->height->format(2, '.', ''),
+                                'Length' => $parcel->length->format(2),
+                                'Width' => $parcel->width->format(2),
+                                'Height' => $parcel->height->format(2),
                             ],
                             'PackageWeight' => [
                                 'UnitOfMeasurement' => [
                                     'Code' => $weightUnit,
                                 ],
-                                'Weight' => $parcel->weight->format(2, '.', ''),
+                                'Weight' => $parcel->weight->format(2),
                             ],
                         ];
                     }, $parcels),
@@ -300,10 +281,10 @@ class Service implements ServiceInterface
                     0.00,
                     0.00,
                     (float) $package['PackageWeight']['Weight'],
-                    Unit::CENTIMETER,
-                    $package['PackageWeight']['UnitOfMeasurement']['Code'] === 'LBS' ?
-                        Unit::POUND :
-                        Unit::KILOGRAM
+                    Centimeter::unit(),
+                    $package['PackageWeight']['UnitOfMeasurement']['Code'] === 'LBS'
+                        ? Pound::unit()
+                        : Kilogram::unit()
                 );
             }
 
@@ -362,7 +343,7 @@ class Service implements ServiceInterface
      */
     public function getAvailableServices(QuoteRequest $request): PromiseInterface
     {
-        return promise_for([]);
+        return Create::promiseFor([]);
     }
 
     /**

@@ -4,6 +4,12 @@ namespace Vinnia\Shipping;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Centimeter;
+use Vinnia\Util\Measurement\Inch;
+use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\Pound;
+use Vinnia\Util\Measurement\Unit;
 
 class QuoteRequest
 {
@@ -59,9 +65,6 @@ class QuoteRequest
         $this->date = new DateTimeImmutable();
     }
 
-    /**
-     * @return string
-     */
     public function getPaymentTypeOfIncoterm(): string
     {
         // FIXME: is this default correct? we are essentially saying
@@ -72,5 +75,15 @@ class QuoteRequest
         return !$this->incoterm || in_array(mb_strtoupper($this->incoterm, 'utf-8'), ['DDP'], true)
             ? static::PAYMENT_TYPE_SENDER
             : static::PAYMENT_TYPE_RECIPIENT;
+    }
+
+    /**
+     * @return Unit[]
+     */
+    public function determineUnits(): array
+    {
+        return $this->units === QuoteRequest::UNITS_IMPERIAL
+            ? [Inch::unit(), Pound::unit()]
+            : [Centimeter::unit(), Kilogram::unit()];
     }
 }

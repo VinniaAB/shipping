@@ -8,7 +8,6 @@ use JsonSerializable;
 
 class Quote implements JsonSerializable
 {
-
     /**
      * @var string
      */

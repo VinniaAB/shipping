@@ -5,26 +5,10 @@ namespace Vinnia\Shipping\FedEx;
 
 class Credentials
 {
-
-    /**
-     * @var string
-     */
-    private $credentialKey;
-
-    /**
-     * @var string
-     */
-    private $credentialPassword;
-
-    /**
-     * @var string
-     */
-    private $accountNumber;
-
-    /**
-     * @var string
-     */
-    private $meterNumber;
+    private string $credentialKey;
+    private string $credentialPassword;
+    private string $accountNumber;
+    private string $meterNumber;
 
     public function __construct(string $credentialKey, string $credentialPassword, string $accountNumber, string $meterNumber)
     {
@@ -34,33 +18,21 @@ class Credentials
         $this->meterNumber = $meterNumber;
     }
 
-    /**
-     * @return string
-     */
     public function getCredentialKey(): string
     {
         return $this->credentialKey;
     }
 
-    /**
-     * @return string
-     */
     public function getCredentialPassword(): string
     {
         return $this->credentialPassword;
     }
 
-    /**
-     * @return string
-     */
     public function getAccountNumber(): string
     {
         return $this->accountNumber;
     }
 
-    /**
-     * @return string
-     */
     public function getMeterNumber(): string
     {
         return $this->meterNumber;

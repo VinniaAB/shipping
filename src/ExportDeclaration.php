@@ -11,7 +11,6 @@ use Vinnia\Util\Measurement\Amount;
  */
 class ExportDeclaration
 {
-
     /**
      * @var string
      */

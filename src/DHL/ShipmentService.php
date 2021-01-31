@@ -14,6 +14,10 @@ use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\ShipmentServiceInterface;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Centimeter;
+use Vinnia\Util\Measurement\Inch;
+use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\Pound;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Text\Xml;
 use Vinnia\Util\Text\XmlCallbackParser;
@@ -24,10 +28,14 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
     {
         $now = date('c');
         [$lengthUnit, $weightUnit] = $request->units === ShipmentRequest::UNITS_IMPERIAL
-            ? [Unit::INCH, Unit::POUND]
-            : [Unit::CENTIMETER, Unit::KILOGRAM];
+            ? [Inch::unit(), Pound::unit()]
+            : [Centimeter::unit(), Kilogram::unit()];
 
-        $parcels = array_map(fn ($parcel) => $parcel->convertTo($lengthUnit, $weightUnit), $request->parcels);
+        $parcels = array_map(
+            fn ($parcel) => $parcel->convertTo($lengthUnit, $weightUnit),
+            $request->parcels
+        );
+        $totalWeight = Parcel::getTotalWeight($parcels, $weightUnit);
         $parcelsData = array_map(function (Parcel $parcel, int $idx) use ($lengthUnit, $weightUnit): array {
             return [
                 'PieceID' => $idx + 1,
@@ -60,8 +68,8 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
             $specialServices[] = 'II';
         }
 
-        $lengthUnitName = $lengthUnit === Unit::INCH ? 'I' : 'C';
-        $weightUnitName = $weightUnit === Unit::POUND ? 'L' : 'K';
+        $lengthUnitName = $lengthUnit === Inch::unit() ? 'I' : 'C';
+        $weightUnitName = $weightUnit === Pound::unit() ? 'L' : 'K';
 
         $countryNames = require __DIR__ . '/../../countries.php';
 
@@ -114,7 +122,7 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
                 'ExportLineItem' => array_map(function (int $key, ExportDeclaration $decl) use ($request, $weightUnitName): array {
                     $weight = [
                         'Weight' => $decl->weight
-                            ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
+                            ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Pound::unit() : Kilogram::unit())
                             ->format(2),
                         'WeightUnit' => $weightUnitName,
                     ];
@@ -138,12 +146,7 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
                 'Pieces' => [
                     'Piece' => $parcelsData,
                 ],
-                'Weight' => array_reduce($parcels, function (Amount $carry, Parcel $parcel) {
-                    return new Amount(
-                        $carry->getValue() + $parcel->weight->getValue(),
-                        $parcel->weight->getUnit()
-                    );
-                }, new Amount(0, ''))->format(2),
+                'Weight' => $totalWeight->format(2),
                 'WeightUnit' => $weightUnitName,
                 'GlobalProductCode' => $request->service,
                 'Date' => $request->date->format('Y-m-d'),

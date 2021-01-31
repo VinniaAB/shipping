@@ -4,7 +4,6 @@ namespace Vinnia\Shipping;
 
 class Pickup
 {
-
     /**
      * @var string
      */

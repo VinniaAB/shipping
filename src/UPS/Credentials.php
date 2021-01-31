@@ -5,21 +5,9 @@ namespace Vinnia\Shipping\UPS;
 
 class Credentials
 {
-
-    /**
-     * @var string
-     */
-    private $username;
-
-    /**
-     * @var string
-     */
-    private $password;
-
-    /**
-     * @var string
-     */
-    private $accessLicense;
+    private string $username;
+    private string $password;
+    private string $accessLicense;
 
     public function __construct(string $username, string $password, string $accessLicense)
     {
@@ -28,25 +16,16 @@ class Credentials
         $this->accessLicense = $accessLicense;
     }
 
-    /**
-     * @return string
-     */
     public function getUsername(): string
     {
         return $this->username;
     }
 
-    /**
-     * @return string
-     */
     public function getPassword(): string
     {
         return $this->password;
     }
 
-    /**
-     * @return string
-     */
     public function getAccessLicense(): string
     {
         return $this->accessLicense;

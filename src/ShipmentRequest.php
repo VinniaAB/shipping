@@ -4,7 +4,6 @@ namespace Vinnia\Shipping;
 
 class ShipmentRequest extends QuoteRequest
 {
-
     /**
      * @var string
      */

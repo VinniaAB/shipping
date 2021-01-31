@@ -8,51 +8,15 @@ use Vinnia\Util\Collection;
 
 class Address implements JsonSerializable
 {
-
-    /**
-     * @var string
-     */
-    public $name;
-
-    /**
-     * @var string[]
-     */
-    public $lines;
-
-    /**
-     * @var string
-     */
-    public $zip;
-
-    /**
-     * @var string
-     */
-    public $city;
-
-    /**
-     * @var string
-     */
-    public $state;
-
-    /**
-     * @var string
-     */
-    public $countryCode;
-
-    /**
-     * @var string
-     */
-    public $contactName;
-
-    /**
-     * @var string
-     */
-    public $contactPhone;
-
-    /**
-     * @var string
-     */
-    public $contactEmail;
+    public string $name;
+    public array $lines;
+    public string $zip;
+    public string $city;
+    public string $state;
+    public string $countryCode;
+    public string $contactName;
+    public string $contactPhone;
+    public string $contactEmail;
 
     /**
      * Address constructor.
@@ -88,9 +52,6 @@ class Address implements JsonSerializable
         $this->contactEmail = $contactEmail;
     }
 
-    /**
-     * @return array
-     */
     public function toArray(): array
     {
         return [
@@ -106,18 +67,11 @@ class Address implements JsonSerializable
         ];
     }
 
-    /**
-     * @return array
-     */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return $this->toArray();
     }
 
-    /**
-     * @param array $data
-     * @return self
-     */
     public static function fromArray(array $data): self
     {
         return new Address(
@@ -133,10 +87,7 @@ class Address implements JsonSerializable
         );
     }
 
-    /**
-     * @return string
-     */
-    public function __toString()
+    public function __toString(): string
     {
         $parts = [
             $this->name,

@@ -6,7 +6,6 @@ use Exception;
 
 class ServiceException extends Exception
 {
-
     /**
      * @var array
      */

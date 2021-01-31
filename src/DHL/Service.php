@@ -37,6 +37,10 @@ use Vinnia\Shipping\TrackingResult;
 use Vinnia\Util\Arrays;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Centimeter;
+use Vinnia\Util\Measurement\Inch;
+use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\Pound;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Text\Xml;
 use Vinnia\Util\Text\XmlCallbackParser;
@@ -45,10 +49,9 @@ class Service extends ServiceLike implements ServiceInterface
 {
     protected function getQuoteOrCapability(QuoteRequest $request, string $elementName): PromiseInterface
     {
-        $parcels = array_map(function (Parcel $parcel, int $idx) use ($request): array {
-            $p = $request->units == ShipmentRequest::UNITS_IMPERIAL ?
-                $parcel->convertTo(Unit::INCH, Unit::POUND) :
-                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        [$lengthUnit, $weightUnit] = $request->determineUnits();
+        $parcels = array_map(function (Parcel $parcel, int $idx) use ($request, $lengthUnit, $weightUnit): array {
+            $p = $parcel->convertTo($lengthUnit, $weightUnit);
 
             return [
                 'PieceID' => $idx + 1,
@@ -292,8 +295,8 @@ EOD;
                         (float) ($details['Height'] ?? 0.00),
                         (float) ($details['Depth'] ?? 0.00),
                         (float) ($details['Weight'] ?? 0.00),
-                        ($details['WeightUnit'] ?? 'K') === 'K' ? Unit::CENTIMETER : Unit::INCH,
-                        ($details['WeightUnit'] ?? 'K') === 'K' ? Unit::KILOGRAM : Unit::POUND
+                        ($details['WeightUnit'] ?? 'K') === 'K' ? Centimeter::unit() : Inch::unit(),
+                        ($details['WeightUnit'] ?? 'K') === 'K' ? Kilogram::unit() : Pound::unit()
                     );
                 }, $pieceInfos);
 
@@ -395,21 +398,14 @@ EOD;
     public function createPickup(PickupRequest $request): PromiseInterface
     {
         $now = new DateTimeImmutable('now');
+        [$lengthUnit, $weightUnit] = $request->determineUnits();
 
-        /* @var Amount $totalWeight */
-        $totalWeight = array_reduce($request->parcels, function (Amount $carry, Parcel $current) use ($request): Amount {
-            $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
-                $current->convertTo(Unit::INCH, Unit::POUND) :
-                $current->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        $parcels = array_map(
+            fn ($parcel) => $parcel->convertTo($lengthUnit, $weightUnit),
+            $request->parcels
+        );
 
-            return new Amount($carry->getValue() + $parcel->weight->getValue(), $parcel->weight->getUnit());
-        }, new Amount(0, ''));
-
-        $parcels = array_map(function (Parcel $parcel) use ($request): Parcel {
-            return $request->units == ShipmentRequest::UNITS_IMPERIAL ?
-                $parcel->convertTo(Unit::INCH, Unit::POUND) :
-                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
-        }, $request->parcels);
+        $totalWeight = Parcel::getTotalWeight($parcels, $weightUnit);
 
         $parcelsData = array_map(function (Parcel $parcel, int $idx): array {
             return [

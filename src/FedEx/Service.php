@@ -10,7 +10,11 @@ use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ServerException;
-use function GuzzleHttp\Promise\promise_for;
+use Vinnia\Util\Measurement\Centimeter;
+use Vinnia\Util\Measurement\Inch;
+use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\Pound;
+use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use LogicException;
 use Money\Currency;
@@ -48,40 +52,15 @@ class Service implements ServiceInterface
     const URL_TEST = 'https://wsbeta.fedex.com:443/web-services';
     const URL_PRODUCTION = 'https://ws.fedex.com:443/web-services';
 
-    /**
-     * @var ClientInterface
-     */
-    private $guzzle;
+    private ClientInterface $guzzle;
+    private Credentials $credentials;
+    private string $url;
+    private ErrorFormatterInterface $errorFormatter;
 
-    /**
-     * @var Credentials
-     */
-    private $credentials;
-
-    /**
-     * @var string
-     */
-    private $url;
-
-    /**
-     * @var null|ErrorFormatterInterface
-     */
-    private $errorFormatter;
-
-    /**
-     * @var array
-     */
-    private $residentailServices = [
+    const RESIDENTIAL_SERVICES = [
         'GROUND_HOME_DELIVERY',
     ];
 
-    /**
-     * Service constructor.
-     * @param ClientInterface $guzzle
-     * @param Credentials $credentials
-     * @param string $url
-     * @param null|ErrorFormatterInterface $errorFormatter
-     */
     public function __construct(
         ClientInterface $guzzle,
         Credentials $credentials,
@@ -92,9 +71,7 @@ class Service implements ServiceInterface
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->url = $url;
-        $this->errorFormatter = $errorFormatter === null ?
-            new ExactErrorFormatter() :
-            $errorFormatter;
+        $this->errorFormatter = $errorFormatter ?? new ExactErrorFormatter();
     }
 
     /**
@@ -151,24 +128,26 @@ class Service implements ServiceInterface
      */
     public function getQuotes(QuoteRequest $request): PromiseInterface
     {
-        $parcels = array_map(function (Parcel $parcel, int $idx) use ($request): array {
-            $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
-                $parcel->convertTo(Unit::INCH, Unit::POUND) :
-                $parcel->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        [$lengthUnit, $weightUnit] = $request->units === ShipmentRequest::UNITS_IMPERIAL
+            ? [Inch::unit(), Pound::unit()]
+            : [Centimeter::unit(), Kilogram::unit()];
+
+        $parcels = array_map(function (Parcel $parcel, int $idx) use ($request, $lengthUnit, $weightUnit): array {
+            $parcel = $parcel->convertTo($lengthUnit, $weightUnit);
 
             return [
                 'SequenceNumber' => $idx + 1,
                 'GroupNumber' => 1,
                 'GroupPackageCount' => 1,
                 'Weight' => [
-                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
+                    'Units' => $request->units === ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
                     'Value' => $parcel->weight->format(2),
                 ],
                 'Dimensions' => [
                     'Length' => $parcel->length->format(0),
                     'Width' => $parcel->width->format(0),
                     'Height' => $parcel->height->format(0),
-                    'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
+                    'Units' => $request->units === ShipmentRequest::UNITS_IMPERIAL ? 'IN' : 'CM',
                 ],
             ];
         }, $request->parcels, array_keys($request->parcels));
@@ -372,8 +351,8 @@ EOD;
                     (float) $dimensions['Height'],
                     (float) $dimensions['Length'],
                     (float) $weight['Value'],
-                    $dimensions['Units'] === 'IN' ? Unit::INCH : Unit::CENTIMETER,
-                    $weight['Units'] === 'LB' ? Unit::POUND : Unit::KILOGRAM
+                    $dimensions['Units'] === 'IN' ? Inch::unit() : Centimeter::unit(),
+                    $weight['Units'] === 'LB' ? Pound::unit() : Kilogram::unit()
                 );
                 $tracking = new Tracking('FedEx', $service, $activities);
                 $tracking->estimatedDeliveryDate = $estimatedDelivery;
@@ -429,14 +408,20 @@ EOD;
      */
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        /* @var Amount $totalWeight */
-        $totalWeight = array_reduce($request->parcels, function (Amount $carry, Parcel $current) use ($request): Amount {
-            $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
-                $current->convertTo(Unit::INCH, Unit::POUND) :
-                $current->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        [$lengthUnit, $weightUnit] = $request->units === QuoteRequest::UNITS_IMPERIAL
+            ? [Inch::unit(), Pound::unit()]
+            : [Centimeter::unit(), Kilogram::unit()];
 
-            return new Amount($carry->getValue() + $parcel->weight->getValue(), $parcel->weight->getUnit());
-        }, new Amount(0, ''));
+        $parcels = array_map(
+            fn ($parcel) => $parcel->convertTo($lengthUnit, $weightUnit),
+            $request->parcels
+        );
+
+        $totalWeight = array_reduce(
+            $parcels,
+            fn ($carry, $parcel) => $carry->add($parcel->weight),
+            new Amount(0, $weightUnit)
+        );
 
         /* @var Shipment[] $shipments */
         $shipments = [];
@@ -471,7 +456,7 @@ EOD;
             }
         }
 
-        return promise_for($shipments);
+        return Create::promiseFor($shipments);
     }
 
     protected function buildShipmentRequestBody(
@@ -480,9 +465,8 @@ EOD;
         Amount $totalWeight,
         ?string $masterTrackingId = null
     ): string {
-        $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
-            $request->parcels[$parcelIndex]->convertTo(Unit::INCH, Unit::POUND) :
-            $request->parcels[$parcelIndex]->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        [$lengthUnit, $weightUnit] = $request->determineUnits();
+        $parcel = $request->parcels[$parcelIndex]->convertTo($lengthUnit, $weightUnit);
 
         $data = [
             'ProcessShipmentRequest' => [
@@ -508,7 +492,7 @@ EOD;
                     'ServiceType' => $request->service,
                     'PackagingType' => 'YOUR_PACKAGING',
                     'TotalWeight' => $parcelIndex === 0 ? [
-                        'Units' => $totalWeight->getUnit() === Unit::POUND ? 'LB' : 'KG',
+                        'Units' => $totalWeight->getUnit() === Pound::unit() ? 'LB' : 'KG',
                         'Value' => $totalWeight->format(2),
                     ] : null,
                     'TotalInsuredValue' => [
@@ -563,7 +547,7 @@ EOD;
                         'CommercialInvoice' => [
                             'TermsOfSale' => $request->incoterm,
                         ],
-                        'Commodities' => array_map(function (ExportDeclaration $decl) use ($request) {
+                        'Commodities' => array_map(function (ExportDeclaration $decl) use ($request, $weightUnit) {
                             return [
                                 'NumberOfPieces' => $decl->quantity,
                                 'Description' => $decl->description,
@@ -571,7 +555,7 @@ EOD;
                                 'Weight' => [
                                     'Units' => $request->units == ShipmentRequest::UNITS_IMPERIAL ? 'LB' : 'KG',
                                     'Value' => $decl->weight
-                                        ->convertTo($request->units == ShipmentRequest::UNITS_IMPERIAL ? Unit::POUND : Unit::KILOGRAM)
+                                        ->convertTo($weightUnit)
                                         ->format(2),
                                 ],
                                 'Quantity' => $decl->quantity,
@@ -916,15 +900,9 @@ EOD;
      */
     public function createPickup(PickupRequest $request): PromiseInterface
     {
-        /* @var Amount $totalWeight */
-        $totalWeight = array_reduce($request->parcels, function (Amount $carry, Parcel $current) use ($request): Amount {
-            $parcel = $request->units == QuoteRequest::UNITS_IMPERIAL ?
-                $current->convertTo(Unit::INCH, Unit::POUND) :
-                $current->convertTo(Unit::CENTIMETER, Unit::KILOGRAM);
+        [$lengthUnit, $weightUnit] = $request->determineUnits();
 
-            return new Amount($carry->getValue() + $parcel->weight->getValue(), $parcel->weight->getUnit());
-        }, new Amount(0, ''));
-
+        $totalWeight = Parcel::getTotalWeight($request->parcels, $weightUnit);
         $trackRequest = Xml::fromArray([
             'CreatePickupRequest' => [
                 'WebAuthenticationDetail' => [
@@ -1049,10 +1027,7 @@ EOD;
     }
 
     /**
-     * @param string $id
-     * @param string $location
-     * @param string $service
-     * @param DateTimeImmutable $date
+     * @param CancelPickupRequest $request
      * @return PromiseInterface
      */
     public function cancelPickup(CancelPickupRequest $request): PromiseInterface
@@ -1097,12 +1072,8 @@ EOD;
         });
     }
 
-    /**
-     * @param string $service
-     * @return bool
-     */
     private function serviceIsResidential(string $service): bool
     {
-        return in_array($service, $this->residentailServices);
+        return in_array($service, static::RESIDENTIAL_SERVICES);
     }
 }

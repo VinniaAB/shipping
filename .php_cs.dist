@@ -1,12 +1,11 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 $finder = PhpCsFixer\Finder::create()
+    ->in(__DIR__)
     ->path([
-        'src/',
-        'tests/',
-    ])
-    ->in(__DIR__);
+        '#src/#',
+        '#tests/#',
+    ]);
 
 return PhpCsFixer\Config::create()
     ->setRiskyAllowed(true)
@@ -27,6 +26,8 @@ return PhpCsFixer\Config::create()
             'keep_multiple_spaces_after_comma' => false,
             'on_multiline' => 'ignore',
         ],
+        'non_printable_character' => true,
+        'no_blank_lines_after_class_opening' => true,
         'no_trailing_comma_in_list_call' => true,
         'no_trailing_whitespace_in_comment' => false,
         'trailing_comma_in_multiline_array' => true,

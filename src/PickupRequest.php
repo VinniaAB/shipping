@@ -3,6 +3,12 @@
 namespace Vinnia\Shipping;
 
 use DateTimeImmutable;
+use DateTimeInterface;
+use Vinnia\Util\Measurement\Centimeter;
+use Vinnia\Util\Measurement\Inch;
+use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\Pound;
+use Vinnia\Util\Measurement\Unit;
 
 class PickupRequest
 {
@@ -17,74 +23,31 @@ class PickupRequest
     const DELIVERY_SERVICE_TYPE_DOOR_TO_AIRPORT = 'door_to_airport';
     const DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR_NON_COMPLIANT = 'door_to_door_non_compliant';
 
+    public string $service;
+    public Address $pickupAddress;
+    public Address $requestorAddress;
+    public DateTimeInterface $earliestPickup;
+    public DateTimeInterface $latestPickup;
 
     /**
-     * @var string
+     * @var Parcel[]
      */
-    public $service;
-
-    /**
-     * @var Address
-     */
-    public $pickupAddress;
-
-    /**
-     * @var Address
-     */
-    public $requestorAddress;
-
-    /**
-     * @var DateTimeImmutable
-     */
-    public $earliestPickup;
-
-    /**
-     * @var DateTimeImmutable
-     */
-    public $latestPickup;
-
-    /**
-     * @var array
-     */
-    public $parcels;
-
-    /**
-     * @var float
-     */
-    public $insuredValue = 0.0;
-
-    /**
-     * @var string
-     */
-    public $currency = 'EUR';
-
-    /**
-     * @var string
-     */
-    public $notes = '';
-
-    /**
-     * @var
-     */
-    public $units = self::UNITS_METRIC;
-
-    /**
-     * @var string
-     */
-    public $locationType = self::LOCATION_TYPE_BUSINESS;
-
-    /**
-     * @var string
-     */
-    public $deliveryServiceType = self::DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR;
+    public array $parcels;
+    public float $insuredValue = 0.0;
+    public string $currency = 'EUR';
+    public string $notes = '';
+    public string $units = self::UNITS_METRIC;
+    public string $locationType = self::LOCATION_TYPE_BUSINESS;
+    public string $deliveryServiceType = self::DELIVERY_SERVICE_TYPE_DOOR_TO_DOOR;
 
     /**
      * PickupRequest constructor.
      * @param string $service
-     * @param Address $address
+     * @param Address $requestorAddress
+     * @param Address $pickupAddress
      * @param DateTimeImmutable $earliestPickup
      * @param DateTimeImmutable $latestPickup
-     * @param array $parcels
+     * @param Parcel[] $parcels
      */
     public function __construct(
         string $service,
@@ -100,5 +63,15 @@ class PickupRequest
         $this->parcels = $parcels;
         $this->earliestPickup = $earliestPickup;
         $this->latestPickup = $latestPickup;
+    }
+
+    /**
+     * @return Unit[]
+     */
+    public function determineUnits(): array
+    {
+        return $this->units === QuoteRequest::UNITS_IMPERIAL
+            ? [Inch::unit(), Pound::unit()]
+            : [Centimeter::unit(), Kilogram::unit()];
     }
 }

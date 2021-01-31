@@ -3,35 +3,18 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
-use Vinnia\Util\Collection;
-use Vinnia\Util\Measurement\Amount;
-use Vinnia\Util\Measurement\Unit;
-
 use JsonSerializable;
-use LogicException;
+use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\Meter;
+use Vinnia\Util\Measurement\Unit;
 
 class Parcel implements JsonSerializable
 {
-
-    /**
-     * @var Amount
-     */
-    public $width;
-
-    /**
-     * @var Amount
-     */
-    public $height;
-
-    /**
-     * @var Amount
-     */
-    public $length;
-
-    /**
-     * @var Amount
-     */
-    public $weight;
+    public Amount $width;
+    public Amount $height;
+    public Amount $length;
+    public Amount $weight;
 
     /**
      * Package constructor.
@@ -48,7 +31,7 @@ class Parcel implements JsonSerializable
         $this->weight = $weight;
     }
 
-    public function convertTo(string $lengthUnit, string $weightUnit): self
+    public function convertTo(Unit $lengthUnit, Unit $weightUnit): self
     {
         return new Parcel(
             $this->width->convertTo($lengthUnit),
@@ -58,11 +41,7 @@ class Parcel implements JsonSerializable
         );
     }
 
-    /**
-     * @param string $lengthUnit
-     * @return float
-     */
-    public function getVolume(string $lengthUnit = Unit::METER): float
+    public function getVolume(Unit $lengthUnit): float
     {
         $amounts = [$this->width, $this->height, $this->length];
         return array_reduce($amounts, function (float $carry, Amount $current) use ($lengthUnit): float {
@@ -73,9 +52,6 @@ class Parcel implements JsonSerializable
         }, 1.0);
     }
 
-    /**
-     * @return array
-     */
     public function toArray(): array
     {
         return [
@@ -86,36 +62,41 @@ class Parcel implements JsonSerializable
         ];
     }
 
-    /**
-     * @return array
-     */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return $this->toArray();
     }
 
-    /**
-     * @param float $width
-     * @param float $height
-     * @param float $length
-     * @param float $weight
-     * @param string $lengthUnit
-     * @param string $weightUnit
-     * @return Parcel
-     */
     public static function make(
         float $width,
         float $height,
         float $length,
         float $weight,
-        string $lengthUnit = Unit::METER,
-        string $weightUnit = Unit::KILOGRAM
+        ?Unit $lengthUnit = null,
+        ?Unit $weightUnit = null
     ): Parcel {
+        $lengthUnit = $lengthUnit ?? Meter::unit();
+        $weightUnit = $weightUnit ?? Kilogram::unit();
+
         return new Parcel(
             new Amount($width, $lengthUnit),
             new Amount($height, $lengthUnit),
             new Amount($length, $lengthUnit),
             new Amount($weight, $weightUnit)
+        );
+    }
+
+    /**
+     * @param Parcel[] $parcels
+     * @param Unit $unit
+     * @return Amount
+     */
+    public static function getTotalWeight(array $parcels, Unit $unit): Amount
+    {
+        return array_reduce(
+            $parcels,
+            fn ($carry, $parcel) => $carry->add($parcel->weight->convertTo($unit)),
+            new Amount(0, $unit)
         );
     }
 }

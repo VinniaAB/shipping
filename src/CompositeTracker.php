@@ -3,11 +3,11 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
+use GuzzleHttp\Promise\Utils;
 use GuzzleHttp\Promise\PromiseInterface;
 
 class CompositeTracker
 {
-
     /**
      * @var ServiceInterface[]
      */
@@ -50,13 +50,12 @@ class CompositeTracker
      */
     private function aggregate(string $method, array $parameters = []): PromiseInterface
     {
-        /* @var PromiseInterface[] $promises */
         $promises = array_map(function (ServiceInterface $service) use ($method, $parameters): PromiseInterface {
             return call_user_func_array([$service, $method], $parameters);
         }, $this->services);
         // create an aggregate promise that will be fulfilled
         // when all service promises are either fulfilled or rejected
-        $aggregate = \GuzzleHttp\Promise\settle($promises);
+        $aggregate = Utils::settle($promises);
         return $aggregate->then(function (array $inspections) {
             $results = [];
             foreach ($inspections as $inspection) {

@@ -6,7 +6,9 @@ namespace Vinnia\Shipping\TNT;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
 use Vinnia\Shipping\TimezoneDetector;
-use function GuzzleHttp\Promise\promise_for;
+use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\Meter;
+use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use LogicException;
@@ -38,35 +40,12 @@ class Service implements ServiceInterface
     const URL_TEST = 'https://test';
     const URL_PRODUCTION = 'https://express.tnt.com/expressconnect';
 
-    /**
-     * @var ClientInterface
-     */
-    private $guzzle;
-
-    /**
-     * @var Credentials
-     */
-    private $credentials;
-
-    /**
-     * @var string
-     */
-    private $baseUrl;
-
-    /**
-     * @var null|ErrorFormatterInterface
-     */
-    private $errorFormatter;
-
+    private ClientInterface $guzzle;
+    private Credentials $credentials;
+    private string $baseUrl;
+    private ErrorFormatterInterface $errorFormatter;
     protected TimezoneDetector $timezoneDetector;
 
-    /**
-     * Service constructor.
-     * @param ClientInterface $guzzle
-     * @param Credentials $credentials
-     * @param string $baseUrl
-     * @param null|ErrorFormatterInterface $responseFormatter
-     */
     public function __construct(
         ClientInterface $guzzle,
         Credentials $credentials,
@@ -76,29 +55,19 @@ class Service implements ServiceInterface
         $this->guzzle = $guzzle;
         $this->credentials = $credentials;
         $this->baseUrl = $baseUrl;
-        $this->errorFormatter = $responseFormatter === null ?
-            new ExactErrorFormatter() :
-            $responseFormatter;
+        $this->errorFormatter = $responseFormatter ?? new ExactErrorFormatter();
         $this->timezoneDetector = new TimezoneDetector(
             require __DIR__ . '/../../timezones.php'
         );
     }
 
-    /**
-     * @param QuoteRequest $request
-     * @return PromiseInterface promise resolved with an array of \Vinnia\Shipping\Quote on success
-     * @internal param Address $sender
-     * @internal param Address $recipient
-     * @internal param Package $package
-     * @internal param array $options
-     */
     public function getQuotes(QuoteRequest $request): PromiseInterface
     {
-        $package = $request->package->convertTo(Unit::METER, Unit::KILOGRAM);
-        $length = number_format($package->length->getValue(), 2, '.', '');
-        $width = number_format($package->width->getValue(), 2, '.', '');
-        $height = number_format($package->height->getValue(), 2, '.', '');
-        $weight = number_format($package->weight->getValue(), 2, '.', '');
+        $package = $request->parcels[0]->convertTo(Meter::unit(), Kilogram::unit());
+        $length = $package->length->format(2);
+        $width = $package->width->format(2);
+        $height = $package->height->format(2);
+        $weight = $package->weight->format(2);
 
         $dt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 
@@ -294,7 +263,7 @@ EOD;
      */
     public function getAvailableServices(QuoteRequest $request): PromiseInterface
     {
-        return promise_for([]);
+        return Create::promiseFor([]);
     }
 
     /**
