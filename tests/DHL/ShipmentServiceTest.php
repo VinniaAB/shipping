@@ -15,6 +15,8 @@ use Vinnia\Shipping\ShipmentRequest;
 use Vinnia\Shipping\Tests\AbstractTestCase;
 use Vinnia\Shipping\Tests\GuzzleTrait;
 use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Centimeter;
+use Vinnia\Util\Measurement\Kilogram;
 use Vinnia\Util\Measurement\Unit;
 use function GuzzleHttp\Psr7\stream_for;
 
@@ -84,10 +86,10 @@ TXT;
         );
 
         $request = new ShipmentRequest('P', $sender, $recipient, [
-            Parcel::make(10.0, 10.0, 10.0, 2.0, Unit::CENTIMETER, Unit::KILOGRAM),
+            Parcel::make(10.0, 10.0, 10.0, 2.0, Centimeter::unit(), Kilogram::unit()),
         ]);
         $request->exportDeclarations = [
-            new ExportDeclaration('Solid cube of titanium', 'CH', 1, 100.00, 'CHF', new Amount(2.0, Unit::KILOGRAM)),
+            new ExportDeclaration('Solid cube of titanium', 'CH', 1, 100.00, 'CHF', new Amount(2.0, Kilogram::unit())),
         ];
         $request->isDutiable = true;
 
@@ -125,10 +127,10 @@ TXT;
         );
 
         $request = new ShipmentRequest('K', $sender, $recipient, [
-            Parcel::make(10.0, 10.0, 10.0, 2.0, Unit::CENTIMETER, Unit::KILOGRAM),
+            Parcel::make(10.0, 10.0, 10.0, 2.0, Centimeter::unit(), Kilogram::unit()),
         ]);
         $request->exportDeclarations = [
-            new ExportDeclaration('Solid cube of titanium', 'CH', 1, 100.00, 'CHF', new Amount(2.0, Unit::KILOGRAM)),
+            new ExportDeclaration('Solid cube of titanium', 'CH', 1, 100.00, 'CHF', new Amount(2.0, Kilogram::unit())),
         ];
         $request->isDutiable = false;
 
