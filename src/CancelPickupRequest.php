@@ -2,58 +2,23 @@
 
 namespace Vinnia\Shipping;
 
-/**
- * Class CancelPickupRequest
- * @package Vinnia\Shipping
- */
+use DateTimeInterface;
+
 class CancelPickupRequest
 {
-    /**
-     * @var string
-     */
-    public $id;
+    public string $id;
+    public string $service;
+    public Address $requestorAddress;
+    public Address $pickupAddress;
+    public DateTimeInterface $date;
+    public string $locationCode;
 
-    /**
-     * @var string
-     */
-    public $service;
-
-    /**
-     * @var Address
-     */
-    public $requestorAddress;
-
-    /**
-     * @var Address
-     */
-    public $pickupAddress;
-
-    /**
-     * @var \DateTimeImmutable
-     */
-    public $date;
-
-    /**
-     * @var string
-     */
-    public $locationCode;
-
-
-    /**
-     * CancelPickupRequest constructor.
-     * @param string $id
-     * @param string $service
-     * @param Address $requestorAddress
-     * @param Address $pickupAddress
-     * @param \DateTimeImmutable $date
-     * @param string $locationCode
-     */
     public function __construct(
         string $id,
         string $service,
         Address $requestorAddress,
         Address $pickupAddress,
-        \DateTimeImmutable $date,
+        DateTimeInterface $date,
         string $locationCode = ''
     ) {
         $this->id = $id;

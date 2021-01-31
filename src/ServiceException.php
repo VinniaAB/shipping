@@ -7,14 +7,10 @@ use Exception;
 class ServiceException extends Exception
 {
     /**
-     * @var array
+     * @var string[]
      */
-    public $errors;
-
-    /**
-     * @var string
-     */
-    public $source;
+    public array $errors;
+    public string $source;
 
     /**
      * ErrorBag constructor.

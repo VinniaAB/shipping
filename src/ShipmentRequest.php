@@ -4,35 +4,12 @@ namespace Vinnia\Shipping;
 
 class ShipmentRequest extends QuoteRequest
 {
-    /**
-     * @var string
-     */
-    public $service;
-
-    /**
-     * @var string
-     */
-    public $reference = '';
-
-    /**
-     * @var string|null
-     */
-    public $labelFormat;
-
-    /**
-     * @var string|null
-     */
-    public $labelSize;
-
-    /**
-     * @var bool
-     */
-    public $signatureRequired = false;
-
-    /**
-     * @var string
-     */
-    public $internationalTransactionNo;
+    public string $service;
+    public string $reference = '';
+    public ?string $labelFormat = null;
+    public ?string $labelSize = null;
+    public bool $signatureRequired = false;
+    public string $internationalTransactionNo = '';
 
     /**
      * ShipmentRequest constructor.

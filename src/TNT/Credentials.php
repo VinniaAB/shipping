@@ -5,10 +5,10 @@ namespace Vinnia\Shipping\TNT;
 
 class Credentials
 {
-    private string $username;
-    private string $password;
-    private string $accountNumber;
-    private string $accountCountry;
+    public string $username;
+    public string $password;
+    public string $accountNumber;
+    public string $accountCountry;
 
     public function __construct(string $username, string $password, string $accountNumber, string $accountCountry)
     {
@@ -16,25 +16,5 @@ class Credentials
         $this->password = $password;
         $this->accountNumber = $accountNumber;
         $this->accountCountry = $accountCountry;
-    }
-
-    public function getUsername(): string
-    {
-        return $this->username;
-    }
-
-    public function getPassword(): string
-    {
-        return $this->password;
-    }
-
-    public function getAccountNumber(): string
-    {
-        return $this->accountNumber;
-    }
-
-    public function getAccountCountry(): string
-    {
-        return $this->accountCountry;
     }
 }

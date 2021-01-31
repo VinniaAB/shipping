@@ -13,33 +13,11 @@ class TrackingActivity implements JsonSerializable
     const STATUS_EXCEPTION = 500;
     const STATUS_NOTIFICATION = 700;
 
-    /**
-     * @var int
-     */
-    public $status;
+    public int $status;
+    public string $description;
+    public DateTimeInterface $date;
+    public Address $address;
 
-    /**
-     * @var string
-     */
-    public $description;
-
-    /**
-     * @var DateTimeInterface
-     */
-    public $date;
-
-    /**
-     * @var Address
-     */
-    public $address;
-
-    /**
-     * TrackingActivity constructor.
-     * @param int $status
-     * @param string $description
-     * @param DateTimeInterface $date
-     * @param Address $address
-     */
     public function __construct(int $status, string $description, DateTimeInterface $date, Address $address)
     {
         $this->status = $status;
@@ -48,9 +26,6 @@ class TrackingActivity implements JsonSerializable
         $this->address = $address;
     }
 
-    /**
-     * @return array
-     */
     public function toArray(): array
     {
         return [
@@ -61,10 +36,7 @@ class TrackingActivity implements JsonSerializable
         ];
     }
 
-    /**
-     * @return array
-     */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return $this->toArray();
     }

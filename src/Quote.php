@@ -8,27 +8,10 @@ use JsonSerializable;
 
 class Quote implements JsonSerializable
 {
-    /**
-     * @var string
-     */
-    public $vendor;
+    public string $vendor;
+    public string $service;
+    public Money $price;
 
-    /**
-     * @var string
-     */
-    public $service;
-
-    /**
-     * @var Money
-     */
-    public $price;
-
-    /**
-     * Quote constructor.
-     * @param string $vendor
-     * @param string $service
-     * @param Money $price
-     */
     public function __construct(string $vendor, string $service, Money $price)
     {
         $this->vendor = $vendor;
@@ -36,9 +19,6 @@ class Quote implements JsonSerializable
         $this->price = $price;
     }
 
-    /**
-     * @return array
-     */
     public function toArray(): array
     {
         return [
@@ -48,10 +28,7 @@ class Quote implements JsonSerializable
         ];
     }
 
-    /**
-     * @return array
-     */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return $this->toArray();
     }

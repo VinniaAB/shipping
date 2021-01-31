@@ -4,21 +4,9 @@ namespace Vinnia\Shipping;
 
 class Shipment
 {
-    /**
-     * @var string
-     */
-    public $id;
-
-    /**
-     * @var string
-     */
-    public $vendor;
-
-    /**
-     * Binary pdf data
-     * @var string
-     */
-    public $labelData;
+    public string $id;
+    public string $vendor;
+    public string $labelData;
 
     /**
      * Raw data that was used to create this object
@@ -26,13 +14,6 @@ class Shipment
      */
     public $raw;
 
-    /**
-     * Label constructor.
-     * @param string $id
-     * @param string $vendor
-     * @param string $labelData
-     * @param mixed $raw
-     */
     public function __construct(string $id, string $vendor, string $labelData, $raw = null)
     {
         $this->id = $id;

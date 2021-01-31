@@ -2,32 +2,15 @@
 
 namespace Vinnia\Shipping;
 
+use DateTimeInterface;
+
 class Pickup
 {
-    /**
-     * @var string
-     */
-    public $vendor;
-
-    /**
-     * @var int|string
-     */
-    public $id;
-
-    /**
-     * @var string
-     */
-    public $service;
-
-    /**
-     * @var \DateTimeImmutable
-     */
-    public $date;
-
-    /**
-     * @var string
-     */
-    public $locationCode;
+    public string $vendor;
+    public string $id;
+    public string $service;
+    public DateTimeInterface $date;
+    public string $locationCode;
 
     /**
      * Raw data that was used to create this object
@@ -35,20 +18,11 @@ class Pickup
      */
     public $raw;
 
-    /**
-     * Pickup constructor.
-     * @param string $vendor
-     * @param string $id
-     * @param string $service
-     * @param \DateTimeImmutable $date
-     * @param string $locationCode
-     * @param null $raw
-     */
     public function __construct(
         string $vendor,
         string $id,
         string $service,
-        \DateTimeImmutable $date,
+        DateTimeInterface $date,
         string $locationCode = '',
         $raw = null
     ) {

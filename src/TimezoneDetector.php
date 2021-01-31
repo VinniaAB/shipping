@@ -10,7 +10,6 @@ class TimezoneDetector
      * @var array<string, string>
      */
     protected array $timezoneMap;
-
     protected float $matchThreshold;
 
     /**

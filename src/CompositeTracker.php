@@ -11,10 +11,9 @@ class CompositeTracker
     /**
      * @var ServiceInterface[]
      */
-    private $services;
+    private array $services;
 
     /**
-     * CompositeTracker constructor.
      * @param ServiceInterface[] $services
      */
     public function __construct(array $services)

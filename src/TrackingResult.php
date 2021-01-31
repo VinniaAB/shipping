@@ -8,33 +8,11 @@ class TrackingResult
     const STATUS_SUCCESS = 100;
     const STATUS_ERROR = 500;
 
-    /**
-     * @var int
-     */
-    public $status;
+    public int $status;
+    public string $trackingNumber;
+    public string $body;
+    public ?Tracking $tracking;
 
-    /**
-     * @var string
-     */
-    public $trackingNumber;
-
-    /**
-     * @var string
-     */
-    public $body;
-
-    /**
-     * @var Tracking|null
-     */
-    public $tracking;
-
-    /**
-     * TrackingResult constructor.
-     * @param int $status
-     * @param string $trackingNumber
-     * @param string $body
-     * @param null|Tracking $tracking
-     */
     public function __construct(int $status, string $trackingNumber, string $body, ?Tracking $tracking = null)
     {
         $this->status = $status;

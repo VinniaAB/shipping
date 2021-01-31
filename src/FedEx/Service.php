@@ -159,13 +159,13 @@ class Service implements ServiceInterface
             'RateRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
-                        'Key' => $this->credentials->getCredentialKey(),
-                        'Password' => $this->credentials->getCredentialPassword(),
+                        'Key' => $this->credentials->credentialKey,
+                        'Password' => $this->credentials->credentialPassword,
                     ],
                 ],
                 'ClientDetail' => [
-                    'AccountNumber' => $this->credentials->getAccountNumber(),
-                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                    'AccountNumber' => $this->credentials->accountNumber,
+                    'MeterNumber' => $this->credentials->meterNumber,
                 ],
                 'Version' => [
                     'ServiceId' => 'crs',
@@ -186,7 +186,7 @@ class Service implements ServiceInterface
                         'PaymentType' => 'SENDER',
                         'Payor' => [
                             'ResponsibleParty' => [
-                                'AccountNumber' => $this->credentials->getAccountNumber(),
+                                'AccountNumber' => $this->credentials->accountNumber,
                             ],
                         ],
                     ],
@@ -241,13 +241,13 @@ EOD;
             'TrackRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
-                        'Key' => $this->credentials->getCredentialKey(),
-                        'Password' => $this->credentials->getCredentialPassword(),
+                        'Key' => $this->credentials->credentialKey,
+                        'Password' => $this->credentials->credentialPassword,
                     ],
                 ],
                 'ClientDetail' => [
-                    'AccountNumber' => $this->credentials->getAccountNumber(),
-                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                    'AccountNumber' => $this->credentials->accountNumber,
+                    'MeterNumber' => $this->credentials->meterNumber,
                 ],
                 'Version' => [
                     'ServiceId' => 'trck',
@@ -472,13 +472,13 @@ EOD;
             'ProcessShipmentRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
-                        'Key' => $this->credentials->getCredentialKey(),
-                        'Password' => $this->credentials->getCredentialPassword(),
+                        'Key' => $this->credentials->credentialKey,
+                        'Password' => $this->credentials->credentialPassword,
                     ],
                 ],
                 'ClientDetail' => [
-                    'AccountNumber' => $this->credentials->getAccountNumber(),
-                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                    'AccountNumber' => $this->credentials->accountNumber,
+                    'MeterNumber' => $this->credentials->meterNumber,
                 ],
                 'Version' => [
                     'ServiceId' => 'ship',
@@ -522,7 +522,7 @@ EOD;
                         'PaymentType' => 'SENDER',
                         'Payor' => [
                             'ResponsibleParty' => [
-                                'AccountNumber' => $this->credentials->getAccountNumber(),
+                                'AccountNumber' => $this->credentials->accountNumber,
                             ],
                         ],
                     ],
@@ -536,7 +536,7 @@ EOD;
                                 'RECIPIENT',
                             'Payor' => [
                                 'ResponsibleParty' => [
-                                    'AccountNumber' => $this->credentials->getAccountNumber(),
+                                    'AccountNumber' => $this->credentials->accountNumber,
                                 ],
                             ],
                         ],
@@ -668,13 +668,13 @@ EOD;
             'DeleteShipmentRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
-                        'Key' => $this->credentials->getCredentialKey(),
-                        'Password' => $this->credentials->getCredentialPassword(),
+                        'Key' => $this->credentials->credentialKey,
+                        'Password' => $this->credentials->credentialPassword,
                     ],
                 ],
                 'ClientDetail' => [
-                    'AccountNumber' => $this->credentials->getAccountNumber(),
-                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                    'AccountNumber' => $this->credentials->accountNumber,
+                    'MeterNumber' => $this->credentials->meterNumber,
                 ],
                 'Version' => [
                     'ServiceId' => 'ship',
@@ -743,13 +743,13 @@ EOD;
             'ServiceAvailabilityRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
-                        'Key' => $this->credentials->getCredentialKey(),
-                        'Password' => $this->credentials->getCredentialPassword(),
+                        'Key' => $this->credentials->credentialKey,
+                        'Password' => $this->credentials->credentialPassword,
                     ],
                 ],
                 'ClientDetail' => [
-                    'AccountNumber' => $this->credentials->getAccountNumber(),
-                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                    'AccountNumber' => $this->credentials->accountNumber,
+                    'MeterNumber' => $this->credentials->meterNumber,
                 ],
                 'Version' => [
                     'ServiceId' => 'vacs',
@@ -823,13 +823,13 @@ EOD;
             'GetTrackingDocumentsRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
-                        'Key' => $this->credentials->getCredentialKey(),
-                        'Password' => $this->credentials->getCredentialPassword(),
+                        'Key' => $this->credentials->credentialKey,
+                        'Password' => $this->credentials->credentialPassword,
                     ],
                 ],
                 'ClientDetail' => [
-                    'AccountNumber' => $this->credentials->getAccountNumber(),
-                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                    'AccountNumber' => $this->credentials->accountNumber,
+                    'MeterNumber' => $this->credentials->meterNumber,
                 ],
                 'Version' => [
                     'ServiceId' => 'trck',
@@ -842,7 +842,7 @@ EOD;
                         'Type' => 'TRACKING_NUMBER_OR_DOORTAG',
                         'Value' => $trackingNumber,
                     ],
-                    'SecureSpodAccount' => $this->credentials->getAccountNumber(),
+                    'SecureSpodAccount' => $this->credentials->accountNumber,
                 ],
                 'TrackingDocumentSpecification' => [
                     'DocumentTypes' => 'SIGNATURE_PROOF_OF_DELIVERY',
@@ -907,13 +907,13 @@ EOD;
             'CreatePickupRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
-                        'Key' => $this->credentials->getCredentialKey(),
-                        'Password' => $this->credentials->getCredentialPassword(),
+                        'Key' => $this->credentials->credentialKey,
+                        'Password' => $this->credentials->credentialPassword,
                     ],
                 ],
                 'ClientDetail' => [
-                    'AccountNumber' => $this->credentials->getAccountNumber(),
-                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                    'AccountNumber' => $this->credentials->accountNumber,
+                    'MeterNumber' => $this->credentials->meterNumber,
                 ],
                 'Version' => [
                     'ServiceId' => 'disp',
@@ -1036,13 +1036,13 @@ EOD;
             'CancelPickupRequest' => [
                 'WebAuthenticationDetail' => [
                     'UserCredential' => [
-                        'Key' => $this->credentials->getCredentialKey(),
-                        'Password' => $this->credentials->getCredentialPassword(),
+                        'Key' => $this->credentials->credentialKey,
+                        'Password' => $this->credentials->credentialPassword,
                     ],
                 ],
                 'ClientDetail' => [
-                    'AccountNumber' => $this->credentials->getAccountNumber(),
-                    'MeterNumber' => $this->credentials->getMeterNumber(),
+                    'AccountNumber' => $this->credentials->accountNumber,
+                    'MeterNumber' => $this->credentials->meterNumber,
                 ],
                 'Version' => [
                     'ServiceId' => 'disp',

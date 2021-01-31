@@ -8,32 +8,21 @@ use JsonSerializable;
 
 class Tracking implements JsonSerializable
 {
-    /**
-     * @var string
-     */
-    public $vendor;
-
-    /**
-     * @var string
-     */
-    public $service;
+    public string $vendor;
+    public string $service;
 
     /**
      * Activities are not guaranteed to be sorted chronologically.
      *
      * @var TrackingActivity[]
      */
-    public $activities;
+    public array $activities;
 
     /**
      * @var Parcel[]
      */
-    public $parcels = [];
-
-    /**
-     * @var DateTimeInterface|null
-     */
-    public $estimatedDeliveryDate;
+    public array $parcels = [];
+    public ?DateTimeInterface $estimatedDeliveryDate = null;
 
     /**
      * Tracking constructor.
@@ -48,9 +37,6 @@ class Tracking implements JsonSerializable
         $this->activities = $activities;
     }
 
-    /**
-     * @return array
-     */
     public function toArray(): array
     {
         return [
@@ -61,10 +47,7 @@ class Tracking implements JsonSerializable
         ];
     }
 
-    /**
-     * @return array
-     */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return $this->toArray();
     }

@@ -4,6 +4,10 @@ declare(strict_types = 1);
 namespace Vinnia\Shipping\UPS;
 
 use DateTimeImmutable;
+use DateTimeZone;
+use Exception;
+use LogicException;
+
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
 use Vinnia\Util\Measurement\Centimeter;
@@ -13,7 +17,7 @@ use Vinnia\Util\Measurement\Pound;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
-use LogicException;
+
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
@@ -82,11 +86,11 @@ class Service implements ServiceInterface
         $body = [
             'UPSSecurity' => [
                 'UsernameToken' => [
-                    'Username' => $this->credentials->getUsername(),
-                    'Password' => $this->credentials->getPassword(),
+                    'Username' => $this->credentials->username,
+                    'Password' => $this->credentials->password,
                 ],
                 'ServiceAccessToken' => [
-                    'AccessLicenseNumber' => $this->credentials->getAccessLicense(),
+                    'AccessLicenseNumber' => $this->credentials->accessLicense,
                 ],
             ],
             'RateRequest' => [
@@ -189,9 +193,6 @@ class Service implements ServiceInterface
         });
     }
 
-    /**
-     * @inheritdoc
-     */
     public function getTrackingStatus(array $trackingNumbers, array $options = []): PromiseInterface
     {
         if (count($trackingNumbers) > 1) {
@@ -202,11 +203,11 @@ class Service implements ServiceInterface
         $body = [
             'UPSSecurity' => [
                 'UsernameToken' => [
-                    'Username' => $this->credentials->getUsername(),
-                    'Password' => $this->credentials->getPassword(),
+                    'Username' => $this->credentials->username,
+                    'Password' => $this->credentials->password,
                 ],
                 'ServiceAccessToken' => [
-                    'AccessLicenseNumber' => $this->credentials->getAccessLicense(),
+                    'AccessLicenseNumber' => $this->credentials->accessLicense,
                 ],
             ],
             'TrackRequest' => [
@@ -240,7 +241,7 @@ class Service implements ServiceInterface
                 //They only supply the date so let's set time to 12 to cover most of the world
                 $estimatedDelivery = DateTimeImmutable::createFromFormat(
                     'Ymd H:i:s',
-                    $deliveryDetail['Date'].' 12:00:00', new \DateTimeZone('UTC')
+                    $deliveryDetail['Date'].' 12:00:00', new DateTimeZone('UTC')
                 );
             }
 
@@ -269,7 +270,7 @@ class Service implements ServiceInterface
                         '',
                         $row['ActivityLocation']['Address']['CountryCode'] ?? ''
                     );
-                    $date = \DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
+                    $date = DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
                     $status = $this->getStatusFromType($row['Status']['Type']);
                     $description = $row['Status']['Description'] ?? '';
                     return new TrackingActivity($status, $description, $date, $address);
@@ -298,10 +299,6 @@ class Service implements ServiceInterface
         });
     }
 
-    /**
-     * @param string $type
-     * @return int
-     */
     private function getStatusFromType(string $type): int
     {
         $type = mb_strtoupper($type, 'utf-8');
@@ -318,61 +315,33 @@ class Service implements ServiceInterface
         return TrackingActivity::STATUS_IN_TRANSIT;
     }
 
-    /**
-     * @param ShipmentRequest $request
-     * @return PromiseInterface
-     */
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        // TODO: Implement createLabel() method.
+        throw new Exception('Not implemented.');
     }
 
-    /**
-     * @param string $id
-     * @param array $data
-     * @return PromiseInterface
-     */
     public function cancelShipment(string $id, array $data = []): PromiseInterface
     {
         return new FulfilledPromise(true);
     }
 
-    /**
-     * @param QuoteRequest $request
-     * @return PromiseInterface promise resolved with an array of strings
-     */
     public function getAvailableServices(QuoteRequest $request): PromiseInterface
     {
         return Create::promiseFor([]);
     }
 
-    /**
-     * @param string $trackingNumber
-     * @return PromiseInterface
-     * @throws \Exception
-     */
     public function getProofOfDelivery(string $trackingNumber): PromiseInterface
     {
-        throw new \Exception('Not implemented');
+        throw new Exception('Not implemented.');
     }
 
-    /**
-     * @param PickupRequest $request
-     * @return PromiseInterface
-     * @throws \Exception
-     */
     public function createPickup(PickupRequest $request): PromiseInterface
     {
-        throw new \Exception('Not implemented');
+        throw new Exception('Not implemented.');
     }
 
-    /**
-     * @param CancelPickupRequest $request
-     * @return PromiseInterface
-     * @throws \Exception
-     */
     public function cancelPickup(CancelPickupRequest $request): PromiseInterface
     {
-        throw new \Exception('Not implemented');
+        throw new Exception('Not implemented.');
     }
 }

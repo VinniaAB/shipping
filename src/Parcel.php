@@ -16,13 +16,6 @@ class Parcel implements JsonSerializable
     public Amount $length;
     public Amount $weight;
 
-    /**
-     * Package constructor.
-     * @param Amount $width
-     * @param Amount $height
-     * @param Amount $length
-     * @param Amount $weight
-     */
     public function __construct(Amount $width, Amount $height, Amount $length, Amount $weight)
     {
         $this->width = $width;

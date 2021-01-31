@@ -3,6 +3,12 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping\TNT;
 
+use DateTimeImmutable;
+use DateTimeZone;
+use Exception;
+use LogicException;
+use SimpleXMLElement;
+
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
 use Vinnia\Shipping\TimezoneDetector;
@@ -11,7 +17,7 @@ use Vinnia\Util\Measurement\Meter;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
-use LogicException;
+
 use Money\Currency;
 use Money\Money;
 use Psr\Http\Message\ResponseInterface;
@@ -31,9 +37,6 @@ use Vinnia\Shipping\TrackingResult;
 use Vinnia\Util\Collection;
 use Vinnia\Util\Measurement\Unit;
 use Vinnia\Util\Text\Xml;
-use DateTimeImmutable;
-use DateTimeZone;
-use SimpleXMLElement;
 
 class Service implements ServiceInterface
 {
@@ -93,8 +96,8 @@ class Service implements ServiceInterface
          <type>N</type>
       </product>
       <account>
-        <accountNumber>{$this->credentials->getAccountNumber()}</accountNumber>
-        <accountCountry>{$this->credentials->getAccountCountry()}</accountCountry>
+        <accountNumber>{$this->credentials->accountNumber}</accountNumber>
+        <accountCountry>{$this->credentials->accountCountry}</accountCountry>
       </account>
       <currency>EUR</currency>
       <priceBreakDown>false</priceBreakDown>
@@ -117,7 +120,7 @@ EOD;
                 'Accept' => 'text/xml',
                 'Content-Type' => 'text/xml',
             ],
-            'auth' => [$this->credentials->getUsername(), $this->credentials->getPassword(), 'basic'],
+            'auth' => [$this->credentials->username, $this->credentials->password, 'basic'],
             'body' => $body,
         ])->then(function (ResponseInterface $response): array {
             $body = (string) $response->getBody();
@@ -164,7 +167,7 @@ EOD;
                 'Accept' => 'text/xml',
                 'Content-Type' => 'application/x-www-form-urlencoded',
             ],
-            'auth' => [$this->credentials->getUsername(), $this->credentials->getPassword(), 'basic'],
+            'auth' => [$this->credentials->username, $this->credentials->password, 'basic'],
 
             // yes, TNT wants url-encoded XML for this endpoint.
             'form_params' => [
@@ -222,10 +225,6 @@ EOD;
         });
     }
 
-    /**
-     * @param string $code
-     * @return int
-     */
     private function getStatusFromCode(string $code): int
     {
         $code = mb_strtoupper($code, 'utf-8');
@@ -238,61 +237,33 @@ EOD;
         return TrackingActivity::STATUS_IN_TRANSIT;
     }
 
-    /**
-     * @param ShipmentRequest $request
-     * @return PromiseInterface
-     */
     public function createShipment(ShipmentRequest $request): PromiseInterface
     {
-        // TODO: Implement createLabel() method.
+        throw new Exception('Not implemented.');
     }
 
-    /**
-     * @param string $id
-     * @param array $data
-     * @return PromiseInterface
-     */
     public function cancelShipment(string $id, array $data = []): PromiseInterface
     {
         return new FulfilledPromise(true);
     }
 
-    /**
-     * @param QuoteRequest $request
-     * @return PromiseInterface promise resolved with an array of strings
-     */
     public function getAvailableServices(QuoteRequest $request): PromiseInterface
     {
         return Create::promiseFor([]);
     }
 
-    /**
-     * @param string $trackingNumber
-     * @return PromiseInterface
-     * @throws \Exception
-     */
     public function getProofOfDelivery(string $trackingNumber): PromiseInterface
     {
-        throw new \Exception('Not implemented');
+        throw new Exception('Not implemented.');
     }
 
-    /**
-     * @param PickupRequest $request
-     * @return PromiseInterface
-     * @throws \Exception
-     */
     public function createPickup(PickupRequest $request): PromiseInterface
     {
-        throw new \Exception('Not implemented');
+        throw new Exception('Not implemented.');
     }
 
-    /**
-     * @param CancelPickupRequest $request
-     * @return PromiseInterface
-     * @throws \Exception
-     */
     public function cancelPickup(CancelPickupRequest $request): PromiseInterface
     {
-        throw new \Exception('Not implemented');
+        throw new Exception('Not implemented.');
     }
 }
