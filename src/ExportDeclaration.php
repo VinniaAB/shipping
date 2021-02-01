@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace Vinnia\Shipping;
 
-use Vinnia\Util\Measurement\Amount;
+use Vinnia\Util\Measurement\Mass;
 
 class ExportDeclaration
 {
@@ -12,7 +12,7 @@ class ExportDeclaration
     public int $quantity;
     public float $value;
     public string $currency;
-    public Amount $weight;
+    public Mass $weight;
 
     public function __construct(
         string $description,
@@ -20,7 +20,7 @@ class ExportDeclaration
         int $quantity,
         float $value,
         string $currency,
-        Amount $weight
+        Mass $weight
     ) {
         $this->description = $description;
         $this->originCountryCode = $originCountryCode;

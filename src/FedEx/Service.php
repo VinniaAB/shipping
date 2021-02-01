@@ -13,6 +13,7 @@ use GuzzleHttp\Exception\ServerException;
 use Vinnia\Util\Measurement\Centimeter;
 use Vinnia\Util\Measurement\Inch;
 use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\Mass;
 use Vinnia\Util\Measurement\Pound;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -420,7 +421,7 @@ EOD;
         $totalWeight = array_reduce(
             $parcels,
             fn ($carry, $parcel) => $carry->add($parcel->weight),
-            new Amount(0, $weightUnit)
+            new Mass(0.0, $weightUnit)
         );
 
         /* @var Shipment[] $shipments */
@@ -462,7 +463,7 @@ EOD;
     protected function buildShipmentRequestBody(
         ShipmentRequest $request,
         int $parcelIndex,
-        Amount $totalWeight,
+        Mass $totalWeight,
         ?string $masterTrackingId = null
     ): string {
         [$lengthUnit, $weightUnit] = $request->determineUnits();
