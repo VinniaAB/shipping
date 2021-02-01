@@ -7,6 +7,8 @@ use DateTimeInterface;
 use Vinnia\Util\Measurement\Centimeter;
 use Vinnia\Util\Measurement\Inch;
 use Vinnia\Util\Measurement\Kilogram;
+use Vinnia\Util\Measurement\LengthUnit;
+use Vinnia\Util\Measurement\MassUnit;
 use Vinnia\Util\Measurement\Pound;
 use Vinnia\Util\Measurement\Unit;
 
@@ -66,7 +68,7 @@ class PickupRequest
     }
 
     /**
-     * @return Unit[]
+     * @return array<LengthUnit | MassUnit>
      */
     public function determineUnits(): array
     {
