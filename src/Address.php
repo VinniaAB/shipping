@@ -85,6 +85,11 @@ class Address implements JsonSerializable
         );
     }
 
+    public static function empty(): self
+    {
+        return new Address('', '', '', '', '', '', '', '');
+    }
+
     public function __toString(): string
     {
         $parts = [
