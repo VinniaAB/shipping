@@ -9,7 +9,9 @@ use Vinnia\Util\Collection;
 class Address implements JsonSerializable
 {
     public string $name;
-    public array $lines;
+    public string $address1;
+    public string $address2;
+    public string $address3;
     public string $zip;
     public string $city;
     public string $state;
@@ -18,21 +20,11 @@ class Address implements JsonSerializable
     public string $contactPhone;
     public string $contactEmail;
 
-    /**
-     * Address constructor.
-     * @param string $name
-     * @param string[] $lines
-     * @param string $zip
-     * @param string $city
-     * @param string $state
-     * @param string $countryCode
-     * @param string $contactName
-     * @param string $contactPhone
-     * @param string $contactEmail
-     */
     public function __construct(
         string $name,
-        array $lines,
+        string $address1,
+        string $address2,
+        string $address3,
         string $zip,
         string $city,
         string $state,
@@ -42,7 +34,9 @@ class Address implements JsonSerializable
         string $contactEmail = ''
     ) {
         $this->name = $name;
-        $this->lines = $lines;
+        $this->address1 = $address1;
+        $this->address2 = $address2;
+        $this->address3 = $address3;
         $this->zip = $zip;
         $this->city = $city;
         $this->state = $state;
@@ -56,7 +50,9 @@ class Address implements JsonSerializable
     {
         return [
             'name' => $this->name,
-            'lines' => $this->lines,
+            'address1' => $this->address1,
+            'address2' => $this->address2,
+            'address3' => $this->address3,
             'zip' => $this->zip,
             'city' => $this->city,
             'state' => $this->state,
@@ -76,7 +72,9 @@ class Address implements JsonSerializable
     {
         return new Address(
             $data['name'] ?? '',
-            $data['lines'] ?? ['', '', ''],
+            $data['address1'] ?? '',
+            $data['address2'] ?? '',
+            $data['address3'] ?? '',
             $data['zip'] ?? '',
             $data['city'] ?? '',
             $data['state'] ?? '',
@@ -91,9 +89,9 @@ class Address implements JsonSerializable
     {
         $parts = [
             $this->name,
-            $this->lines[0] ?? '',
-            $this->lines[1] ?? '',
-            $this->lines[2] ?? '',
+            $this->address1 ?: '',
+            $this->address2 ?: '',
+            $this->address3 ?: '',
             $this->zip . ' ' . $this->city,
             $this->state,
             $this->countryCode,

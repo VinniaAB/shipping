@@ -204,7 +204,7 @@ EOD;
 
                     // unfortunately TNT only supplies a "Depot" and "DepotName" for the location
                     // of the status update so we can't really create a good address from it.
-                    $address = new Address('', [], '', $depot, '', '');
+                    $address = new Address('', '', '', '', '', $depot, '', '');
                     $tz = $this->timezoneDetector->findByCity($depot) ?? 'UTC';
                     $dt = DateTimeImmutable::createFromFormat(
                         'YmdHi',

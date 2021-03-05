@@ -102,7 +102,11 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
             ],
             'Consignee' => [
                 'CompanyName' => $request->recipient->name,
-                'AddressLine' => array_filter($request->recipient->lines),
+                'AddressLine' => array_filter([
+                    $request->recipient->address1,
+                    $request->recipient->address2,
+                    $request->recipient->address3,
+                ]),
                 'City' => $request->recipient->city,
                 'PostalCode' => $request->recipient->zip,
                 'CountryCode' => $request->recipient->countryCode,
@@ -160,7 +164,11 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
             'Shipper' => [
                 'ShipperID' => $this->credentials->accountNumber,
                 'CompanyName' => $request->sender->name,
-                'AddressLine' => $request->sender->lines,
+                'AddressLine' => array_filter([
+                    $request->sender->address1,
+                    $request->sender->address2,
+                    $request->sender->address3,
+                ]),
                 'City' => $request->sender->city,
                 'PostalCode' => $request->sender->zip,
                 'CountryCode' => $request->sender->countryCode,

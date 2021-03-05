@@ -105,7 +105,11 @@ class Service implements ServiceInterface
                         'Name' => '',
                         'ShipperNumber' => '',
                         'Address' => [
-                            'AddressLine' => array_filter($sender->lines),
+                            'AddressLine' => array_filter([
+                                $sender->address1,
+                                $sender->address2,
+                                $sender->address3,
+                            ]),
                             'City' => $sender->city,
                             'StateProvinceCode' => '',
                             'PostalCode' => $sender->zip,
@@ -115,7 +119,11 @@ class Service implements ServiceInterface
                     'ShipTo' => [
                         'Name' => '',
                         'Address' => [
-                            'AddressLine' => array_filter($recipient->lines),
+                            'AddressLine' => array_filter([
+                                $recipient->address1,
+                                $recipient->address2,
+                                $recipient->address3,
+                            ]),
                             'City' => $recipient->city,
                             'StateProvinceCode' => $recipient->state,
                             'PostalCode' => $recipient->zip,
@@ -125,7 +133,11 @@ class Service implements ServiceInterface
                     'ShipFrom' => [
                         'Name' => '',
                         'Address' => [
-                            'AddressLine' => array_filter($sender->lines),
+                            'AddressLine' => array_filter([
+                                $sender->address1,
+                                $sender->address2,
+                                $sender->address3,
+                            ]),
                             'City' => $sender->city,
                             'StateProvinceCode' => $sender->state,
                             'PostalCode' => $sender->zip,
@@ -264,7 +276,9 @@ class Service implements ServiceInterface
                 $activities = (new Collection($activities))->map(function (array $row): TrackingActivity {
                     $address = new Address(
                         '',
-                        [],
+                        '',
+                        '',
+                        '',
                         $row['ActivityLocation']['Address']['PostalCode'] ?? '',
                         $row['ActivityLocation']['Address']['City'] ?? '',
                         '',

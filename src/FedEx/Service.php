@@ -85,13 +85,11 @@ class Service implements ServiceInterface
         // fedex only supports 2 street lines so
         // let's put everything that overflows
         // into the 2nd line.
-        $lines = [
-            $address->lines[0] ?? '',
-            implode(', ', array_slice($address->lines, 1)),
-        ];
-
         $addressArray = [
-            'StreetLines' => array_filter($lines),
+            'StreetLines' => [
+                $address->address1,
+                ($address->address2 . ',' . $address->address3),
+            ],
             'City' => $address->city,
             'StateOrProvinceCode' => $address->state,
             'PostalCode' => $address->zip,
@@ -326,7 +324,9 @@ EOD;
                     $dt = new DateTimeImmutable($element['Timestamp']);
                     $address = new Address(
                         '',
-                        [],
+                        '',
+                        '',
+                        '',
                         $element['Address']['PostalCode'] ?? '',
                         $element['Address']['City'] ?? '',
                         $element['Address']['StateOrProvinceCode'] ?? '',

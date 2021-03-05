@@ -253,7 +253,7 @@ EOD;
                     // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
                     $addressParts = array_map('trim', explode('-', $area['Description'] ?? ''));
 
-                    $address = new Address('', [], '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
+                    $address = new Address('', '', '', '', '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
 
                     $dtString = ((string)$element['Date']) . ' ' . ((string)$element['Time']);
                     $tz = $this->timezoneDetector->findByCity($addressParts[0]) ?? 'UTC';
@@ -425,9 +425,9 @@ EOD;
                     'Phone' => $request->requestorAddress->contactPhone,
                 ],
                 'CompanyName' => $request->requestorAddress->name,
-                'Address1' => $request->requestorAddress->lines[0] ?? '',
-                'Address2' => $request->requestorAddress->lines[1] ?? '',
-                'Address3' => $request->requestorAddress->lines[2] ?? '',
+                'Address1' => $request->requestorAddress->address1 ?: '',
+                'Address2' => $request->requestorAddress->address2 ?: '',
+                'Address3' => $request->requestorAddress->address3 ?: '',
                 'City' => $request->requestorAddress->city,
                 'CountryCode' => $request->requestorAddress->countryCode,
                 'PostalCode' => $request->requestorAddress->zip,
@@ -435,9 +435,9 @@ EOD;
             'Place' => [
                 'LocationType' => $this->formatLocationType($request->locationType), // B - Business, R - Residence, C- (Business/Residence)
                 'CompanyName' => $request->pickupAddress->name,
-                'Address1' => $request->pickupAddress->lines[0] ?? '',
-                'Address2' => $request->pickupAddress->lines[1] ?? '',
-                'Address3' => $request->pickupAddress->lines[2] ?? '',
+                'Address1' => $request->pickupAddress->address1 ?: '',
+                'Address2' => $request->pickupAddress->address2 ?: '',
+                'Address3' => $request->pickupAddress->address3 ?: '',
                 'PackageLocation' => '',
                 'City' => $request->pickupAddress->city,
                 'StateCode' => $request->pickupAddress->state,
