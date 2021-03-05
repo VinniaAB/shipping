@@ -66,7 +66,9 @@ TXT;
 
         $sender = new Address(
             'Some Company',
-            ['Bächlerstrasse 1'],
+            'Bächlerstrasse 1',
+            '',
+            '',
             '8802',
             'Kilchberg',
             '',
@@ -76,7 +78,9 @@ TXT;
         );
         $recipient = new Address(
             'Some Other Company',
-            ['1 Bakers Road'],
+            '1 Bakers Road',
+            '',
+            '',
             'UB8 1RG',
             'Uxbridge',
             '',
@@ -107,7 +111,9 @@ TXT;
 
         $sender = new Address(
             'Some Company',
-            ['Bächlerstrasse 1'],
+            'Bächlerstrasse 1',
+            '',
+            '',
             '8802',
             'Kilchberg',
             '',
@@ -117,7 +123,9 @@ TXT;
         );
         $recipient = new Address(
             'Some Other Company',
-            ['1 Bakers Road'],
+            '1 Bakers Road',
+            '',
+            '',
             'UB8 1RG',
             'Uxbridge',
             '',
