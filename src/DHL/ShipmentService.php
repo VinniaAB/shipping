@@ -135,7 +135,7 @@ class ShipmentService extends ServiceLike implements ShipmentServiceInterface
                         'Quantity' => $decl->quantity,
                         'QuantityUnit' => 'PCS',
                         'Description' => $decl->description,
-                        'Value' => number_format($decl->value, 2, '.', ''),
+                        'Value' => number_format($decl->value / $decl->quantity, 2, '.', ''),
                         'Weight' => $weight,
                         'GrossWeight' => $weight,
                         'ManufactureCountryCode' => $decl->originCountryCode,
