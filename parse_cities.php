@@ -6,7 +6,7 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
-$handle = fopen($argv[1], 'r');
+$handle = fopen($argv[1], 'rb');
 $out = [];
 
 while ($parts = fgetcsv($handle, 0, "\t")) {
@@ -16,20 +16,15 @@ while ($parts = fgetcsv($handle, 0, "\t")) {
         continue;
     }
 
+    $countryCode = $parts[8];
     $city = \Vinnia\Shipping\TimezoneDetector::normalize($parts[2]);
-    $chr = $city[0];
 
     // index the array by the first character of the city.
-    if (!isset($out[$chr])) {
-        $out[$chr] = [];
+    if (!isset($out[$countryCode])) {
+        $out[$countryCode] = [];
     }
 
-    // don't overwrite stuff...
-    if (isset($out[$chr][$city])) {
-        continue;
-    }
-
-    $out[$chr][$city] = $tz;
+    $out[$countryCode][$city] = $tz;
 }
 
 fclose($handle);

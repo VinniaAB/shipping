@@ -4,10 +4,10 @@ namespace Vinnia\Shipping;
 
 use Normalizer;
 
-class TimezoneDetector
+final class TimezoneDetector
 {
     /**
-     * @var array<string, string>
+     * @var array<string, array<string, string>>
      */
     protected array $timezoneMap;
     protected float $matchThreshold;
@@ -43,22 +43,32 @@ class TimezoneDetector
     public function findByCity(string $city): ?string
     {
         $city = static::normalize($city);
-        $chr = $city[0] ?? null;
 
-        if (!$chr) {
-            return null;
+        foreach ($this->timezoneMap as $countryCode => $cities) {
+            if ($match = $this->findMatchFromCities($cities, $city)) {
+                return $match;
+            }
         }
 
-        $timezones = $this->timezoneMap[$chr] ?? [];
-        ksort($timezones);
+        return null;
+    }
 
-        // we found an exact match
-        if (isset($timezones[$city])) {
-            return $timezones[$city];
+    public function findByCountryAndCity(string $countryCode, string $city): ?string
+    {
+        $city = static::normalize($city);
+        $cities = $this->timezoneMap[$countryCode] ?? [];
+
+        return $this->findMatchFromCities($cities, $city);
+    }
+
+    protected function findMatchFromCities(array $cities, string $city): ?string
+    {
+        if (isset($cities[$city])) {
+            return $cities[$city];
         }
 
         // if we didn't find an exact match, do some fuzzy searching.
-        foreach ($timezones as $maybeCity => $tz) {
+        foreach ($cities as $maybeCity => $tz) {
             similar_text($maybeCity, $city, $result);
 
             if ($result > $this->matchThreshold) {

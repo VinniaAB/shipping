@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\Response;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Credentials;
 use Vinnia\Shipping\DHL\Service;
+use Vinnia\Shipping\DHL\ServiceLike;
 use Vinnia\Shipping\DHL\ShipmentService;
 use Vinnia\Shipping\ExportDeclaration;
 use Vinnia\Shipping\Parcel;
@@ -302,5 +303,74 @@ XML;
 
         $this->assertCount(1, $results);
         $this->assertSame('2020-09-16T18:11:45+02:00', $results[0]->tracking->activities[0]->date->format('c'));
+    }
+
+    public function testUsesCountryInTimezoneLookup()
+    {
+        $xml = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<req:TrackingResponse xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com TrackingResponse.xsd">
+   <AWBInfo>
+      <AWBNumber>123</AWBNumber>
+      <Status>
+         <ActionStatus>success</ActionStatus>
+      </Status>
+      <ShipmentInfo>
+         <Pieces>1</Pieces>
+         <Weight>3.1</Weight>
+         <WeightUnit>K</WeightUnit>
+         <GlobalProductCode>U</GlobalProductCode>
+         <ShipmentEvent>
+            <Date>2020-09-16</Date>
+            <Time>18:11:45</Time>
+            <ServiceEvent>
+               <EventCode>PU</EventCode>
+               <Description>Shipment picked up</Description>
+            </ServiceEvent>
+            <Signatory />
+            <ServiceArea>
+               <ServiceAreaCode>AMS</ServiceAreaCode>
+               <Description>LONDON-CAN</Description>
+            </ServiceArea>
+         </ShipmentEvent>
+      </ShipmentInfo>
+      <Pieces>
+         <PieceInfo>
+            <PieceDetails>
+               <AWBNumber>123</AWBNumber>
+               <LicensePlate></LicensePlate>
+               <PieceNumber>1</PieceNumber>
+               <ActualDepth>44.5</ActualDepth>
+               <ActualWidth>30.0</ActualWidth>
+               <ActualHeight>8.5</ActualHeight>
+               <ActualWeight>3.1</ActualWeight>
+               <Depth>1.0</Depth>
+               <Width>1.0</Width>
+               <Height>1.0</Height>
+               <Weight>0.1</Weight>
+               <PackageType>YP</PackageType>
+               <DimWeight>2.27</DimWeight>
+               <WeightUnit>K</WeightUnit>
+            </PieceDetails>
+         </PieceInfo>
+      </Pieces>
+   </AWBInfo>
+   <LanguageCode>en</LanguageCode>
+</req:TrackingResponse>
+XML;
+
+        $service = new Service(
+            $this->createClient(),
+            new Credentials('', '', ''),
+            Service::URL_TEST
+        );
+
+        $this->responseQueue[] = new Response(200, [], $xml);
+
+        /* @var \Vinnia\Shipping\TrackingResult[] $results */
+        $results = $service->getTrackingStatus(['123'])->wait();
+
+        $this->assertCount(1, $results);
+        $this->assertSame('2020-09-16T18:11:45-04:00', $results[0]->tracking->activities[0]->date->format('c'));
     }
 }

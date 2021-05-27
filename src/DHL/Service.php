@@ -249,15 +249,26 @@ EOD;
                 $activities = (new Collection($events))->map(function (array $element) {
                     $area = $element['ServiceArea'];
                     $event = $element['ServiceEvent'];
+                    $tz = 'UTC';
+                    $address = Address::empty();
 
-                    // ServiceArea.Description is a string of format {CITY} - {COUNTRY}
-                    $addressParts = array_map('trim', explode('-', $area['Description'] ?? ''));
-
-                    $address = new Address('', '', '', '', '', $addressParts[0] ?? '', '', $addressParts[1] ?? '');
+                    // ServiceArea.Description is a string of format {CITY}-{COUNTRY_ISO3}
+                    // There might be several elements in the city name. One example of this
+                    // is "LONDON-HEATHROW-GBR". In this case Heathrow is irrelevant and we
+                    // are only interested in "LONDON".
+                    if (preg_match('/([^\-]+)-.*([A-Z]{3})$/', $area['Description'], $matches)) {
+                        $address = Address::fromArray([
+                            'city' => $matches[1],
+                            'country_code' => static::$countriesIso3ToIso2[$matches[2]],
+                        ]);
+                        $tz = $this->timezoneDetector->findByCountryAndCity(
+                            $address->countryCode,
+                            $address->city
+                        );
+                    }
 
                     $dtString = ((string)$element['Date']) . ' ' . ((string)$element['Time']);
-                    $tz = $this->timezoneDetector->findByCity($addressParts[0]) ?? 'UTC';
-                    $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString, new DateTimeZone($tz));
+                    $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString, new DateTimeZone($tz ?: 'UTC'));
 
                     // the description will sometimes include the location too.
                     $description = $event['Description'] ?? '';

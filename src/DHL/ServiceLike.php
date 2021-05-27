@@ -17,6 +17,10 @@ abstract class ServiceLike
     const URL_TEST = 'https://xmlpitest-ea.dhl.com/XMLShippingServlet';
     const URL_PRODUCTION = 'https://xmlpi-ea.dhl.com/XMLShippingServlet';
 
+    /**
+     * @var array<string, string>
+     */
+    protected static array $countriesIso3ToIso2 = [];
     protected ClientInterface $guzzle;
     protected Credentials $credentials;
     protected string $baseUrl;
@@ -36,6 +40,9 @@ abstract class ServiceLike
         $this->timezoneDetector = new TimezoneDetector(
             require __DIR__ . '/../../timezones.php'
         );
+        if (!static::$countriesIso3ToIso2) {
+            static::$countriesIso3ToIso2 = require __DIR__ . '/../../country_iso3_to_iso2.php';
+        }
     }
 
     protected function throwError(string $body): void

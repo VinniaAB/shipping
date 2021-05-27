@@ -13,11 +13,17 @@ class TimezoneDetectorTest extends TestCase
     public function setUp(): void
     {
         $this->detector = new TimezoneDetector([
-            'n' => [
-                'new york city' => 'America/New_York',
+            'CA' => [
+                'london' => 'America/Toronto',
             ],
-            's' => [
+            'GB' => [
+                'london' => 'Europe/London',
+            ],
+            'SE' => [
                 'stockholm' => 'Europe/Stockholm',
+            ],
+            'US' => [
+                'new york city' => 'America/New_York',
             ],
         ]);
     }
@@ -37,8 +43,17 @@ class TimezoneDetectorTest extends TestCase
      * @param string $city
      * @param string|null $expected
      */
-    public function testDetectsTimezone(string $city, ?string $expected)
+    public function testDetectsTimezoneByCity(string $city, ?string $expected)
     {
         $this->assertSame($expected, $this->detector->findByCity($city));
+    }
+
+    public function testDetectsTimezoneByCountryAndCity()
+    {
+        $tz = $this->detector->findByCountryAndCity('CA', 'London');
+        $this->assertSame('America/Toronto', $tz);
+
+        $tz = $this->detector->findByCountryAndCity('GB', 'London');
+        $this->assertSame('Europe/London', $tz);
     }
 }
