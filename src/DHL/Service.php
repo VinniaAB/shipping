@@ -256,10 +256,10 @@ EOD;
                     // There might be several elements in the city name. One example of this
                     // is "LONDON-HEATHROW-GBR". In this case Heathrow is irrelevant and we
                     // are only interested in "LONDON".
-                    if (preg_match('/([^\-]+)-.*([A-Z]{3})$/', $area['Description'], $matches)) {
+                    if (preg_match('/([^\-]+)-.*([A-Z]{3})$/', $area['Description'] ?? '', $matches)) {
                         $address = Address::fromArray([
                             'city' => $matches[1],
-                            'country_code' => static::$countriesIso3ToIso2[$matches[2]],
+                            'country_code' => static::$countriesIso3ToIso2[$matches[2]] ?? '',
                         ]);
                         $tz = $this->timezoneDetector->findByCountryAndCity(
                             $address->countryCode,
