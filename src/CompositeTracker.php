@@ -39,7 +39,7 @@ class CompositeTracker
                     return $trackingResult;
                 }
             }
-            return $trackings[0] ?? null;
+            return current($trackings[0]) ?? null;
         });
     }
 
