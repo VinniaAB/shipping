@@ -35,7 +35,7 @@ class CompositeTracker
             foreach ($trackings as $trackingResults) {
                 $trackingResult = current($trackingResults);
 
-                if (TrackingResult::STATUS_SUCCESS === $trackingResult->status) {
+                if ($trackingResult && TrackingResult::STATUS_SUCCESS === $trackingResult->status) {
                     return $trackingResult;
                 }
             }
