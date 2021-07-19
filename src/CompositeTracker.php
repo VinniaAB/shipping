@@ -28,11 +28,13 @@ class CompositeTracker
      */
     public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
     {
-        return $this->aggregate('getTrackingStatus', [$trackingNumber, $options])->then(function (array $trackings) {
+        return $this->aggregate('getTrackingStatus', [[$trackingNumber], $options])->then(function (array $trackings) {
             /**
              * @var TrackingResult $trackingResult
              */
-            foreach ($trackings as $trackingResult) {
+            foreach ($trackings as $trackingResults) {
+                $trackingResult = current($trackingResults);
+
                 if (TrackingResult::STATUS_SUCCESS === $trackingResult->status) {
                     return $trackingResult;
                 }
