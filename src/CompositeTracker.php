@@ -1,5 +1,5 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Vinnia\Shipping;
 
@@ -29,17 +29,8 @@ class CompositeTracker
     public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
     {
         return $this->aggregate('getTrackingStatus', [[$trackingNumber], $options])->then(function (array $trackings) {
-            /**
-             * @var TrackingResult $trackingResult
-             */
-            foreach ($trackings as $trackingResults) {
-                $trackingResult = current($trackingResults);
-
-                if ($trackingResult && TrackingResult::STATUS_SUCCESS === $trackingResult->status) {
-                    return $trackingResult;
-                }
-            }
-            return current($trackings[0]) ?? null;
+            //Broken out to own public method for testability down the line.
+            return $this->parseAggregateResults($trackings);
         });
     }
 
@@ -67,5 +58,25 @@ class CompositeTracker
             }
             return $results;
         });
+    }
+
+    /**
+     * @param array $trackings
+     * @return TrackingResult|null
+     */
+    public function parseAggregateResults(array $trackings): ?TrackingResult
+    {
+        /**
+         * @var TrackingResult $trackingResult
+         */
+        foreach ($trackings as $trackingResults) {
+            // Might be more than one trackingResult from each vendor
+            foreach ($trackingResults as $trackingResult) {
+                if ($trackingResult && TrackingResult::STATUS_SUCCESS === $trackingResult->status) {
+                    return $trackingResult;
+                }
+            }
+        }
+        return current($trackings[0]) ?? null;
     }
 }
