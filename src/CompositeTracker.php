@@ -30,7 +30,7 @@ class CompositeTracker
     {
         return $this->aggregate('getTrackingStatus', [[$trackingNumber], $options])->then(function (array $trackings) {
             //Broken out to own public method for testability down the line.
-            return $this->parseAggregateResults($trackings);
+            return $this->findSuccessOrFirst($trackings);
         });
     }
 
@@ -61,10 +61,11 @@ class CompositeTracker
     }
 
     /**
+     * Find the first successful match or return the first response.
      * @param array $trackings
      * @return TrackingResult|null
      */
-    public function parseAggregateResults(array $trackings): ?TrackingResult
+    public function findSuccessOrFirst(array $trackings): ?TrackingResult
     {
         /**
          * @var TrackingResult $trackingResult
@@ -77,6 +78,7 @@ class CompositeTracker
                 }
             }
         }
+        //No successful tracking found - return the first one
         return current($trackings[0]) ?? null;
     }
 }
