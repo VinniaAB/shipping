@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Vinnia\Shipping\Tests;
 
@@ -12,7 +12,6 @@ use Vinnia\Shipping\ShipmentRequest;
 
 class MockTrackerService implements ServiceInterface
 {
-
     private array $trackingResults;
 
     public function __construct(array $trackingResults)
