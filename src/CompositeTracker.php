@@ -29,7 +29,6 @@ class CompositeTracker
     public function getTrackingStatus(string $trackingNumber, array $options = []): PromiseInterface
     {
         return $this->aggregate('getTrackingStatus', [[$trackingNumber], $options])->then(function (array $trackings) {
-            //Broken out to own public method for testability down the line.
             return $this->findSuccessOrFirst($trackings);
         });
     }
@@ -65,7 +64,7 @@ class CompositeTracker
      * @param array $trackings
      * @return TrackingResult|null
      */
-    public function findSuccessOrFirst(array $trackings): ?TrackingResult
+    private function findSuccessOrFirst(array $trackings): ?TrackingResult
     {
         /**
          * @var TrackingResult $trackingResult
@@ -79,6 +78,7 @@ class CompositeTracker
             }
         }
         //No successful tracking found - return the first one
+        //Current returns the first element of the array regardless of the index
         return current($trackings[0]) ?? null;
     }
 }
