@@ -7,7 +7,16 @@
 require __DIR__ . '/vendor/autoload.php';
 
 $handle = fopen($argv[1], 'rb');
-$out = [];
+$out = [
+    'CH' => [
+        // the cities-files are using the french spelling
+        // "geneve" which is not what we want.
+        'geneva' => 'Europe/Zurich',
+    ],
+    'SE' => [
+        'arlanda' => 'Europe/Stockholm',
+    ],
+];
 
 while ($parts = fgetcsv($handle, 0, "\t")) {
     $tz = $parts[17] ?? '';
