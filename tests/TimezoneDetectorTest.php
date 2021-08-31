@@ -6,35 +6,31 @@ namespace Vinnia\Shipping\Tests;
 use PHPUnit\Framework\TestCase;
 use Vinnia\Shipping\TimezoneDetector;
 
-class TimezoneDetectorTest extends TestCase
+final class TimezoneDetectorTest extends TestCase
 {
     public TimezoneDetector $detector;
 
     public function setUp(): void
     {
-        $this->detector = new TimezoneDetector([
-            'CA' => [
-                'london' => 'America/Toronto',
-            ],
-            'GB' => [
-                'london' => 'Europe/London',
-            ],
-            'SE' => [
-                'stockholm' => 'Europe/Stockholm',
-            ],
-            'US' => [
-                'new york city' => 'America/New_York',
-            ],
-        ]);
+        $this->detector = new TimezoneDetector(
+            require __DIR__ . '/../timezones.php'
+        );
     }
 
     public function timezoneProvider()
     {
         return [
-            ['stockholm', 'Europe/Stockholm'],
-            ['stockhol', 'Europe/Stockholm'],
-            ['new york', null],
-            ['yee', null],
+            ['stockholm', '', 'Europe/Stockholm'],
+            ['stock', 'SE', 'Europe/Stockholm'],
+            ['stockhol', '', 'Europe/Stockholm'],
+            ['London', 'CA', 'America/Toronto'],
+            ['London', 'GB', 'Europe/London'],
+            ['new york', '', 'America/New_York'],
+            ['yee', '', null],
+            ['EAST MIDLANDS', 'GB', 'Europe/London'],
+            ['ONTARIO SERVICE AREA', 'CA', 'America/Toronto'],
+            ['CINCINNATI HUB', 'US', 'America/New_York'],
+            ['NEW YORK CITY GATEWAY', 'US', 'America/New_York'],
         ];
     }
 
@@ -43,17 +39,10 @@ class TimezoneDetectorTest extends TestCase
      * @param string $city
      * @param string|null $expected
      */
-    public function testDetectsTimezoneByCity(string $city, ?string $expected)
+    public function testDetectsTimezoneByCity(string $city, string $countryCode, ?string $expected)
     {
-        $this->assertSame($expected, $this->detector->findByCity($city));
-    }
+        $found = $this->detector->find($city, $countryCode);
 
-    public function testDetectsTimezoneByCountryAndCity()
-    {
-        $tz = $this->detector->findByCountryAndCity('CA', 'London');
-        $this->assertSame('America/Toronto', $tz);
-
-        $tz = $this->detector->findByCountryAndCity('GB', 'London');
-        $this->assertSame('Europe/London', $tz);
+        $this->assertSame($expected, $found->timezone ?? null);
     }
 }

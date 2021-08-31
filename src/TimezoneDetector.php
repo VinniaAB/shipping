@@ -6,21 +6,29 @@ use Normalizer;
 
 final class TimezoneDetector
 {
+    const EXPECTED_MINIMUM_SIMILARITY = 75.0;
+    const EXPECTED_SIMILARITY_BY_LENGTH = [
+        1 => 85.0,
+        2 => 85.0,
+        3 => 85.0,
+        4 => 80.0,
+        5 => 80.0,
+        6 => 80.0,
+        7 => self::EXPECTED_MINIMUM_SIMILARITY,
+    ];
+
     /**
      * @var array<string, array<string, string>>
      */
     protected array $timezoneMap;
-    protected float $matchThreshold;
 
     /**
      * TimezoneDetector constructor.
      * @param array<string, string> $timezoneMap
-     * @param float $matchThreshold
      */
-    public function __construct(array $timezoneMap, float $matchThreshold = 85.0)
+    public function __construct(array $timezoneMap)
     {
         $this->timezoneMap = $timezoneMap;
-        $this->matchThreshold = $matchThreshold;
     }
 
     public static function normalize(string $value): string
@@ -40,42 +48,54 @@ final class TimezoneDetector
         return strtolower($value);
     }
 
-    public function findByCity(string $city): ?string
+    public function find(string $location, string $countryCode = ''): ?TimezoneResult
     {
-        $city = static::normalize($city);
+        $location = static::normalize($location);
 
-        foreach ($this->timezoneMap as $countryCode => $cities) {
-            if ($match = $this->findMatchFromCities($cities, $city)) {
-                return $match;
+        // if we have a proper country code we can speed up
+        // the search by removing any other country.
+        $map = isset($this->timezoneMap[$countryCode])
+            ? [$countryCode => $this->timezoneMap[$countryCode]]
+            : $this->timezoneMap;
+
+        // attempt to find an exact match.
+        $found = $map[$countryCode][$location] ?? null;
+
+        if ($found) {
+            return new TimezoneResult($found, $location, $location);
+        }
+
+        $expectedSimilarity = static::EXPECTED_SIMILARITY_BY_LENGTH[strlen($location)]
+            ?? static::EXPECTED_MINIMUM_SIMILARITY;
+        $matchedTimezone = '';
+        $matchedLocation = '';
+        $mostSimilarPct = 0.0;
+
+        foreach ($map as $cities) {
+            foreach ($cities as $city => $timezone) {
+                if ($city === $location) {
+                    return new TimezoneResult(
+                        $timezone, $location, $city
+                    );
+                }
+
+                similar_text($location, $city, $similarity);
+
+                // if we have a country code we don't really care about the
+                // string similarity - we just want the most probable match.
+                //
+                // however, if we don't have a country code we don't want
+                // to randomly grab a timezone if the similarity is super low.
+                if (($countryCode || $similarity > $expectedSimilarity) && $similarity > $mostSimilarPct) {
+                    $matchedTimezone = $timezone;
+                    $matchedLocation = $city;
+                    $mostSimilarPct = $similarity;
+                }
             }
         }
 
-        return null;
-    }
-
-    public function findByCountryAndCity(string $countryCode, string $city): ?string
-    {
-        $city = static::normalize($city);
-        $cities = $this->timezoneMap[$countryCode] ?? [];
-
-        return $this->findMatchFromCities($cities, $city);
-    }
-
-    protected function findMatchFromCities(array $cities, string $city): ?string
-    {
-        if (isset($cities[$city])) {
-            return $cities[$city];
-        }
-
-        // if we didn't find an exact match, do some fuzzy searching.
-        foreach ($cities as $maybeCity => $tz) {
-            similar_text($maybeCity, $city, $result);
-
-            if ($result > $this->matchThreshold) {
-                return $tz;
-            }
-        }
-
-        return null;
+        return $matchedTimezone
+            ? new TimezoneResult($matchedTimezone, $location, $matchedLocation)
+            : null;
     }
 }

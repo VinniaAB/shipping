@@ -253,7 +253,7 @@ EOD;
                 $activities = (new Collection($events))->map(function (array $element) {
                     $area = $element['ServiceArea'];
                     $event = $element['ServiceEvent'];
-                    $tz = 'UTC';
+                    $tz = null;
                     $address = Address::empty();
 
                     // ServiceArea.Description is a string of format {CITY}-{COUNTRY_ISO3}
@@ -265,14 +265,14 @@ EOD;
                             'city' => $matches[1],
                             'country_code' => static::$countriesIso3ToIso2[$matches[2]] ?? '',
                         ]);
-                        $tz = $this->timezoneDetector->findByCountryAndCity(
-                            $address->countryCode,
-                            $address->city
+                        $tz = $this->timezoneDetector->find(
+                            $address->city,
+                            $address->countryCode
                         );
                     }
 
                     $dtString = ((string)$element['Date']) . ' ' . ((string)$element['Time']);
-                    $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString, new DateTimeZone($tz ?: 'UTC'));
+                    $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString, new DateTimeZone($tz->timezone ?? 'UTC'));
 
                     // the description will sometimes include the location too.
                     $description = $event['Description'] ?? '';
