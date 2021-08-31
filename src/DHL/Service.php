@@ -149,6 +149,10 @@ EOD;
                 $this->throwError($body);
             }
 
+            if (!Arrays::isNumericKeyArray($qtdShip)) {
+                $qtdShip = [$qtdShip];
+            }
+
             $qtdShip = new Collection($qtdShip);
 
             // somestimes the DHL api responds with a correct response
