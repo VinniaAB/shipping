@@ -28,9 +28,8 @@
         "phpunit/phpunit": "~9.0"
     },
     "scripts": {
-        "lint": "php-cs-fixer fix --dry-run --diff --diff-format=\"udiff\" -vvv --ansi",
-        "lint:fix": "php-cs-fixer fix --diff --diff-format=\"udiff\" -vvv --ansi",
-        "test": "phpunit --verbose"
+        "lint": "@php -d xdebug.mode=off vendor/bin/php-cs-fixer fix --dry-run --diff --diff-format=\"udiff\" -vvv --ansi",
+        "test": "@php -d xdebug.mode=off vendor/bin/phpunit"
     },
     "autoload": {
         "psr-4": {
