@@ -333,7 +333,7 @@ EOD;
                         $element['Address']['CountryName'] ?? ''
                     );
 
-                    return new TrackingActivity($status, $description, $dt, $address);
+                    return new TrackingActivity($status, $description, $dt, $address, $element['Timestamp']);
                 })->value();
 
                 $dimensions = Arrays::get($item, 'TrackDetails.PackageDimensions', [

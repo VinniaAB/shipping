@@ -284,7 +284,7 @@ EOD;
                         $description .= ': ' . ((string)$element['Signatory'] ?: 'Not provided');
                     }
 
-                    return new TrackingActivity($status, $description, $dt, $address);
+                    return new TrackingActivity($status, $description, $dt, $address, $dtString);
                 })->value();
 
                 $pieceInfos = Arrays::get($element, 'Pieces.PieceInfo');

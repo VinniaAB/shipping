@@ -284,10 +284,11 @@ class Service implements ServiceInterface
                         '',
                         $row['ActivityLocation']['Address']['CountryCode'] ?? ''
                     );
-                    $date = DateTimeImmutable::createFromFormat('YmdHis', $row['Date'] . $row['Time']);
+                    $dtString = $row['Date'] . $row['Time'];
+                    $date = DateTimeImmutable::createFromFormat('YmdHis', $dtString);
                     $status = $this->getStatusFromType($row['Status']['Type']);
                     $description = $row['Status']['Description'] ?? '';
-                    return new TrackingActivity($status, $description, $date, $address);
+                    return new TrackingActivity($status, $description, $date, $address, $dtString);
                 })->value();
 
                 $parcels[] = Parcel::make(

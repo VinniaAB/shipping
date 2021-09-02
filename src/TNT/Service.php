@@ -206,14 +206,15 @@ EOD;
                     // of the status update so we can't really create a good address from it.
                     $address = new Address('', '', '', '', '', $depot, '', '');
                     $tz = $this->timezoneDetector->find($depot);
+                    $dtString = ((string) $e->LocalEventDate) . ((string) $e->LocalEventTime);
                     $dt = DateTimeImmutable::createFromFormat(
                         'YmdHi',
-                        ((string) $e->LocalEventDate) . ((string) $e->LocalEventTime),
+                        $dtString,
                         new DateTimeZone($tz->timezone ?? 'UTC')
                     );
                     $status = $this->getStatusFromCode((string) $e->StatusCode);
                     $description = (string) $e->StatusDescription;
-                    return new TrackingActivity($status, $description, $dt, $address);
+                    return new TrackingActivity($status, $description, $dt, $address, $dtString);
                 })->value();
 
                 $service = (string) $element->ShipmentSummary->Service;
