@@ -40,6 +40,7 @@ final class TrackingActivity implements JsonSerializable
             'description' => $this->description,
             'date' => $this->date->format('c'),
             'address' => $this->address,
+            'original_date' => $this->originalDate,
         ];
     }
 
