@@ -1,13 +1,13 @@
 <?php declare(strict_types = 1);
 
-$finder = PhpCsFixer\Finder::create()
+$finder = (new PhpCsFixer\Finder())
     ->in(__DIR__)
     ->path([
         '#src/#',
         '#tests/#',
     ]);
 
-return PhpCsFixer\Config::create()
+return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
     ->setRules([
         '@PSR1' => true,
@@ -30,6 +30,6 @@ return PhpCsFixer\Config::create()
         'no_blank_lines_after_class_opening' => true,
         'no_trailing_comma_in_list_call' => true,
         'no_trailing_whitespace_in_comment' => false,
-        'trailing_comma_in_multiline_array' => true,
+        'trailing_comma_in_multiline' => true,
     ])
     ->setFinder($finder);

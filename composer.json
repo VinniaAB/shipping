@@ -24,11 +24,11 @@
         "vinnia/util": "dev-master"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^2.16",
+        "friendsofphp/php-cs-fixer": "^3.2.1",
         "phpunit/phpunit": "~9.0"
     },
     "scripts": {
-        "lint": "@php -d xdebug.mode=off vendor/bin/php-cs-fixer fix --dry-run --diff --diff-format=\"udiff\" -vvv --ansi",
+        "lint": "@php -d xdebug.mode=off vendor/bin/php-cs-fixer fix --dry-run --diff -vvv --ansi",
         "test": "@php -d xdebug.mode=off vendor/bin/phpunit"
     },
     "autoload": {
