@@ -31,6 +31,8 @@ final class TimezoneDetectorTest extends TestCase
             ['ONTARIO SERVICE AREA', 'CA', 'America/Toronto'],
             ['CINCINNATI HUB', 'US', 'America/New_York'],
             ['NEW YORK CITY GATEWAY', 'US', 'America/New_York'],
+            ['SHANGHAI - CHINA MAINLAND', 'CN', 'Asia/Shanghai'],
+            ['EAST CHINA AREA', 'CN', 'Asia/Shanghai'],
         ];
     }
 

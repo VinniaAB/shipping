@@ -71,6 +71,7 @@ final class TimezoneDetector
         $matchedLocation = '';
         $mostSimilarPct = 0.0;
 
+        // attempt to find a timezone by matching the cities.
         foreach ($map as $cities) {
             foreach ($cities as $city => $timezone) {
                 if ($city === $location) {
@@ -81,17 +82,29 @@ final class TimezoneDetector
 
                 similar_text($location, $city, $similarity);
 
-                // if we have a country code we don't really care about the
-                // string similarity - we just want the most probable match.
-                //
-                // however, if we don't have a country code we don't want
-                // to randomly grab a timezone if the similarity is super low.
-                if (($countryCode || $similarity > $expectedSimilarity) && $similarity > $mostSimilarPct) {
+                if ($similarity > $expectedSimilarity && $similarity > $mostSimilarPct) {
                     $matchedTimezone = $timezone;
                     $matchedLocation = $city;
                     $mostSimilarPct = $similarity;
                 }
             }
+        }
+
+        // we could not find a timezone from the city name. just use
+        // the most common timezone in the country instead.
+        if (!$matchedTimezone && $countryCode) {
+            $timezonesByCount = array_count_values($map[$countryCode]);
+            $timezonesByCount = array_map(
+                fn (string $tz, int $count) => [$tz, $count],
+                array_keys($timezonesByCount),
+                array_values($timezonesByCount)
+            );
+
+            usort($timezonesByCount, function (array $a, array $b) {
+                return $b[1] <=> $a[1];
+            });
+
+            $matchedTimezone = $timezonesByCount[0][0] ?? null;
         }
 
         return $matchedTimezone
