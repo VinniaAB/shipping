@@ -6,10 +6,10 @@ namespace Vinnia\Shipping\Tests;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Promise\Create;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use function GuzzleHttp\Promise\promise_for;
 
 trait GuzzleTrait
 {
@@ -39,7 +39,7 @@ trait GuzzleTrait
             'handler' => HandlerStack::create(function (RequestInterface $request, array $options = []) {
                 $this->requests[] = $request;
                 $response = array_shift($this->responseQueue);
-                return promise_for($response);
+                return Create::promiseFor($response);
             }),
         ]);
     }

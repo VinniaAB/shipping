@@ -19,7 +19,7 @@
         "ext-mbstring": "*",
         "ext-simplexml": "*",
         "ext-xml": "*",
-        "guzzlehttp/guzzle": "^6.2",
+        "guzzlehttp/guzzle": "~7.0",
         "moneyphp/money": "^3.0",
         "vinnia/util": "dev-master"
     },

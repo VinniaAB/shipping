@@ -4,7 +4,10 @@ declare(strict_types=1);
 namespace Vinnia\Shipping\Tests\DHL;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\Stream;
+use GuzzleHttp\Psr7\Utils;
 use Vinnia\Shipping\Address;
 use Vinnia\Shipping\DHL\Credentials;
 use Vinnia\Shipping\DHL\Service;
@@ -19,7 +22,6 @@ use Vinnia\Util\Measurement\Centimeter;
 use Vinnia\Util\Measurement\Kilogram;
 use Vinnia\Util\Measurement\Mass;
 use Vinnia\Util\Measurement\Unit;
-use function GuzzleHttp\Psr7\stream_for;
 
 class ShipmentServiceTest extends AbstractTestCase
 {
@@ -46,7 +48,8 @@ TXT;
         );
         $address = Address::fromArray(static::EMPTY_ADDRESS);
         $request = new ShipmentRequest('', $address, $address, []);
-        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
+
+        $this->responseQueue[] = new Response(200, [], Utils::streamFor(static::EMPTY_RESPONSE));
         /* @var \Vinnia\Shipping\Shipment[] $shipments */
         $shipments = $service->createShipment($request)
             ->wait();
@@ -163,7 +166,7 @@ TXT;
     {
         $service = new ShipmentService($this->createClient(), new Credentials('', '', ''));
 
-        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
+        $this->responseQueue[] = new Response(200, [], Utils::streamFor(static::EMPTY_RESPONSE));
         $address = Address::fromArray(static::EMPTY_ADDRESS);
         $request = new ShipmentRequest('', $address, $address, []);
 
@@ -183,7 +186,7 @@ TXT;
     {
         $service = new ShipmentService($this->createClient(), new Credentials('', '', ''));
 
-        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
+        $this->responseQueue[] = new Response(200, [], Utils::streamFor(static::EMPTY_RESPONSE));
         $address = Address::fromArray(static::EMPTY_ADDRESS);
         $request = new ShipmentRequest('', $address, $address, []);
         $request->isDutiable = false;
@@ -201,7 +204,7 @@ TXT;
     {
         $service = new ShipmentService($this->createClient(), new Credentials('', '', '321'));
 
-        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
+        $this->responseQueue[] = new Response(200, [], Utils::streamFor(static::EMPTY_RESPONSE));
         $address = Address::fromArray(static::EMPTY_ADDRESS);
         $request = new ShipmentRequest('', $address, $address, []);
         $request->isDutiable = true;
@@ -222,7 +225,7 @@ TXT;
     {
         $service = new ShipmentService($this->createClient(), new Credentials('', '', '321'));
 
-        $this->responseQueue[] = new Response(200, [], stream_for(static::EMPTY_RESPONSE));
+        $this->responseQueue[] = new Response(200, [], Utils::streamFor(static::EMPTY_RESPONSE));
         $address = Address::fromArray(static::EMPTY_ADDRESS);
         $request = new ShipmentRequest('', $address, $address, []);
         $request->isDutiable = true;
